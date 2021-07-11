@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
-import { isImageFile } from '../../public/stylesheets/utils';
+import { isImageFile } from '../../public/utils';
 
 var router = express.Router();
 
@@ -16,6 +16,7 @@ router.post('/source', upload.array('source'), (req,res) => {
 		for (var i = 0; i < files.length;i++) {
 			if(!isImageFile(files[i])){
 				res.status(415).send("jpg,jpeg,png파일만 업로드 가능합니다.")
+				return
 			}
 		}
 		const req_id = generate_id();
