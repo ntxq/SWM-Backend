@@ -3,6 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import { isImageFile, generate_id } from '../../modules/utils';
 import path from 'path';
+import { req_now_step, req_ocr_result, save_ocr_result } from '../../modules/req_ai_server';
 
 interface ImageRequest extends express.Request{
 	req_id?:number;
@@ -61,8 +62,7 @@ router.post('/source', upload.array('source'), (req:ImageRequest,res) => {
 router.get('/progress', (req,res) => {
 	try{
 		const req_id = req.params['req_id']
-		var step = req.params['step']
-		// step = get_now_step(req_id,step)
+		var step = req_now_step(req_id,req.params['step'])
 		res.send({step:step})
 	}
 	catch{
@@ -73,7 +73,7 @@ router.get('/progress', (req,res) => {
 router.get('/result', (req,res) => {
 	try{
 		const req_id = req.params['req_id']
-		const data = {} // get_ocr_result(req_id)
+		const data = req_ocr_result(req_id)
 		res.send({data:data})
 	}
 	catch{
@@ -84,7 +84,7 @@ router.get('/result', (req,res) => {
 router.post('/confirm', (req,res) => {
 	try{
 		const data = req.body['data']
-		// save_ocr_result(data)
+		save_ocr_result(data)
 		res.send({})
 	}
 	catch{
