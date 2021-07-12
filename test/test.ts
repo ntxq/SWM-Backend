@@ -1,6 +1,6 @@
 var supertest = require('supertest');
 var expect = require("chai").expect;
-import app from '../app'
+import app from '../src/app'
 // describe('App', function() {
 //   it('has the default page', function(done) {
 //     request(app)
