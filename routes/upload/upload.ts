@@ -1,9 +1,7 @@
-import * as createError from "http-errors"
+import createError from "http-errors"
 import express from 'express';
 
 import ocrRouter from './ocr'
-
-var app = express();
 
 var router = express.Router();
 

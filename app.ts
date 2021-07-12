@@ -6,7 +6,7 @@ var logger = require('morgan');
 
 // var indexRouter = require('./routes/index');
 // var usersRouter = require('./routes/users');
-var uploadRouter = require('./routes/upload/upload');
+var uploadRouter = require('./routes/upload/upload.ts');
 
 var app = express();
 
@@ -40,4 +40,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+export default app;

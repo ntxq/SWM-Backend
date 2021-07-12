@@ -1,3 +1,5 @@
+import path from "path";
+
 export function isImageFile(file:Express.Multer.File):boolean{
 	 // Allowed ext
 	 const filetypes = /jpeg|jpg|png/;
