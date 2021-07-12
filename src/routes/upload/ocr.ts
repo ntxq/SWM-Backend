@@ -8,7 +8,7 @@ var router = express.Router();
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, 'images/');
+		cb(null, __dirname +'/../../images/');
 	},
 	filename: function (req, file, cb) {
 	  cb(null, file.originalname);
@@ -16,11 +16,9 @@ var storage = multer.diskStorage({
 })
 var fileFilter = function(req:express.Request, file, cb){
 	if(!isImageFile(file)){
-		req.res.statusCode = 415
-		// req.h = 'goes wrong on the mimetype';
-		cb('Error: Images Only!');
+		return cb({message:'Error: Images Only!',status:415});
 	}
-	cb(null,true)
+	return cb(null,true)
 }
   
 const upload = multer({ storage: storage, fileFilter:fileFilter, limits: { fileSize: 1024 * 1024 * 1024 } });
@@ -28,20 +26,13 @@ const upload = multer({ storage: storage, fileFilter:fileFilter, limits: { fileS
 
 router.post('/source', upload.array('source'), (req,res) => {
 	try{
-		const files = req.files as Express.Multer.File[];
-		for (var i = 0; i < files.length;i++) {
-			console.log(res.statusCode)
-			if(req){
-				res.status(415).send("jpg,jpeg,png파일만 업로드 가능합니다.")
-				return
-			}
-		}
+		// const files = req.files as Express.Multer.File[];
 		const req_id = generate_id();
-		for (var i = 0; i < files.length;i++) {
-			const file = files[i]
-			const path = `original/${req_id}_${i}`
-			fs.writeFile(path, file.buffer,()=>{})
-		}
+		// for (var i = 0; i < files.length;i++) {
+		// 	const file = files[i]
+		// 	const path = `original/${req_id}_${i}`
+		// 	fs.writeFile(path, file.buffer,()=>{})
+		// }
 		// send_to_ai_server();
 		res.send({req_id:req_id})
 	}
