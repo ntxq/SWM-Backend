@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon --watch '**/*.ts' --exec \"ts-node\" bin/www.ts",
+    "start": "nodemon --watch '**/*.ts' --exec \"ts-node\" src/bin/www.ts",
     "release": "node build/bin/www.js",
     "build": "tsc --project ./",
     "test": "env TS_NODE_PROJECT=\"tsconfig.json\" mocha --require ts-node/register 'test/**/*.ts'"

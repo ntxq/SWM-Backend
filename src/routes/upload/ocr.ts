@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
-import { isImageFile, generate_id } from '../../public/utils';
+import { isImageFile, generate_id } from '../../modules/utils';
 
 var router = express.Router();
 
