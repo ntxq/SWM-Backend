@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
-import { isImageFile } from '../../public/utils';
+import { isImageFile, generate_id } from '../../public/utils';
 
 var router = express.Router();
 
@@ -25,7 +25,7 @@ router.post('/source', upload.array('source'), (req,res) => {
 			const path = `original/${req_id}_${i}`
 			fs.writeFile(path, file.buffer,()=>{})
 		}
-		send_to_ai_server();
+		// send_to_ai_server();
 		res.send({req_id:req_id})
 	}
 	catch{
@@ -37,7 +37,7 @@ router.get('/progress', (req,res) => {
 	try{
 		const req_id = req.params['req_id']
 		var step = req.params['step']
-		step = get_now_step(req_id,step)
+		// step = get_now_step(req_id,step)
 		res.send({step:step})
 	}
 	catch{
@@ -48,7 +48,7 @@ router.get('/progress', (req,res) => {
 router.get('/result', (req,res) => {
 	try{
 		const req_id = req.params['req_id']
-		const data = get_ocr_result(req_id)
+		const data = {} // get_ocr_result(req_id)
 		res.send({data:data})
 	}
 	catch{
@@ -59,7 +59,7 @@ router.get('/result', (req,res) => {
 router.post('/confirm', (req,res) => {
 	try{
 		const data = req.body['data']
-		save_ocr_result(data)
+		// save_ocr_result(data)
 		res.send({})
 	}
 	catch{
