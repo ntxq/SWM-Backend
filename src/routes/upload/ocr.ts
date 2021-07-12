@@ -2,21 +2,32 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import { isImageFile, generate_id } from '../../modules/utils';
+import path from 'path';
+
+interface ImageRequest extends express.Request{
+	req_id?:number;
+}
 
 var router = express.Router();
 
+var prefix = 0
+const image_dir = __dirname +'/../../images'
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, __dirname +'/../../images/');
+		cb(null, image_dir);
 	},
 	filename: function (req, file, cb) {
-	  cb(null, file.originalname);
+		prefix += 1
+		cb(null, Date.now() + prefix + file.originalname);
 	}
 })
-var fileFilter = function(req:express.Request, file, cb){
+var fileFilter = function(req:ImageRequest, file, cb){
 	if(!isImageFile(file)){
 		return cb({message:'Error: Images Only!',status:415});
+	}
+	if(!req.req_id){
+		req.req_id = generate_id();
 	}
 	return cb(null,true)
 }
@@ -24,17 +35,23 @@ var fileFilter = function(req:express.Request, file, cb){
 const upload = multer({ storage: storage, fileFilter:fileFilter, limits: { fileSize: 1024 * 1024 * 1024 } });
 
 
-router.post('/source', upload.array('source'), (req,res) => {
+router.post('/source', upload.array('source'), (req:ImageRequest,res) => {
 	try{
-		// const files = req.files as Express.Multer.File[];
-		const req_id = generate_id();
-		// for (var i = 0; i < files.length;i++) {
-		// 	const file = files[i]
-		// 	const path = `original/${req_id}_${i}`
-		// 	fs.writeFile(path, file.buffer,()=>{})
-		// }
+		const files = req.files as Express.Multer.File[];
+		for (var i = 0; i < files.length;i++) {
+			const file = files[i]
+			const old_path = file.path
+			const new_path = `${image_dir}/original/${req.req_id}_${i}${path.extname(file.originalname)}`
+			fs.rename(old_path, new_path, function (err) {
+				if (err) {
+					console.error(err)
+					throw err
+				}
+				console.log('Successfully renamed - AKA moved!')
+			})
+		}
 		// send_to_ai_server();
-		res.send({req_id:req_id})
+		res.send({req_id:req.req_id})
 	}
 	catch{
 		res.status(500).send({msg:"internel error"});
