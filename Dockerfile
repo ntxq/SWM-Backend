@@ -1,15 +1,19 @@
-FROM node:8.11-alpine
+#docker build -t swm_back .
+FROM node:16-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /usr/src
 
-ARG NODE_ENV
-ENV NODE_ENV $NODE_ENV
+# ARG NODE_ENV
+# ENV NODE_ENV $NODE_ENV
 
-COPY package*.json /usr/src/app/
-RUN npm install
+COPY package*.json /usr/src/
+RUN yarn install
 
-COPY . /usr/src/app
+COPY . /usr/src
 
-ENV PORT 5000
+# volume ["."]
+
+ENV PORT 3000
 EXPOSE $PORT
 CMD [ "npm", "start" ]
+#docker run -p 3000:3000 -d --network=host --name swm_back -v $PWD:/usr/src/ swm_back
