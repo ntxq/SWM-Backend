@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+// option objc_class_prefix = "HLW";
+
+package ai_server;
+
+service OCR {
+  rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
+  rpc GetResult (SendResult) returns (ReplyGetResult) {}
+  rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
+}
+
+service Style {
+  rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
+  rpc GetResult (SendResult) returns (ReplyGetResult) {}
+  rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
+}
+
+message SendProgress {
+  int64 req_id = 1;
+  int32 step = 2;
+}
+
+message ReplyGetProgress {
+  int64 req_id = 1;
+  int32 status_code = 2;
+}
+
+message SendResult {
+  int64 req_id = 1;
+  string data = 2;
+}
+
+message ReplyGetResult {
+  int64 req_id = 1;
+  int32 status_code = 2;
+}
+
+message RequestRunModel {
+  int64 req_id = 1;
+}
+
+message ReplyRunModel {
+  int64 req_id = 1;
+  int32 status_code = 2;
+}
