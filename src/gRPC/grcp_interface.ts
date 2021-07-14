@@ -42,19 +42,20 @@ export class OCRInterface{
   }
   
   OnUpdateStep(call, callback) {
-    call = call as SendStep
+    const request:SendStep = call.request 
     const response: ReplySendStep = {
-      req_id:call.req_id,
-      step:call.step,
+      req_id:request.req_id,
+      step:request.step,
       status_code:200
     }
+    console.log(response)
     callback(null,response);
   }
   
   OnComplete(call, callback) {
-    call = call as SendResult
+    const request:SendResult = call.request 
     const response: ReplySendResult = {
-      req_id:call.req_id,
+      req_id:request.req_id,
       status_code:200
     }
     callback(null,response);
@@ -84,19 +85,19 @@ export class StyleInterface{
   }
   
   OnUpdateStep(call, callback) {
-    call = call as SendStep
+    const request:SendStep = call.request 
     const response: ReplySendStep = {
-      req_id:call.req_id,
-      step:call.step,
+      req_id:request.req_id,
+      step:request.step,
       status_code:200
     }
     callback(null,response);
   }
   
   OnComplete(call, callback) {
-    call = call as SendResult
+    const request:SendResult = call.request 
     const response: ReplySendResult = {
-      req_id:call.req_id,
+      req_id:request.req_id,
       status_code:200
     }
     callback(null,response);

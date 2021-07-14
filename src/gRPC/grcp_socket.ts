@@ -13,7 +13,7 @@ var packageDefinition = protoLoader.loadSync(
     oneofs: true
 });
   
-class GPRCSocket{
+class GRPCSocket{
   client_url: string
   server_url: string
   client: grpc.Server
@@ -56,4 +56,4 @@ class GPRCSocket{
   }
 }
       
-export const grpcSocket = new GPRCSocket("localhost",50050,50051)
+export const grpcSocket = new GRPCSocket("localhost",50050,50051)
