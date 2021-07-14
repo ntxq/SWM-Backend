@@ -14,39 +14,39 @@ class OCRStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetProgress = channel.unary_unary(
-                '/ai_server.OCR/GetProgress',
-                request_serializer=ai__server__pb2.SendProgress.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyGetProgress.FromString,
+        self.OnUpdateStep = channel.unary_unary(
+                '/ai_server.OCR/OnUpdateStep',
+                request_serializer=ai__server__pb2.SendStep.SerializeToString,
+                response_deserializer=ai__server__pb2.ReplySendStep.FromString,
                 )
-        self.GetResult = channel.unary_unary(
-                '/ai_server.OCR/GetResult',
+        self.OnComplete = channel.unary_unary(
+                '/ai_server.OCR/OnComplete',
                 request_serializer=ai__server__pb2.SendResult.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyGetResult.FromString,
+                response_deserializer=ai__server__pb2.ReplySendResult.FromString,
                 )
-        self.RunModel = channel.unary_unary(
-                '/ai_server.OCR/RunModel',
-                request_serializer=ai__server__pb2.RequestRunModel.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyRunModel.FromString,
+        self.Start = channel.unary_unary(
+                '/ai_server.OCR/Start',
+                request_serializer=ai__server__pb2.RequestStart.SerializeToString,
+                response_deserializer=ai__server__pb2.ReplyRequestStart.FromString,
                 )
 
 
 class OCRServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def GetProgress(self, request, context):
+    def OnUpdateStep(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetResult(self, request, context):
+    def OnComplete(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RunModel(self, request, context):
+    def Start(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -55,20 +55,20 @@ class OCRServicer(object):
 
 def add_OCRServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetProgress': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetProgress,
-                    request_deserializer=ai__server__pb2.SendProgress.FromString,
-                    response_serializer=ai__server__pb2.ReplyGetProgress.SerializeToString,
+            'OnUpdateStep': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnUpdateStep,
+                    request_deserializer=ai__server__pb2.SendStep.FromString,
+                    response_serializer=ai__server__pb2.ReplySendStep.SerializeToString,
             ),
-            'GetResult': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetResult,
+            'OnComplete': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnComplete,
                     request_deserializer=ai__server__pb2.SendResult.FromString,
-                    response_serializer=ai__server__pb2.ReplyGetResult.SerializeToString,
+                    response_serializer=ai__server__pb2.ReplySendResult.SerializeToString,
             ),
-            'RunModel': grpc.unary_unary_rpc_method_handler(
-                    servicer.RunModel,
-                    request_deserializer=ai__server__pb2.RequestRunModel.FromString,
-                    response_serializer=ai__server__pb2.ReplyRunModel.SerializeToString,
+            'Start': grpc.unary_unary_rpc_method_handler(
+                    servicer.Start,
+                    request_deserializer=ai__server__pb2.RequestStart.FromString,
+                    response_serializer=ai__server__pb2.ReplyRequestStart.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -81,7 +81,7 @@ class OCR(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def GetProgress(request,
+    def OnUpdateStep(request,
             target,
             options=(),
             channel_credentials=None,
@@ -91,14 +91,14 @@ class OCR(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/GetProgress',
-            ai__server__pb2.SendProgress.SerializeToString,
-            ai__server__pb2.ReplyGetProgress.FromString,
+        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/OnUpdateStep',
+            ai__server__pb2.SendStep.SerializeToString,
+            ai__server__pb2.ReplySendStep.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetResult(request,
+    def OnComplete(request,
             target,
             options=(),
             channel_credentials=None,
@@ -108,14 +108,14 @@ class OCR(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/GetResult',
+        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/OnComplete',
             ai__server__pb2.SendResult.SerializeToString,
-            ai__server__pb2.ReplyGetResult.FromString,
+            ai__server__pb2.ReplySendResult.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def RunModel(request,
+    def Start(request,
             target,
             options=(),
             channel_credentials=None,
@@ -125,9 +125,9 @@ class OCR(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/RunModel',
-            ai__server__pb2.RequestRunModel.SerializeToString,
-            ai__server__pb2.ReplyRunModel.FromString,
+        return grpc.experimental.unary_unary(request, target, '/ai_server.OCR/Start',
+            ai__server__pb2.RequestStart.SerializeToString,
+            ai__server__pb2.ReplyRequestStart.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -141,39 +141,39 @@ class StyleStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetProgress = channel.unary_unary(
-                '/ai_server.Style/GetProgress',
-                request_serializer=ai__server__pb2.SendProgress.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyGetProgress.FromString,
+        self.OnUpdateStep = channel.unary_unary(
+                '/ai_server.Style/OnUpdateStep',
+                request_serializer=ai__server__pb2.SendStep.SerializeToString,
+                response_deserializer=ai__server__pb2.ReplySendStep.FromString,
                 )
-        self.GetResult = channel.unary_unary(
-                '/ai_server.Style/GetResult',
+        self.OnComplete = channel.unary_unary(
+                '/ai_server.Style/OnComplete',
                 request_serializer=ai__server__pb2.SendResult.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyGetResult.FromString,
+                response_deserializer=ai__server__pb2.ReplySendResult.FromString,
                 )
-        self.RunModel = channel.unary_unary(
-                '/ai_server.Style/RunModel',
-                request_serializer=ai__server__pb2.RequestRunModel.SerializeToString,
-                response_deserializer=ai__server__pb2.ReplyRunModel.FromString,
+        self.Start = channel.unary_unary(
+                '/ai_server.Style/Start',
+                request_serializer=ai__server__pb2.RequestStart.SerializeToString,
+                response_deserializer=ai__server__pb2.ReplyRequestStart.FromString,
                 )
 
 
 class StyleServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def GetProgress(self, request, context):
+    def OnUpdateStep(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetResult(self, request, context):
+    def OnComplete(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def RunModel(self, request, context):
+    def Start(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -182,20 +182,20 @@ class StyleServicer(object):
 
 def add_StyleServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetProgress': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetProgress,
-                    request_deserializer=ai__server__pb2.SendProgress.FromString,
-                    response_serializer=ai__server__pb2.ReplyGetProgress.SerializeToString,
+            'OnUpdateStep': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnUpdateStep,
+                    request_deserializer=ai__server__pb2.SendStep.FromString,
+                    response_serializer=ai__server__pb2.ReplySendStep.SerializeToString,
             ),
-            'GetResult': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetResult,
+            'OnComplete': grpc.unary_unary_rpc_method_handler(
+                    servicer.OnComplete,
                     request_deserializer=ai__server__pb2.SendResult.FromString,
-                    response_serializer=ai__server__pb2.ReplyGetResult.SerializeToString,
+                    response_serializer=ai__server__pb2.ReplySendResult.SerializeToString,
             ),
-            'RunModel': grpc.unary_unary_rpc_method_handler(
-                    servicer.RunModel,
-                    request_deserializer=ai__server__pb2.RequestRunModel.FromString,
-                    response_serializer=ai__server__pb2.ReplyRunModel.SerializeToString,
+            'Start': grpc.unary_unary_rpc_method_handler(
+                    servicer.Start,
+                    request_deserializer=ai__server__pb2.RequestStart.FromString,
+                    response_serializer=ai__server__pb2.ReplyRequestStart.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -208,7 +208,7 @@ class Style(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def GetProgress(request,
+    def OnUpdateStep(request,
             target,
             options=(),
             channel_credentials=None,
@@ -218,14 +218,14 @@ class Style(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/GetProgress',
-            ai__server__pb2.SendProgress.SerializeToString,
-            ai__server__pb2.ReplyGetProgress.FromString,
+        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/OnUpdateStep',
+            ai__server__pb2.SendStep.SerializeToString,
+            ai__server__pb2.ReplySendStep.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def GetResult(request,
+    def OnComplete(request,
             target,
             options=(),
             channel_credentials=None,
@@ -235,14 +235,14 @@ class Style(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/GetResult',
+        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/OnComplete',
             ai__server__pb2.SendResult.SerializeToString,
-            ai__server__pb2.ReplyGetResult.FromString,
+            ai__server__pb2.ReplySendResult.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def RunModel(request,
+    def Start(request,
             target,
             options=(),
             channel_credentials=None,
@@ -252,8 +252,8 @@ class Style(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/RunModel',
-            ai__server__pb2.RequestRunModel.SerializeToString,
-            ai__server__pb2.ReplyRunModel.FromString,
+        return grpc.experimental.unary_unary(request, target, '/ai_server.Style/Start',
+            ai__server__pb2.RequestStart.SerializeToString,
+            ai__server__pb2.ReplyRequestStart.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -5,8 +5,8 @@ file = f"{directory}/ai_server.proto"
 protoc.main((
     '',
     '-Iprotos',
-    '--python_out=gRPC',
-    '--grpc_python_out=gRPC',
+    '--python_out=codegen',
+    '--grpc_python_out=codegen',
     f'--proto_path={directory}',
     file
 ))

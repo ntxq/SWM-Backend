@@ -19,29 +19,29 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0f\x61i_server.proto\x12\tai_server\",\n\x0cSendProgress\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x0c\n\x04step\x18\x02 \x01(\x05\"7\n\x10ReplyGetProgress\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\"*\n\nSendResult\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\"5\n\x0eReplyGetResult\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\"!\n\x0fRequestRunModel\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\"4\n\rReplyRunModel\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\x32\xd1\x01\n\x03OCR\x12\x45\n\x0bGetProgress\x12\x17.ai_server.SendProgress\x1a\x1b.ai_server.ReplyGetProgress\"\x00\x12?\n\tGetResult\x12\x15.ai_server.SendResult\x1a\x19.ai_server.ReplyGetResult\"\x00\x12\x42\n\x08RunModel\x12\x1a.ai_server.RequestRunModel\x1a\x18.ai_server.ReplyRunModel\"\x00\x32\xd3\x01\n\x05Style\x12\x45\n\x0bGetProgress\x12\x17.ai_server.SendProgress\x1a\x1b.ai_server.ReplyGetProgress\"\x00\x12?\n\tGetResult\x12\x15.ai_server.SendResult\x1a\x19.ai_server.ReplyGetResult\"\x00\x12\x42\n\x08RunModel\x12\x1a.ai_server.RequestRunModel\x1a\x18.ai_server.ReplyRunModel\"\x00\x62\x06proto3'
+  serialized_pb=b'\n\x0f\x61i_server.proto\x12\tai_server\"(\n\x08SendStep\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x0c\n\x04step\x18\x02 \x01(\x05\"B\n\rReplySendStep\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x0c\n\x04step\x18\x02 \x01(\x05\x12\x13\n\x0bstatus_code\x18\x03 \x01(\x05\"*\n\nSendResult\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x01(\t\"6\n\x0fReplySendResult\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\"\x1e\n\x0cRequestStart\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\"8\n\x11ReplyRequestStart\x12\x0e\n\x06req_id\x18\x01 \x01(\x03\x12\x13\n\x0bstatus_code\x18\x02 \x01(\x05\x32\xcb\x01\n\x03OCR\x12?\n\x0cOnUpdateStep\x12\x13.ai_server.SendStep\x1a\x18.ai_server.ReplySendStep\"\x00\x12\x41\n\nOnComplete\x12\x15.ai_server.SendResult\x1a\x1a.ai_server.ReplySendResult\"\x00\x12@\n\x05Start\x12\x17.ai_server.RequestStart\x1a\x1c.ai_server.ReplyRequestStart\"\x00\x32\xcd\x01\n\x05Style\x12?\n\x0cOnUpdateStep\x12\x13.ai_server.SendStep\x1a\x18.ai_server.ReplySendStep\"\x00\x12\x41\n\nOnComplete\x12\x15.ai_server.SendResult\x1a\x1a.ai_server.ReplySendResult\"\x00\x12@\n\x05Start\x12\x17.ai_server.RequestStart\x1a\x1c.ai_server.ReplyRequestStart\"\x00\x62\x06proto3'
 )
 
 
 
 
-_SENDPROGRESS = _descriptor.Descriptor(
-  name='SendProgress',
-  full_name='ai_server.SendProgress',
+_SENDSTEP = _descriptor.Descriptor(
+  name='SendStep',
+  full_name='ai_server.SendStep',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='req_id', full_name='ai_server.SendProgress.req_id', index=0,
+      name='req_id', full_name='ai_server.SendStep.req_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='step', full_name='ai_server.SendProgress.step', index=1,
+      name='step', full_name='ai_server.SendStep.step', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -60,28 +60,35 @@ _SENDPROGRESS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=30,
-  serialized_end=74,
+  serialized_end=70,
 )
 
 
-_REPLYGETPROGRESS = _descriptor.Descriptor(
-  name='ReplyGetProgress',
-  full_name='ai_server.ReplyGetProgress',
+_REPLYSENDSTEP = _descriptor.Descriptor(
+  name='ReplySendStep',
+  full_name='ai_server.ReplySendStep',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='req_id', full_name='ai_server.ReplyGetProgress.req_id', index=0,
+      name='req_id', full_name='ai_server.ReplySendStep.req_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='status_code', full_name='ai_server.ReplyGetProgress.status_code', index=1,
+      name='step', full_name='ai_server.ReplySendStep.step', index=1,
       number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='status_code', full_name='ai_server.ReplySendStep.status_code', index=2,
+      number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -98,8 +105,8 @@ _REPLYGETPROGRESS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=76,
-  serialized_end=131,
+  serialized_start=72,
+  serialized_end=138,
 )
 
 
@@ -137,28 +144,28 @@ _SENDRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=133,
-  serialized_end=175,
+  serialized_start=140,
+  serialized_end=182,
 )
 
 
-_REPLYGETRESULT = _descriptor.Descriptor(
-  name='ReplyGetResult',
-  full_name='ai_server.ReplyGetResult',
+_REPLYSENDRESULT = _descriptor.Descriptor(
+  name='ReplySendResult',
+  full_name='ai_server.ReplySendResult',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='req_id', full_name='ai_server.ReplyGetResult.req_id', index=0,
+      name='req_id', full_name='ai_server.ReplySendResult.req_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='status_code', full_name='ai_server.ReplyGetResult.status_code', index=1,
+      name='status_code', full_name='ai_server.ReplySendResult.status_code', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -176,21 +183,21 @@ _REPLYGETRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=177,
-  serialized_end=230,
+  serialized_start=184,
+  serialized_end=238,
 )
 
 
-_REQUESTRUNMODEL = _descriptor.Descriptor(
-  name='RequestRunModel',
-  full_name='ai_server.RequestRunModel',
+_REQUESTSTART = _descriptor.Descriptor(
+  name='RequestStart',
+  full_name='ai_server.RequestStart',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='req_id', full_name='ai_server.RequestRunModel.req_id', index=0,
+      name='req_id', full_name='ai_server.RequestStart.req_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -208,28 +215,28 @@ _REQUESTRUNMODEL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=232,
-  serialized_end=265,
+  serialized_start=240,
+  serialized_end=270,
 )
 
 
-_REPLYRUNMODEL = _descriptor.Descriptor(
-  name='ReplyRunModel',
-  full_name='ai_server.ReplyRunModel',
+_REPLYREQUESTSTART = _descriptor.Descriptor(
+  name='ReplyRequestStart',
+  full_name='ai_server.ReplyRequestStart',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='req_id', full_name='ai_server.ReplyRunModel.req_id', index=0,
+      name='req_id', full_name='ai_server.ReplyRequestStart.req_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='status_code', full_name='ai_server.ReplyRunModel.status_code', index=1,
+      name='status_code', full_name='ai_server.ReplyRequestStart.status_code', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -247,31 +254,31 @@ _REPLYRUNMODEL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=267,
-  serialized_end=319,
+  serialized_start=272,
+  serialized_end=328,
 )
 
-DESCRIPTOR.message_types_by_name['SendProgress'] = _SENDPROGRESS
-DESCRIPTOR.message_types_by_name['ReplyGetProgress'] = _REPLYGETPROGRESS
+DESCRIPTOR.message_types_by_name['SendStep'] = _SENDSTEP
+DESCRIPTOR.message_types_by_name['ReplySendStep'] = _REPLYSENDSTEP
 DESCRIPTOR.message_types_by_name['SendResult'] = _SENDRESULT
-DESCRIPTOR.message_types_by_name['ReplyGetResult'] = _REPLYGETRESULT
-DESCRIPTOR.message_types_by_name['RequestRunModel'] = _REQUESTRUNMODEL
-DESCRIPTOR.message_types_by_name['ReplyRunModel'] = _REPLYRUNMODEL
+DESCRIPTOR.message_types_by_name['ReplySendResult'] = _REPLYSENDRESULT
+DESCRIPTOR.message_types_by_name['RequestStart'] = _REQUESTSTART
+DESCRIPTOR.message_types_by_name['ReplyRequestStart'] = _REPLYREQUESTSTART
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-SendProgress = _reflection.GeneratedProtocolMessageType('SendProgress', (_message.Message,), {
-  'DESCRIPTOR' : _SENDPROGRESS,
+SendStep = _reflection.GeneratedProtocolMessageType('SendStep', (_message.Message,), {
+  'DESCRIPTOR' : _SENDSTEP,
   '__module__' : 'ai_server_pb2'
-  # @@protoc_insertion_point(class_scope:ai_server.SendProgress)
+  # @@protoc_insertion_point(class_scope:ai_server.SendStep)
   })
-_sym_db.RegisterMessage(SendProgress)
+_sym_db.RegisterMessage(SendStep)
 
-ReplyGetProgress = _reflection.GeneratedProtocolMessageType('ReplyGetProgress', (_message.Message,), {
-  'DESCRIPTOR' : _REPLYGETPROGRESS,
+ReplySendStep = _reflection.GeneratedProtocolMessageType('ReplySendStep', (_message.Message,), {
+  'DESCRIPTOR' : _REPLYSENDSTEP,
   '__module__' : 'ai_server_pb2'
-  # @@protoc_insertion_point(class_scope:ai_server.ReplyGetProgress)
+  # @@protoc_insertion_point(class_scope:ai_server.ReplySendStep)
   })
-_sym_db.RegisterMessage(ReplyGetProgress)
+_sym_db.RegisterMessage(ReplySendStep)
 
 SendResult = _reflection.GeneratedProtocolMessageType('SendResult', (_message.Message,), {
   'DESCRIPTOR' : _SENDRESULT,
@@ -280,26 +287,26 @@ SendResult = _reflection.GeneratedProtocolMessageType('SendResult', (_message.Me
   })
 _sym_db.RegisterMessage(SendResult)
 
-ReplyGetResult = _reflection.GeneratedProtocolMessageType('ReplyGetResult', (_message.Message,), {
-  'DESCRIPTOR' : _REPLYGETRESULT,
+ReplySendResult = _reflection.GeneratedProtocolMessageType('ReplySendResult', (_message.Message,), {
+  'DESCRIPTOR' : _REPLYSENDRESULT,
   '__module__' : 'ai_server_pb2'
-  # @@protoc_insertion_point(class_scope:ai_server.ReplyGetResult)
+  # @@protoc_insertion_point(class_scope:ai_server.ReplySendResult)
   })
-_sym_db.RegisterMessage(ReplyGetResult)
+_sym_db.RegisterMessage(ReplySendResult)
 
-RequestRunModel = _reflection.GeneratedProtocolMessageType('RequestRunModel', (_message.Message,), {
-  'DESCRIPTOR' : _REQUESTRUNMODEL,
+RequestStart = _reflection.GeneratedProtocolMessageType('RequestStart', (_message.Message,), {
+  'DESCRIPTOR' : _REQUESTSTART,
   '__module__' : 'ai_server_pb2'
-  # @@protoc_insertion_point(class_scope:ai_server.RequestRunModel)
+  # @@protoc_insertion_point(class_scope:ai_server.RequestStart)
   })
-_sym_db.RegisterMessage(RequestRunModel)
+_sym_db.RegisterMessage(RequestStart)
 
-ReplyRunModel = _reflection.GeneratedProtocolMessageType('ReplyRunModel', (_message.Message,), {
-  'DESCRIPTOR' : _REPLYRUNMODEL,
+ReplyRequestStart = _reflection.GeneratedProtocolMessageType('ReplyRequestStart', (_message.Message,), {
+  'DESCRIPTOR' : _REPLYREQUESTSTART,
   '__module__' : 'ai_server_pb2'
-  # @@protoc_insertion_point(class_scope:ai_server.ReplyRunModel)
+  # @@protoc_insertion_point(class_scope:ai_server.ReplyRequestStart)
   })
-_sym_db.RegisterMessage(ReplyRunModel)
+_sym_db.RegisterMessage(ReplyRequestStart)
 
 
 
@@ -310,36 +317,36 @@ _OCR = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=322,
-  serialized_end=531,
+  serialized_start=331,
+  serialized_end=534,
   methods=[
   _descriptor.MethodDescriptor(
-    name='GetProgress',
-    full_name='ai_server.OCR.GetProgress',
+    name='OnUpdateStep',
+    full_name='ai_server.OCR.OnUpdateStep',
     index=0,
     containing_service=None,
-    input_type=_SENDPROGRESS,
-    output_type=_REPLYGETPROGRESS,
+    input_type=_SENDSTEP,
+    output_type=_REPLYSENDSTEP,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='GetResult',
-    full_name='ai_server.OCR.GetResult',
+    name='OnComplete',
+    full_name='ai_server.OCR.OnComplete',
     index=1,
     containing_service=None,
     input_type=_SENDRESULT,
-    output_type=_REPLYGETRESULT,
+    output_type=_REPLYSENDRESULT,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='RunModel',
-    full_name='ai_server.OCR.RunModel',
+    name='Start',
+    full_name='ai_server.OCR.Start',
     index=2,
     containing_service=None,
-    input_type=_REQUESTRUNMODEL,
-    output_type=_REPLYRUNMODEL,
+    input_type=_REQUESTSTART,
+    output_type=_REPLYREQUESTSTART,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
@@ -356,36 +363,36 @@ _STYLE = _descriptor.ServiceDescriptor(
   index=1,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=534,
-  serialized_end=745,
+  serialized_start=537,
+  serialized_end=742,
   methods=[
   _descriptor.MethodDescriptor(
-    name='GetProgress',
-    full_name='ai_server.Style.GetProgress',
+    name='OnUpdateStep',
+    full_name='ai_server.Style.OnUpdateStep',
     index=0,
     containing_service=None,
-    input_type=_SENDPROGRESS,
-    output_type=_REPLYGETPROGRESS,
+    input_type=_SENDSTEP,
+    output_type=_REPLYSENDSTEP,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='GetResult',
-    full_name='ai_server.Style.GetResult',
+    name='OnComplete',
+    full_name='ai_server.Style.OnComplete',
     index=1,
     containing_service=None,
     input_type=_SENDRESULT,
-    output_type=_REPLYGETRESULT,
+    output_type=_REPLYSENDRESULT,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
-    name='RunModel',
-    full_name='ai_server.Style.RunModel',
+    name='Start',
+    full_name='ai_server.Style.Start',
     index=2,
     containing_service=None,
-    input_type=_REQUESTRUNMODEL,
-    output_type=_REPLYRUNMODEL,
+    input_type=_REQUESTSTART,
+    output_type=_REPLYREQUESTSTART,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
