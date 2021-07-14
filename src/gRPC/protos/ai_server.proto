@@ -5,10 +5,6 @@ syntax = "proto3";
 package ai_server;
 
 service OCR {
-  // rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
-  // rpc GetResult (SendResult) returns (ReplyGetResult) {}
-  // rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
-  
   rpc OnUpdateStep (SendStep) returns (ReplySendStep) {}
   rpc OnComplete (SendResult) returns (ReplySendResult) {}
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
