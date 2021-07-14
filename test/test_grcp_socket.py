@@ -1,9 +1,9 @@
 from concurrent import futures
 
 import grpc
-
-from python_out.ai_server_pb2 import *
-import python_out.ai_server_pb2_grpc as service_pb2_grpc
+import asyncio
+from gRPC.ai_server_pb2 import *
+import gRPC.ai_server_pb2_grpc as service_pb2_grpc
 
 
 class OCRServicer(service_pb2_grpc.OCR):
@@ -21,7 +21,7 @@ class OCRServicer(service_pb2_grpc.OCR):
         # return Sum(sum=request.a + request.b)
 
 
-def serve():
+async def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     service_pb2_grpc.add_OCRServicer_to_server(
         OCRServicer(), server
@@ -29,8 +29,17 @@ def serve():
     server.add_insecure_port('[::]:50051')
     server.start()
     print("start listening")
-    server.wait_for_termination()
+    await server.wait_for_termination()
 
+def client():
+    channel = grpc.insecure_channel('localhost:50050') 
+    stub = service_pb2_grpc.OCRStub(channel)
+    response = stub.GetProgress(SendProgress(req_id=3,step=2))
+    print(response.status_code)
 
 if __name__ == '__main__':
-    serve()
+    loop = asyncio.new_event_loop()  # 10
+    asyncio.set_event_loop(loop)
+    client()
+    result = loop.run_until_complete(serve())  # 11
+    loop.close()
