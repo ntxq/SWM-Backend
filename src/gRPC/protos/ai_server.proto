@@ -5,25 +5,30 @@ syntax = "proto3";
 package ai_server;
 
 service OCR {
-  rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
-  rpc GetResult (SendResult) returns (ReplyGetResult) {}
-  rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
+  // rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
+  // rpc GetResult (SendResult) returns (ReplyGetResult) {}
+  // rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
+  
+  rpc OnUpdateStep (SendStep) returns (ReplySendStep) {}
+  rpc OnComplete (SendResult) returns (ReplySendResult) {}
+  rpc Start (RequestStart) returns (ReplyRequestStart) {}
 }
 
 service Style {
-  rpc GetProgress (SendProgress) returns (ReplyGetProgress) {}
-  rpc GetResult (SendResult) returns (ReplyGetResult) {}
-  rpc RunModel (RequestRunModel) returns (ReplyRunModel) {}
+  rpc OnUpdateStep (SendStep) returns (ReplySendStep) {}
+  rpc OnComplete (SendResult) returns (ReplySendResult) {}
+  rpc Start (RequestStart) returns (ReplyRequestStart) {}
 }
 
-message SendProgress {
+message SendStep {
   int64 req_id = 1;
   int32 step = 2;
 }
 
-message ReplyGetProgress {
+message ReplySendStep {
   int64 req_id = 1;
-  int32 status_code = 2;
+  int32 step = 2;
+  int32 status_code = 3;
 }
 
 message SendResult {
@@ -31,16 +36,16 @@ message SendResult {
   string data = 2;
 }
 
-message ReplyGetResult {
+message ReplySendResult {
   int64 req_id = 1;
   int32 status_code = 2;
 }
 
-message RequestRunModel {
+message RequestStart {
   int64 req_id = 1;
 }
 
-message ReplyRunModel {
+message ReplyRequestStart {
   int64 req_id = 1;
   int32 status_code = 2;
 }

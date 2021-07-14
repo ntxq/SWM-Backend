@@ -2,92 +2,58 @@ var PROTO_PATH = __dirname + '/protos/ai_server.proto';
 
 import grpc = require('@grpc/grpc-js');
 import protoLoader = require('@grpc/proto-loader');
-
-interface ReplyGetProgress{
-  req_id:number;
-  status_code:number;
-}
-
-interface ReplyGetResult{
-  req_id:number;
-  status_code:number;
-}
-
-interface RequestRunModel{
-  req_id:number;
-}
-
-interface ReplyRunModel{
-  req_id:number;
-  status_code:number;
-}
+import { OCRInterface, StyleInterface } from './grcp_interface';
 
 var packageDefinition = protoLoader.loadSync(
-    PROTO_PATH,
-    {keepCase: true,
-     longs: String,
-     enums: String,
-     defaults: true,
-     oneofs: true
-    });
-var ai_server_proto = grpc.loadPackageDefinition(packageDefinition).ai_server as any;
-
+  PROTO_PATH,
+  {keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+  
 class GPRCSocket{
   client_url: string
   server_url: string
+  client: grpc.Server
+  server: grpc.Server
+  OCR: OCRInterface
+  style: StyleInterface
+  proto: any
+
   constructor(url:string,server_port:number|string,client_port:number|string) {
     this.client_url = `${url}:${client_port}`
     this.server_url = `${url}:${server_port}`
-    this.openServer()
-  }
+    this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as any;
 
-  private GetProgress(call, callback) {
-    const response: ReplyGetProgress = {
-      req_id:call.req_id,
-      status_code:200
-    }
-    callback(null,response);
-  }
-
-  private GetResult(call, callback) {
-    const response: ReplyGetResult = {
-      req_id:call.req_id,
-      status_code:200
-    }
-    callback(null,response);
+    this.OCR = new OCRInterface(this.client_url,this.proto)
+    this.style = new StyleInterface(this.client_url,this.proto)
+    this.server = this.openServer()
   }
 
   openServer(){
     var server = new grpc.Server();
 
-    server.addService(ai_server_proto.OCR.service, 
-      {
-        GetProgress: this.GetProgress, 
-        GetResult: this.GetResult
-      });
-    server.addService(ai_server_proto.Style.service, 
-      {
-        GetProgress: this.GetProgress, 
-        GetResult: this.GetResult
-      });
-
+    server.addService(this.proto.OCR.service, {
+      OnUpdateStep: this.OCR.OnUpdateStep, 
+      OnComplete: this.OCR.OnComplete
+    });
+    server.addService(this.proto.Style.service, {
+      OnUpdateStep: this.style.OnUpdateStep, 
+      OnComplete: this.style.OnComplete
+    });
+    
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), () => {
       console.log('start listening grpc')
       server.start();
     }); 
+    return server;
   }
-
-  RunModel(req_id:number){
-    var client = new ai_server_proto.OCR(this.client_url,grpc.credentials.createInsecure());
-    const request:RequestRunModel = {req_id:req_id}
-    client.RunModel(request, function(err, response:ReplyRunModel) {
-      if(err){
-        console.error(err)
-        return
-      }
-      console.log('Greeting:', response.status_code);
-    });
+  
+  StartOCR(req_id:number){
+    this.OCR.Start(req_id)
   }
 }
-
+      
 export const grpcSocket = new GPRCSocket("localhost",50050,50051)
