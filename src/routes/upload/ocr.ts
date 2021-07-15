@@ -1,7 +1,9 @@
 import express from 'express';
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 import fs from 'fs';
 import { isImageFile, generate_id } from '../../modules/utils';
+
+import { Request, Response, NextFunction } from 'express-serve-static-core'
 
 var router = express.Router();
 
@@ -14,11 +16,12 @@ var storage = multer.diskStorage({
 	  cb(null, file.originalname);
 	}
 })
-var fileFilter = function(req:express.Request, file, cb){
+
+var fileFilter = function(req:Request, file:Express.Multer.File, cb:FileFilterCallback){
 	if(!isImageFile(file)){
-		req.res.statusCode = 415
+		(req.res as Response).statusCode = 415
 		// req.h = 'goes wrong on the mimetype';
-		cb('Error: Images Only!');
+		cb(Error('Error: Images Only!'));
 	}
 	cb(null,true)
 }
@@ -26,7 +29,7 @@ var fileFilter = function(req:express.Request, file, cb){
 const upload = multer({ storage: storage, fileFilter:fileFilter, limits: { fileSize: 1024 * 1024 * 1024 } });
 
 
-router.post('/source', upload.array('source'), (req,res) => {
+router.post('/source', upload.array('source'), (req:Request,res:Response) => {
 	try{
 		const files = req.files as Express.Multer.File[];
 		for (var i = 0; i < files.length;i++) {
@@ -50,7 +53,7 @@ router.post('/source', upload.array('source'), (req,res) => {
 	}
 });
 
-router.get('/progress', (req,res) => {
+router.get('/progress', (req:Request,res:Response) => {
 	try{
 		const req_id = req.params['req_id']
 		var step = req.params['step']
@@ -62,7 +65,7 @@ router.get('/progress', (req,res) => {
 	}
 });
 
-router.get('/result', (req,res) => {
+router.get('/result', (req:Request,res:Response) => {
 	try{
 		const req_id = req.params['req_id']
 		const data = {} // get_ocr_result(req_id)
@@ -73,7 +76,7 @@ router.get('/result', (req,res) => {
 	}
 });
 
-router.post('/confirm', (req,res) => {
+router.post('/confirm', (req:Request,res:Response) => {
 	try{
 		const data = req.body['data']
 		// save_ocr_result(data)

@@ -3,6 +3,8 @@ import express from 'express';
 
 import ocrRouter from './ocr'
 
+import { Request, Response, NextFunction } from 'express-serve-static-core'
+
 var router = express.Router();
 
 router.use('/OCR', ocrRouter);
@@ -13,7 +15,7 @@ router.use(function(req, res, next) {
 });
 
 // error handler
-router.use(function(err, req, res, next) {
+router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

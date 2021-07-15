@@ -9,9 +9,9 @@ export function isImageFile(file:Express.Multer.File):boolean{
 	 const mimetype = filetypes.test(file.mimetype);
  
 	 if(mimetype && extname){
-		 return true;
+		return true;
 	 } else {
-		 false;
+		return false;
 	 }
 }
 

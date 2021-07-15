@@ -1,11 +1,10 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+import createError from 'http-errors'
+import express from 'express'
+import path from 'path'
+import cookieParser = require('cookie-parser')
+import logger = require('morgan')
+import { Request, Response, NextFunction } from 'express-serve-static-core'
 
-// var indexRouter = require('./routes/index');
-// var usersRouter = require('./routes/users');
 var uploadRouter = require('./routes/upload/upload.ts');
 
 var app = express();
@@ -25,12 +24,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/upload', uploadRouter);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function(req:Request, res:Response, next:NextFunction) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
   console.log(err.message)
   // set locals, only providing error in development
   res.locals.message = err.message;

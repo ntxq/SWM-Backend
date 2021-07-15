@@ -3,11 +3,15 @@
  * Module dependencies.
  */
 import app from '../app'
-var debug = require('debug')('demo:server');
-var http = require('http');
+import debug from 'debug';
+import http = require('http');
+import { AddressInfo } from 'node:net';
+import createError from 'http-errors'
+import { grpcSocket } from '../gRPC/grcp_socket';
 /**
  * Get port from environment and store in Express.
  */
+ grpcSocket.StartOCR(1243)
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 /**
@@ -25,7 +29,7 @@ server.on('listening', onListening);
 /**
  * Normalize a port into a number, string, or false.
  */
-function normalizePort(val) {
+function normalizePort(val:string) {
     var port = parseInt(val, 10);
     if (isNaN(port)) {
         // named pipe
@@ -37,10 +41,12 @@ function normalizePort(val) {
     }
     return false;
 }
+
 /**
  * Event listener for HTTP server "error" event.
  */
-function onError(error) {
+
+function onError(error:createError.HttpError) {
     if (error.syscall !== 'listen') {
         throw error;
     }
@@ -65,7 +71,7 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 function onListening() {
-    var addr = server.address();
+    var addr = server.address() as AddressInfo;
     var bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
