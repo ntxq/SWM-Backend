@@ -1,4 +1,4 @@
-var supertest = require('supertest');
+import supertest = require('supertest');
 var expect = require("chai").expect;
 import app from '../src/app'
 // describe('App', function() {
@@ -13,9 +13,9 @@ describe('upload', function() {
     it('valid file', function(done) {
         supertest(app).post('/upload/OCR/source')
             // .send({data:'x'})
-            .attach('source', 'test/yano.jpg')
+            .attach('source', 'test/test_img.png')
             .expect(200)
-            .end(function(err, res) {
+            .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
                 done();
             });
