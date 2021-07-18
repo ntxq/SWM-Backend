@@ -10,8 +10,8 @@ var uploadRouter = require('./routes/upload/upload.ts');
 var app = express();
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
+// app.set('views', path.join(__dirname, 'views'));
+// app.set('view engine', 'pug');
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -37,7 +37,7 @@ app.use(function(err:createError.HttpError, req:Request, res:Response, next:Next
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.send('error');
 });
 
 export default app;

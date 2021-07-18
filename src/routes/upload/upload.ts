@@ -17,17 +17,18 @@ router.use(function(req, res, next) {
 // error handler
 router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
   // set locals, only providing error in development
+  if(res.statusCode === 415)
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.send('error');
 });
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'OCR' });
+    res.send('index');
 });
 
 module.exports = router;
