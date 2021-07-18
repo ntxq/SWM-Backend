@@ -66,8 +66,8 @@ router.post('/source', upload.array('source'), (req:ImageRequest,res:Response) =
 
 router.get('/progress', (req:Request,res:Response) => {
 	try{
-		const req_id = req.params['req_id']
-		var step = req_now_step(req_id,req.params['step'])
+		const req_id = parseInt(req.params['req_id'])
+		var step = req_now_step(req_id,parseInt(req.params['step']))
 		res.send({step:step})
 	}
 	catch{
@@ -77,7 +77,7 @@ router.get('/progress', (req:Request,res:Response) => {
 
 router.get('/result', (req:Request,res:Response) => {
 	try{
-		const req_id = req.params['req_id']
+		const req_id = parseInt(req.params['req_id'])
 		const data = req_ocr_result(req_id)
 		res.send({data:data})
 	}

@@ -1,7 +1,7 @@
-export function req_now_step(req_id,step){
+export function req_now_step(req_id:number,step:number){
 	return step+1
 }
-export function req_ocr_result(req_id){
+export function req_ocr_result(req_id:number){
 	const sample_data = {
 		req_id:{},
 		boxes:[
@@ -16,6 +16,6 @@ export function req_ocr_result(req_id){
 	return sample_data
 }
 
-export function save_ocr_result(data){
+export function save_ocr_result(data:number){
 	return 0
 }
