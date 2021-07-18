@@ -31,6 +31,7 @@ var fileFilter = function(req:ImageRequest, file:Express.Multer.File, cb:FileFil
 		(req.res as Response).statusCode = 415
 		// req.h = 'goes wrong on the mimetype';
 		cb(Error('Error: Images Only!'));
+	}
 	if(!req.req_id){
 		req.req_id = generate_id();
 	}
