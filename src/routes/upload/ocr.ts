@@ -54,7 +54,7 @@ router.post('/source', upload.array('source'), (req:ImageRequest,res) => {
 		// send_to_ai_server();
 		res.send({req_id:req.req_id})
 	}
-	catch{
+	catch(e){
 		res.status(500).send({msg:"internel error"});
 	}
 });
