@@ -17,7 +17,10 @@ router.use(function(req, res, next) {
 // error handler
 router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
   // set locals, only providing error in development
-  if(res.statusCode === 415)
+  if(res.statusCode === 415){
+    res.status(415).send('error');
+    return;
+  }
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
