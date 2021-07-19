@@ -48,21 +48,15 @@ router.post('/source', upload.array('source'), (req:ImageRequest,res:Response) =
 		//todo 최준영 제대로 된 user id 로 변환
 		const user_id = 'test_user_junyeong'
 		const files = req.files as Express.Multer.File[];
-		mysql_connection.callProcedure('sp_add_original_source',[user_id,files.length,req.name],(rows: any)=>{
+		mysql_connection.callProcedure('sp_add_original_source',[user_id,files.length,req.name],async (rows: any)=>{
 			const req_id = rows['id']
 			for (var i = 0; i < files.length;i++) {
 				const file = files[i]
 				const old_path = file.path
 				const new_path = `${IMAGE_DIR}/original/${req_id}_${i}${path.extname(file.originalname)}`
-				fs.rename(old_path, new_path, function (err) {
-					if (err) {
-						console.error(err)
-						throw err
-					}
-					console.log('Successfully renamed - AKA moved!')
-				})
-			}
-			grpcSocket.StartOCR(req_id)
+				await fs.promises.rename(old_path, new_path)
+			};
+			grpcSocket.StartOCR(req_id,files.length)
 			res.send({req_id:req_id})
 		},()=>{})
 	}

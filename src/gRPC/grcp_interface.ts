@@ -75,24 +75,24 @@ export class OCRInterface{
     callback(null,response);
   }
   //todo 최준영 db에서 index값 읽어서 파일 순차적으로 보내기
-  Start(req_id:number){
-    const index = 0
-    fs.readFile(`${IMAGE_DIR}/original/${req_id}_${index}.png`, (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      console.log(data)
-      const request:RequestStart = {req_id:req_id, index:index, image:data}
-      this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
-        if(err){
+  Start(req_id:number,length:number){
+    for(var i = 0;i<length;i++){
+      const index = i
+      fs.readFile(`${IMAGE_DIR}/original/${req_id}_${i}.png`, (err, data) => {
+        if (err) {
           console.error(err)
           return
         }
-        console.log('Greeting:', response.status_code);
-      });
-    })
-
+        const request:RequestStart = {req_id:req_id, index:index, image:data}
+        this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
+          if(err){
+            console.error(err)
+            return
+          }
+          console.log('Greeting:', response.status_code);
+        });
+      })
+    }
   }
 }
 
