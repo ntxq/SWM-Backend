@@ -11,8 +11,8 @@ describe('upload source', function() {
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
-                expect(res.body.req_id_map).to.hasOwnProperty("test_img.png")
-                expect(res.body.req_id_map["test_img.png"]).to.be.a('number')
+                expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
+                expect(res.body.req_ids["test_img.png"]).to.be.a('number')
                 done();
             });
               // .field('extra_info', '{"in":"case you want to send json along with your file"}')
@@ -26,12 +26,12 @@ describe('upload source', function() {
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
-                expect(res.body.req_id_map).to.hasOwnProperty("test_img.png")
-                expect(res.body.req_id_map["test_img.png"]).to.be.a('number')
-                expect(res.body.req_id_map).to.hasOwnProperty("test_img copy.png")
-                expect(res.body.req_id_map["test_img copy.png"]).to.be.a('number')
-                expect(res.body.req_id_map).to.hasOwnProperty("test_img copy 2.png")
-                expect(res.body.req_id_map["test_img copy 2.png"]).to.be.a('number')
+                expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
+                expect(res.body.req_ids["test_img.png"]).to.be.a('number')
+                expect(res.body.req_ids).to.hasOwnProperty("test_img copy.png")
+                expect(res.body.req_ids["test_img copy.png"]).to.be.a('number')
+                expect(res.body.req_ids).to.hasOwnProperty("test_img copy 2.png")
+                expect(res.body.req_ids["test_img copy 2.png"]).to.be.a('number')
                 done();
             });
               // .field('extra_info', '{"in":"case you want to send json along with your file"}')
