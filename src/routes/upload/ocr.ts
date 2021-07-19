@@ -2,6 +2,7 @@ import express from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import fs from 'fs';
 import { isImageFile, generate_id } from '../../modules/utils';
+import { IMAGE_DIR } from '../../modules/const';
 import path from 'path';
 import { req_now_step, req_ocr_result, save_ocr_result } from '../../modules/req_ai_server';
 
@@ -14,11 +15,10 @@ import { Request, Response, NextFunction } from 'express-serve-static-core'
 var router = express.Router();
 
 var prefix = 0
-const image_dir = __dirname +'/../../images'
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, image_dir);
+		cb(null, IMAGE_DIR);
 	},
 	filename: function (req, file, cb) {
 		prefix += 1
@@ -47,7 +47,7 @@ router.post('/source', upload.array('source'), (req:ImageRequest,res:Response) =
 		for (var i = 0; i < files.length;i++) {
 			const file = files[i]
 			const old_path = file.path
-			const new_path = `${image_dir}/original/${req.req_id}_${i}${path.extname(file.originalname)}`
+			const new_path = `${IMAGE_DIR}/original/${req.req_id}_${i}${path.extname(file.originalname)}`
 			fs.rename(old_path, new_path, function (err) {
 				if (err) {
 					console.error(err)
