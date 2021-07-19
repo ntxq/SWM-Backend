@@ -2,13 +2,23 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import { isImageFile, generate_id } from '../../modules/utils';
+import { IMAGE_DIR } from '../../modules/const';
+import path from 'path';
+import { req_now_step, req_ocr_result, save_ocr_result } from '../../modules/req_ai_server';
+
+interface ImageRequest extends Request{
+	req_id?:number;
+}
+
+import { Request, Response, NextFunction } from 'express-serve-static-core'
 
 var router = express.Router();
 
+var prefix = 0
 
 var storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		cb(null, 'images/');
+		cb(null, IMAGE_DIR);
 	},
 	filename: function (req, file, cb) {
 	  cb(null, file.originalname);
@@ -39,8 +49,15 @@ router.post('/source', upload.array('source'), (req,res) => {
 		const req_id = generate_id();
 		for (var i = 0; i < files.length;i++) {
 			const file = files[i]
-			const path = `original/${req_id}_${i}`
-			fs.writeFile(path, file.buffer,()=>{})
+			const old_path = file.path
+			const new_path = `${IMAGE_DIR}/original/${req.req_id}_${i}${path.extname(file.originalname)}`
+			fs.rename(old_path, new_path, function (err) {
+				if (err) {
+					console.error(err)
+					throw err
+				}
+				console.log('Successfully renamed - AKA moved!')
+			})
 		}
 		// send_to_ai_server();
 		res.send({req_id:req_id})
