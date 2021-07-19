@@ -48,7 +48,12 @@ class mysqlConnection{
 			}
 
 			try{
-				procedure.callback(...rows[0],null)
+				if(Array.isArray(rows)){
+					procedure.callback(...rows[0],null)
+				}
+				else{
+					procedure.callback(rows,null)
+				}
 			}
 			catch(error){
 				procedure.callback(rows,err)
@@ -64,21 +69,20 @@ class mysqlConnection{
 				throw err;
 			}
 			conn.beginTransaction(async ()=>{
-				for(var i = 0;i<procedures.length;i++){
-					const procedure = procedures[i];
-					try{
+				try{
+					for(var i = 0;i<procedures.length;i++){
+						const procedure = procedures[i];
 						await this.execAsyncQuery(conn,procedure)
 					}
-					catch(error){
-						console.error(error);
-						conn.rollback();
-						conn.release();
-						callback(error,null)
-					}
+					conn.commit();
+					conn.release();
+					callback(null,null)
+				} catch(error){
+					console.error(error);
+					conn.rollback();
+					conn.release();
+					callback(error,null)
 				}
-				conn.commit();
-				conn.release();
-				callback(null,null)
 			})
 		})
 	}
@@ -94,15 +98,18 @@ class mysqlConnection{
 					procedure.callback(rows,err)
 					rejects(err)
 				}
-	
-				try{
-					procedure.callback(...rows[0],null)
-					resolve(rows)
+				if(Array.isArray(rows)){
+					const result = JSON.parse(JSON.stringify(rows[0][0]));
+					if(result.error_msg){
+						procedure.callback(null,result.error_msg)
+						rejects(result.error_msg)
+					}
+					procedure.callback(result,null)
 				}
-				catch(error){
-					procedure.callback(rows,err)
-					rejects(err)
+				else{
+					procedure.callback(rows,null)
 				}
+				resolve(rows)
 			})
 		});
 	}
