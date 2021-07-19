@@ -34,7 +34,7 @@ router.post('/source', multer_image.array('source'), (req:Request,res:Response) 
 			procedures.push(procedure)
 		}
 		mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-			res.send({req_id_map:Object.fromEntries(req_id_map)})
+			res.send({req_ids:Object.fromEntries(req_id_map)})
 		})
 	}
 	catch(e){
