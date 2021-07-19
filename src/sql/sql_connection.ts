@@ -1,8 +1,12 @@
 import { Response } from 'express';
-import mysql from 'mysql';
+import mysql, { Connection } from 'mysql';
 import { dbConnection } from './secret'
 
-type SQLErrorFunction = (err:string)=>void;
+export interface Procedure{
+	query:string;
+	parameters:Array<any>;
+	callback:Function;
+}
 
 class mysqlConnection{
 	connection:mysql.Pool;
@@ -32,39 +36,75 @@ class mysqlConnection{
 		return connection
 	}
 	 
-	callProcedure(procedure:string,params:Array<any>,callback:Function,onError:SQLErrorFunction|Response){
-		const question_marks_arr = Array(params.length).fill('?');
+	callProcedure(procedure:Procedure){
+		const question_marks_arr = Array(procedure.parameters.length).fill('?');
 		const question_marks = question_marks_arr.join(',')
-		const sql = `CALL ${procedure}(${question_marks});`
-		this.connection.query(sql,params,function(err, rows, fields){
+		const sql = `CALL ${procedure.query}(${question_marks});`
+		this.connection.query(sql,procedure.parameters,function(err, rows, fields){
 			if(err){
-				//여튼 뭔가 에러뜸
-				if(typeof(onError) === "function"){
-					onError(err.message)
-				}
-				else{
-					console.log(err.message)
-					const res:Response = onError;
-					res.status(500).send({message:"mysql procedure broken."})
-				}
+				console.error(err.message)
+				procedure.callback(rows,err)
 				return
 			}
 
 			try{
-				callback(...rows[0])
+				procedure.callback(...rows[0],null)
 			}
 			catch(error){
-				console.error(error.message)
-				if(typeof(onError) === "function"){
-					onError(error.message)
-				}
-				else{
-					const res:Response = onError;
-					res.status(500).send({message:"mysql procedure broken."})
-				}
+				procedure.callback(rows,err)
 				return
 			}
 		})
+	}
+
+	callMultipleProcedure(procedures:Array<Procedure>,callback:Function){
+		this.connection.getConnection((err,conn)=>{
+			if(err){
+				console.error(err);
+				throw err;
+			}
+			conn.beginTransaction(async ()=>{
+				for(var i = 0;i<procedures.length;i++){
+					const procedure = procedures[i];
+					try{
+						await this.execAsyncQuery(conn,procedure)
+					}
+					catch(error){
+						console.error(error);
+						conn.rollback();
+						conn.release();
+						callback(error,null)
+					}
+				}
+				conn.commit();
+				conn.release();
+				callback(null,null)
+			})
+		})
+	}
+
+	private execAsyncQuery(conn:Connection,procedure:Procedure){
+		return new Promise((resolve,rejects)=>{
+			const question_marks_arr = Array(procedure.parameters.length).fill('?');
+			const question_marks = question_marks_arr.join(',')
+			const sql = `CALL ${procedure.query}(${question_marks});`
+			conn.query(sql,procedure.parameters,function(err, rows, fields){
+				if(err){
+					console.error(err.message)
+					procedure.callback(rows,err)
+					rejects(err)
+				}
+	
+				try{
+					procedure.callback(...rows[0],null)
+					resolve(rows)
+				}
+				catch(error){
+					procedure.callback(rows,err)
+					rejects(err)
+				}
+			})
+		});
 	}
 
 	destroy_connection() {
