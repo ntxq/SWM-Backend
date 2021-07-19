@@ -5,9 +5,11 @@ import { isImageFile, generate_id } from 'src/modules/utils';
 import { IMAGE_DIR } from 'src/modules/const';
 import path from 'path';
 import { req_now_step, req_ocr_result, save_ocr_result } from 'src/modules/req_ai_server';
+import { mysql_connection } from 'src/sql/sql_connection';
+import { grpcSocket } from 'src/gRPC/grcp_socket';
 
 interface ImageRequest extends Request{
-	req_id?:number;
+	name?:string;
 }
 
 import { Request, Response, NextFunction } from 'express-serve-static-core'
@@ -32,8 +34,8 @@ var fileFilter = function(req:ImageRequest, file:Express.Multer.File, cb:FileFil
 		// req.h = 'goes wrong on the mimetype';
 		cb(Error('Error: Images Only!'));
 	}
-	if(!req.req_id){
-		req.req_id = generate_id();
+	if(!req.name){
+		req.name = file.originalname
 	}
 	return cb(null,true)
 }
@@ -43,21 +45,26 @@ const upload = multer({ storage: storage, fileFilter:fileFilter, limits: { fileS
 
 router.post('/source', upload.array('source'), (req:ImageRequest,res:Response) => {
 	try{
+		//todo 최준영 제대로 된 user id 로 변환
+		const user_id = 'test_user_junyeong'
 		const files = req.files as Express.Multer.File[];
-		for (var i = 0; i < files.length;i++) {
-			const file = files[i]
-			const old_path = file.path
-			const new_path = `${IMAGE_DIR}/original/${req.req_id}_${i}${path.extname(file.originalname)}`
-			fs.rename(old_path, new_path, function (err) {
-				if (err) {
-					console.error(err)
-					throw err
-				}
-				console.log('Successfully renamed - AKA moved!')
-			})
-		}
-		// send_to_ai_server();
-		res.send({req_id:req.req_id})
+		mysql_connection.callProcedure('sp_add_original_source',[user_id,files.length,req.name],(rows: any)=>{
+			const req_id = rows['id']
+			for (var i = 0; i < files.length;i++) {
+				const file = files[i]
+				const old_path = file.path
+				const new_path = `${IMAGE_DIR}/original/${req_id}_${i}${path.extname(file.originalname)}`
+				fs.rename(old_path, new_path, function (err) {
+					if (err) {
+						console.error(err)
+						throw err
+					}
+					console.log('Successfully renamed - AKA moved!')
+				})
+			}
+			grpcSocket.StartOCR(req_id)
+			res.send({req_id:req_id})
+		},()=>{})
 	}
 	catch(e){
 		res.status(500).send({msg:"internel error"});

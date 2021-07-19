@@ -7,11 +7,9 @@ import debug from 'debug';
 import http = require('http');
 import { AddressInfo } from 'node:net';
 import createError from 'http-errors'
-import { grpcSocket } from '../gRPC/grcp_socket';
 /**
  * Get port from environment and store in Express.
  */
-//  grpcSocket.StartOCR(1)
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 /**
