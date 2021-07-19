@@ -39,9 +39,12 @@ message ReplySendResult {
 
 message RequestStart {
   int64 req_id = 1;
+  int32 index = 2;
+  bytes image = 3;
 }
 
 message ReplyRequestStart {
   int64 req_id = 1;
-  int32 status_code = 2;
+  int32 index = 2;
+  int32 status_code = 3;
 }
