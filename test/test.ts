@@ -5,7 +5,7 @@ import { expect } from "chai"
 
 describe('upload source', function() {
     it('valid file', function(done) {
-        supertest(app).post('/upload/OCR/source')
+        supertest(app).post('/upload/segmentation/source')
             // .send({data:'x'})
             .attach('source', 'test/test_img.png')
             .expect(200)
@@ -18,7 +18,7 @@ describe('upload source', function() {
               // .field('extra_info', '{"in":"case you want to send json along with your file"}')
     });
     it('multiple file', function(done) {
-        supertest(app).post('/upload/OCR/source')
+        supertest(app).post('/upload/segmentation/source')
             // .send({data:'x'})
             .attach('source', 'test/test_img.png')
             .attach('source', 'test/test_img copy.png')
@@ -37,7 +37,7 @@ describe('upload source', function() {
               // .field('extra_info', '{"in":"case you want to send json along with your file"}')
     });
     it('invalid file', function(done) {
-        supertest(app).post('/upload/OCR/source')
+        supertest(app).post('/upload/segmentation/source')
             // .send({data:'x'})
             .attach('source', 'test/test_txt.txt')
             .expect(415)
@@ -48,7 +48,7 @@ describe('upload source', function() {
               // .field('extra_info', '{"in":"case you want to send json along with your file"}')
     });
     it('valid and invalid file mix', function(done) {
-        supertest(app).post('/upload/OCR/source')
+        supertest(app).post('/upload/segmentation/source')
             // .send({data:'x'})
             .attach('source', 'test/test_img.png')
             .attach('source', 'test/test_txt.txt')
