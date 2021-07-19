@@ -2,7 +2,7 @@ import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
-import { IMAGE_DIR } from '../modules/const';
+import { IMAGE_DIR } from 'src/modules/const';
 
 interface ReplySendStep{
   req_id:number;

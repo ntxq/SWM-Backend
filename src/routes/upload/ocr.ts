@@ -1,10 +1,10 @@
 import express from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import fs from 'fs';
-import { isImageFile, generate_id } from '../../modules/utils';
-import { IMAGE_DIR } from '../../modules/const';
+import { isImageFile, generate_id } from 'src/modules/utils';
+import { IMAGE_DIR } from 'src/modules/const';
 import path from 'path';
-import { req_now_step, req_ocr_result, save_ocr_result } from '../../modules/req_ai_server';
+import { req_now_step, req_ocr_result, save_ocr_result } from 'src/modules/req_ai_server';
 
 interface ImageRequest extends Request{
 	req_id?:number;
