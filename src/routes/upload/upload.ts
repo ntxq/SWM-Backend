@@ -2,12 +2,14 @@ import createError from "http-errors"
 import express from 'express';
 
 import ocrRouter from './ocr'
+import segmentationRouter from './segmentation'
 
 import { Request, Response, NextFunction } from 'express-serve-static-core'
 
 var router = express.Router();
 
 router.use('/OCR', ocrRouter);
+router.use('/segmentation', segmentationRouter);
 
 // catch 404 and forward to error handler
 router.use(function(req, res, next) {
