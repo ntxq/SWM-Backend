@@ -53,8 +53,8 @@ class GRPCSocket{
     return server;
   }
   
-  StartOCR(req_id:number,index:number){
-    this.OCR.Start(req_id,index)
+  StartOCR(req_id:number){
+    this.OCR.Start(req_id)
   }
 }
       

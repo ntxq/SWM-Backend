@@ -17,13 +17,11 @@ interface ReplySendResult{
 
 interface RequestStart{
   req_id:number;
-  index:number;
   image:Buffer;
 }
 
 interface ReplyRequestStart{
   req_id:number;
-  index:number;
   status_code:number;
 }
 
@@ -75,24 +73,21 @@ export class OCRInterface{
     callback(null,response);
   }
   //todo 최준영 db에서 index값 읽어서 파일 순차적으로 보내기
-  Start(req_id:number,length:number){
-    for(var i = 0;i<length;i++){
-      const index = i
-      fs.readFile(`${IMAGE_DIR}/original/${req_id}_${i}.png`, (err, data) => {
-        if (err) {
+  Start(req_id:number){
+    fs.readFile(`${IMAGE_DIR}/original/${req_id}.png`, (err, data) => {
+      if (err) {
+        console.error(err)
+        return
+      }
+      const request:RequestStart = {req_id:req_id, image:data}
+      this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
+        if(err){
           console.error(err)
           return
         }
-        const request:RequestStart = {req_id:req_id, index:index, image:data}
-        this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
-          if(err){
-            console.error(err)
-            return
-          }
-          console.log('Greeting:', response.status_code);
-        });
-      })
-    }
+        console.log('Greeting:', response.status_code);
+      });
+    })
   }
 }
 
@@ -142,7 +137,7 @@ export class StyleInterface{
         console.error(err)
         return
       }
-      const request:RequestStart = {req_id:req_id, index:index, image:data}
+      const request:RequestStart = {req_id:req_id, image:data}
       this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
         if(err){
           console.error(err)

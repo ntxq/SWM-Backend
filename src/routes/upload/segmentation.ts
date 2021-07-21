@@ -35,6 +35,9 @@ router.post('/source', multer_image.array('source'), (req:Request,res:Response) 
 	}
 	mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
 		res.send({req_ids:Object.fromEntries(req_id_map)})
+		req_id_map.forEach(req_id=>{
+			grpcSocket.StartOCR(req_id)
+		})
 	})
 });
 
@@ -74,14 +77,9 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 })
 
 router.get('/result', (req:Request,res:Response) => {
-	try{
-		const req_id = parseInt(req.params['req_id'])
-		const data = req_ocr_result(req_id)
-		res.send({data:data})
-	}
-	catch{
-		res.status(500).send({msg:"internel error"});
-	}
+	const req_id = parseInt(req.params['req_id'])
+	const data = req_ocr_result(req_id)
+	res.send({complete:true,inpaint:"",mask:""})
 });
 
 export default router;
