@@ -4,27 +4,21 @@ syntax = "proto3";
 
 package ai_server;
 
-service OCR {
-  rpc OnUpdateStep (SendStep) returns (ReplySendStep) {}
-  rpc OnComplete (SendResult) returns (ReplySendResult) {}
+service Segmentation {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
-}
-
-service Style {
-  rpc OnUpdateStep (SendStep) returns (ReplySendStep) {}
+  rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
   rpc OnComplete (SendResult) returns (ReplySendResult) {}
-  rpc Start (RequestStart) returns (ReplyRequestStart) {}
 }
 
-message SendStep {
+message RequestMaskUpdate{
   int64 req_id = 1;
-  int32 step = 2;
+  bytes mask = 2;
 }
 
-message ReplySendStep {
+message ReplyMaskUpdate{
   int64 req_id = 1;
-  int32 step = 2;
-  int32 status_code = 3;
+  bytes mask = 2;
+  bytes inpaint = 3;
 }
 
 message SendResult {

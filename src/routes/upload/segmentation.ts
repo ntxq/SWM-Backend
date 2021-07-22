@@ -34,9 +34,6 @@ router.post('/source', multer_image.array('source'), (req:Request,res:Response) 
 	}
 	mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
 		res.send({req_ids:Object.fromEntries(req_id_map)})
-		req_id_map.forEach(req_id=>{
-			grpcSocket.StartOCR(req_id)
-		})
 	})
 });
 

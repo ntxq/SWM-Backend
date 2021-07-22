@@ -2,7 +2,7 @@ var PROTO_PATH = __dirname + '/protos/ai_server.proto';
 
 import grpc = require('@grpc/grpc-js');
 import protoLoader = require('@grpc/proto-loader');
-import { OCRInterface, StyleInterface } from './grcp_interface';
+import { SegmentationInterface } from './grcp_interface';
 import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 
@@ -19,8 +19,7 @@ class GRPCSocket{
   client_url: string
   server_url: string
   server: grpc.Server
-  OCR: OCRInterface
-  style: StyleInterface
+  segmentation: SegmentationInterface
   proto: GrpcObject
 
   constructor(url:string,server_port:number|string,client_port:number|string) {
@@ -28,22 +27,16 @@ class GRPCSocket{
     this.server_url = `${url}:${server_port}`
     this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as GrpcObject;
 
-    this.OCR = new OCRInterface(this.client_url,this.proto)
-    this.style = new StyleInterface(this.client_url,this.proto)
+    this.segmentation = new SegmentationInterface(this.client_url,this.proto)
     this.server = this.openServer()
   }
 
   openServer(){
     var server = new grpc.Server();
-    const OCR = this.proto.OCR as ServiceClientConstructor
-    server.addService(OCR.service, {
-      OnUpdateStep: this.OCR.OnUpdateStep, 
-      OnComplete: this.OCR.OnComplete
-    });
-    const Style = this.proto.Style as ServiceClientConstructor
-    server.addService(Style.service, {
-      OnUpdateStep: this.style.OnUpdateStep, 
-      OnComplete: this.style.OnComplete
+
+    const Segmentation = this.proto.Segmentation as ServiceClientConstructor
+    server.addService(Segmentation.service, {
+      OnComplete: this.segmentation.OnComplete
     });
     
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), () => {
@@ -51,10 +44,6 @@ class GRPCSocket{
       server.start();
     }); 
     return server;
-  }
-  
-  StartOCR(req_id:number){
-    this.OCR.Start(req_id)
   }
 }
       
