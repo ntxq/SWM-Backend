@@ -92,13 +92,18 @@ router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 	res.sendFile(inpaint)
 });
 
-router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
-	const req_id = parseInt(req.query['req_id'] as string)
-	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
-	if(!fs.existsSync(mask)){
-		next(createError(404))
+router.post('/result/mask', (req:Request,res:Response,next:NextFunction) => {
+	const req_id = parseInt(req.body['req_id'] as string)
+	const mask = req.body['mask']['result']
+	if(mask == undefined){
+		next(createError(400))
 	}
-	res.sendFile(mask)
+	const mask_path = `${IMAGE_DIR}/mask/${req_id}.json`
+	fs.writeFile(mask_path,mask,()=>{})
+
+	const rle = mask['value']['rle']
+	// grpcSocket.OCR.updateMask(rle)
+	res.send({success:true})
 });
 
 
