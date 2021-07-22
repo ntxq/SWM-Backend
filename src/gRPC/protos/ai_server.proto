@@ -7,26 +7,26 @@ package ai_server;
 service Segmentation {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
   rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
-  rpc OnComplete (SendResult) returns (ReplySendResult) {}
+  rpc OnComplete (SendSegmentResult) returns (ReplySendSegmentResult) {}
 }
 
 message RequestMaskUpdate{
   int64 req_id = 1;
   bytes mask = 2;
+  bytes image = 3;
 }
 
 message ReplyMaskUpdate{
   int64 req_id = 1;
+  int32 status_code = 2;
+}
+message SendSegmentResult{
+  int64 req_id = 1;
   bytes mask = 2;
   bytes inpaint = 3;
-}
 
-message SendResult {
-  int64 req_id = 1;
-  string data = 2;
 }
-
-message ReplySendResult {
+message ReplySendSegmentResult{
   int64 req_id = 1;
   int32 status_code = 2;
 }
