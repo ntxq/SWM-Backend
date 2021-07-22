@@ -2,7 +2,6 @@ import express from 'express';
 import fs from 'fs';
 import { IMAGE_DIR } from 'src/modules/const';
 import path from 'path';
-import { req_ocr_result } from 'src/modules/req_ai_server';
 import { mysql_connection, Procedure } from 'src/sql/sql_connection';
 import { grpcSocket } from 'src/gRPC/grcp_socket';
 
@@ -77,9 +76,25 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 })
 
 router.get('/result', (req:Request,res:Response) => {
-	const req_id = parseInt(req.params['req_id'])
-	const data = req_ocr_result(req_id)
-	res.send({complete:true,inpaint:"",mask:""})
+	const req_id = parseInt(req.query['req_id'] as string)
+	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}.png`
+	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
+	const complete = fs.existsSync(mask) && fs.existsSync(inpaint)
+	res.send({complete:complete})
 });
+
+router.get('/result/inpaint', (req:Request,res:Response) => {
+	const req_id = parseInt(req.query['req_id'] as string)
+	const path = `${IMAGE_DIR}/inpaint/${req_id}.png`
+	res.sendFile(path)
+});
+
+router.get('/result/mask', (req:Request,res:Response) => {
+	const req_id = parseInt(req.query['req_id'] as string)
+	const path = `${IMAGE_DIR}/mask/${req_id}.png`
+	res.sendFile(path)
+});
+
+
 
 export default router;
