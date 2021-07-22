@@ -83,16 +83,22 @@ router.get('/result', (req:Request,res:Response) => {
 	res.send({complete:complete})
 });
 
-router.get('/result/inpaint', (req:Request,res:Response) => {
+router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const path = `${IMAGE_DIR}/inpaint/${req_id}.png`
-	res.sendFile(path)
+	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}.png`
+	if(!fs.existsSync(inpaint)){
+		next(createError(404))
+	}
+	res.sendFile(inpaint)
 });
 
-router.get('/result/mask', (req:Request,res:Response) => {
+router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const path = `${IMAGE_DIR}/mask/${req_id}.png`
-	res.sendFile(path)
+	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
+	if(!fs.existsSync(mask)){
+		next(createError(404))
+	}
+	res.sendFile(mask)
 });
 
 
