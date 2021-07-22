@@ -40,10 +40,12 @@ router.post('/source', multer_image.array('source'), (req:Request,res:Response) 
 router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,next:NextFunction) => {
 	//todo 최준영 제대로 된 user id 로 변환
 	const user_id = 123123123
+	const blank_not_exist_ids = req.body.empty_id as Array<string>
 	const map_ids:number[] = JSON.parse(req.body.map_ids);
 	const files = req.files as Express.Multer.File[];
 	const req_id_map = new Map<string,number>();
 	const procedures = Array<Procedure>();
+
 	for(var i =0;i<map_ids.length;i++){
 		const req_id = map_ids[i]
 		const blank_file = files[i];
@@ -63,6 +65,11 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 		}
 		procedures.push(procedure)
 	}
+	
+	blank_not_exist_ids.forEach(req_id=>{
+		grpcSocket.segmentation.Start(parseInt(req_id))
+	})
+
 	mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
 		if(err){
 			next(createError(res.statusCode));
@@ -89,20 +96,29 @@ router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 	res.sendFile(inpaint)
 });
 
+router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
+	const req_id = parseInt(req.query['req_id'] as string)
+	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
+	if(!fs.existsSync(mask)){
+		next(createError(404))
+	}
+	res.sendFile(mask)
+});
+
 router.post('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.body['req_id'] as string)
-	const mask = req.body['mask']['result']
+	const mask = JSON.parse(req.body['mask'])['result'][0]
 	if(mask == undefined){
 		next(createError(400))
 	}
 	const mask_path = `${IMAGE_DIR}/mask/${req_id}.json`
-	fs.writeFile(mask_path,mask,()=>{})
+	fs.writeFile(mask_path,JSON.stringify(mask),(err)=>{
+		console.log(err)
+	})
 
-	const rle = mask['value']['rle']
-	// grpcSocket.OCR.updateMask(rle)
+	const rle: Array<number> = mask['value']['rle'] 
+	grpcSocket.segmentation.UpdateMask(req_id,rle)
 	res.send({success:true})
 });
-
-
 
 export default router;

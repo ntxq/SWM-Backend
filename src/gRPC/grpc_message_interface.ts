@@ -1,6 +1,10 @@
+export interface SendSegmentResult{
+	req_id:number;
+	mask:Buffer;
+	inpaint:Buffer;
+}
 
-
-export interface ReplySendResult{
+export interface ReplySendSegmentResult{
 	req_id:number;
 	status_code:number;
 }
@@ -15,18 +19,13 @@ export interface ReplyRequestStart{
 	status_code:number;
 }
 
-export interface SendResult{
-	req_id:number;
-	data:string;
-}
-
 export interface RequestMaskUpdate{
 	req_id:number;
 	mask:Buffer;
+	image:Buffer;
 }
 
 export interface ReplyMaskUpdate{
 	req_id:number;
-	mask:Buffer;
-	inpaint:Buffer;
+	status_code:number;
 }
