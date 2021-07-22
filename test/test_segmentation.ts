@@ -143,7 +143,7 @@ describe('upload blank file', function() {
 describe('get result', function() {
     it.only('get reulst file', function(done) {
         var req_id = 0
-        supertest(app).post('/upload/segmentation/result/mask')
+        supertest(app).post('/upload/segmentation/mask')
             .send({req_id:30,
                 mask:fs.readFileSync("test/resource/rle.json", 'utf8')
             })

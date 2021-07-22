@@ -105,7 +105,7 @@ router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	res.sendFile(mask)
 });
 
-router.post('/result/mask', (req:Request,res:Response,next:NextFunction) => {
+router.post('/mask', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.body['req_id'] as string)
 	const mask = JSON.parse(req.body['mask'])['result'][0]
 	if(mask == undefined){
