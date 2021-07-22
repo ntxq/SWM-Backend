@@ -31,10 +31,14 @@ export class SegmentationInterface{
     callback(null,response);
   }
 
-  UpdateMask(req_id:number,data:Array<number>){
+  UpdateMask(req_id:number,data:Array<Array<number>>){
+    const masks:Array<Buffer> = []
+    data.forEach((mask)=>{
+      masks.push(Buffer.from(mask))
+    })
     const request:RequestMaskUpdate = {
       req_id:req_id, 
-      mask:Buffer.from(data), 
+      mask:masks, 
       image:fs.readFileSync(`${IMAGE_DIR}/original/${req_id}.png`)
     }
     this.client.UpdateMask(request, function(err:Error | null, response:ReplyMaskUpdate) {

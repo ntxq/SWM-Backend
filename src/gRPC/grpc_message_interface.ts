@@ -21,7 +21,7 @@ export interface ReplyRequestStart{
 
 export interface RequestMaskUpdate{
 	req_id:number;
-	mask:Buffer;
+	mask:Buffer[];
 	image:Buffer;
 }
 

@@ -107,7 +107,7 @@ router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 
 router.post('/mask', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.body['req_id'] as string)
-	const mask = JSON.parse(req.body['mask'])['result'][0]
+	const mask = JSON.parse(req.body['mask'])['result']
 	if(mask == undefined){
 		next(createError(400))
 	}
@@ -116,7 +116,10 @@ router.post('/mask', (req:Request,res:Response,next:NextFunction) => {
 		console.log(err)
 	})
 
-	const rle: Array<number> = mask['value']['rle'] 
+	const rle: Array<Array<number>> = []
+	for(var i =0;i<mask.length;i++){
+		rle.push(mask[i]['value']['rle'])
+	}
 	grpcSocket.segmentation.UpdateMask(req_id,rle)
 	res.send({success:true})
 });

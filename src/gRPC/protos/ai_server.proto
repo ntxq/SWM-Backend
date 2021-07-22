@@ -12,7 +12,7 @@ service Segmentation {
 
 message RequestMaskUpdate{
   int64 req_id = 1;
-  bytes mask = 2;
+  repeated bytes mask = 2;
   bytes image = 3;
 }
 
