@@ -40,7 +40,7 @@ router.post('/source', multer_image.array('source'), (req:Request,res:Response) 
 router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,next:NextFunction) => {
 	//todo 최준영 제대로 된 user id 로 변환
 	const user_id = 123123123
-	const blank_not_exist_ids = req.body.empty_id as Array<string>
+	const blank_not_exist_ids:number[] = JSON.parse(req.body.empty_id)
 	const map_ids:number[] = JSON.parse(req.body.map_ids);
 	const files = req.files as Express.Multer.File[];
 	const req_id_map = new Map<string,number>();
