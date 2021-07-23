@@ -24,6 +24,8 @@ export class SegmentationInterface{
     callback:grpc.sendUnaryData<ReplySendSegmentResult>
     ) {
     const request:SendSegmentResult = call.request 
+    fs.writeFileSync(`${IMAGE_DIR}/inpaint/${request.req_id}.png`,request.inpaint)
+    fs.writeFileSync(`${IMAGE_DIR}/mask/${request.req_id}.png`,request.mask)
     const response: ReplySendSegmentResult = {
       req_id:request.req_id,
       status_code:200
