@@ -67,7 +67,7 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 	}
 	
 	blank_not_exist_ids.forEach(req_id=>{
-		grpcSocket.segmentation.Start(parseInt(req_id))
+		grpcSocket.segmentation.Start(req_id)
 	})
 
 	mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
