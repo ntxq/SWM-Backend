@@ -3,7 +3,7 @@ import fs from 'fs';
 import { IMAGE_DIR } from 'src/modules/const';
 import path from 'path';
 import { mysql_connection, Procedure } from 'src/sql/sql_connection';
-import { grpcSocket } from 'src/gRPC/grcp_socket';
+import { grpcSocket } from 'src/gRPC/grpc_socket';
 
 import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { multer_image } from 'src/routes/multer_options';

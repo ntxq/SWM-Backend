@@ -2,7 +2,7 @@ var PROTO_PATH = __dirname + '/protos/ai_server.proto';
 
 import grpc = require('@grpc/grpc-js');
 import protoLoader = require('@grpc/proto-loader');
-import { SegmentationInterface } from './grcp_interface';
+import { SegmentationInterface } from './grpc_interface';
 import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 
