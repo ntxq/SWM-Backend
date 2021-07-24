@@ -2,6 +2,8 @@ export interface SendSegmentResult{
 	req_id:number;
 	mask:Buffer;
 	inpaint:Buffer;
+	width:number;
+	height:number;
 }
 
 export interface ReplySendSegmentResult{

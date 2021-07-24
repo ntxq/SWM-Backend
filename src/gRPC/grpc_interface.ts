@@ -4,8 +4,7 @@ import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
 import { IMAGE_DIR } from 'src/modules/const';
 import { ReplyMaskUpdate, ReplyRequestStart, ReplySendSegmentResult, RequestMaskUpdate, RequestStart, SendSegmentResult } from './grpc_message_interface';
-
-
+import Jimp = require('jimp');
 
 export class SegmentationInterface{
   client_url:string
@@ -17,15 +16,25 @@ export class SegmentationInterface{
     this.proto = proto
 
     const segmentation = this.proto.Segmentation as ServiceClientConstructor
-    this.client = new segmentation(this.client_url,grpc.credentials.createInsecure());
+    this.client = new segmentation(this.client_url,grpc.credentials.createInsecure(),
+      {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
   
   OnComplete(call:grpc.ServerUnaryCall<SendSegmentResult, ReplySendSegmentResult>,
     callback:grpc.sendUnaryData<ReplySendSegmentResult>
     ) {
     const request:SendSegmentResult = call.request 
-    fs.writeFileSync(`${IMAGE_DIR}/inpaint/${request.req_id}.png`,request.inpaint)
-    fs.writeFileSync(`${IMAGE_DIR}/mask/${request.req_id}.png`,request.mask)
+
+    var inpaint = new Jimp(request.width, request.height);
+    inpaint.rgba(false);
+    inpaint.bitmap.data = request.inpaint;
+    inpaint.write(`${IMAGE_DIR}/inpaint/${request.req_id}.png`,(err,value)=>{})
+
+    var mask = new Jimp(request.width, request.height);
+    mask.rgba(true);
+    mask.bitmap.data = request.mask;
+    mask.write(`${IMAGE_DIR}/mask/${request.req_id}.png`,(err,value)=>{})
+    
     const response: ReplySendSegmentResult = {
       req_id:request.req_id,
       status_code:200
