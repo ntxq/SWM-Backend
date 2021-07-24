@@ -22,9 +22,9 @@ class GRPCSocket{
   segmentation: SegmentationInterface
   proto: GrpcObject
 
-  constructor(url:string,server_port:number|string,client_port:number|string) {
-    this.client_url = `${url}:${client_port}`
-    this.server_url = `${url}:${server_port}`
+  constructor(server_url:string,client_url:string) {
+    this.client_url = client_url
+    this.server_url = server_url
     this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as GrpcObject;
 
     this.segmentation = new SegmentationInterface(this.client_url,this.proto)
@@ -32,7 +32,7 @@ class GRPCSocket{
   }
 
   openServer(){
-    var server = new grpc.Server();
+    var server = new grpc.Server({'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor
     server.addService(Segmentation.service, {
@@ -47,4 +47,4 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("localhost",50050,50051)
+export const grpcSocket = new GRPCSocket("0.0.0.0:50050","127.0.0.1:50051")

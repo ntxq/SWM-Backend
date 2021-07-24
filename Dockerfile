@@ -16,4 +16,4 @@ COPY . /usr/src
 ENV PORT 3000
 EXPOSE $PORT
 CMD [ "npm", "start" ]
-#docker run -p 3000:3000 -d --network=host --name swm_back -v $PWD:/usr/src/ swm_back
+#docker run -p 3000:3000 -p 50050:50050 -d --network=host --name swm_back -v $PWD:/usr/src/ swm_back
