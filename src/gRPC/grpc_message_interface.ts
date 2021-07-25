@@ -44,8 +44,10 @@ export interface ReplyRequestStart{
 
 export interface RequestMaskUpdate{
 	req_id:number;
-	mask:Buffer[];
+	mask_rles:Buffer[];
 	image:Buffer;
+	mask_image:Buffer;
+	cut_ranges:string;
 }
 
 export interface ReplyMaskUpdate{
