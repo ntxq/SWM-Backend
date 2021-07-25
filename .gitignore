@@ -1,3 +1,6 @@
+data/**/*.png
+data/**/*.json
+
 *.pyc
 
 yarn.lock
