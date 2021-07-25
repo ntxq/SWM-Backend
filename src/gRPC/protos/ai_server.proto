@@ -6,8 +6,31 @@ package ai_server;
 
 service Segmentation {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
+  rpc ImageTransfer (SendImage) returns (ReceiveImage) {}
+  rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
   rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
   rpc OnComplete (SendSegmentResult) returns (ReplySendSegmentResult) {}
+}
+
+message SendImage{
+  string filename = 1;
+  bytes image = 2;
+  bool is_rgba = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+message ReceiveImage{
+  bool success = 1;
+}
+
+message SendJson{
+  string filename = 1;
+  string data = 2;
+}
+
+message ReceiveJson{
+  bool success = 1;
 }
 
 message RequestMaskUpdate{

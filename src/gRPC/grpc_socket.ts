@@ -36,7 +36,9 @@ class GRPCSocket{
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor
     server.addService(Segmentation.service, {
-      OnComplete: this.segmentation.OnComplete
+      OnComplete: this.segmentation.OnComplete,
+      ImageTransfer: this.segmentation.ImageTransfer,
+      JsonTransfer: this.segmentation.JsonTransfer
     });
     
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), () => {

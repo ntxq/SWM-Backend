@@ -3,8 +3,10 @@ import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
 import { IMAGE_DIR } from 'src/modules/const';
-import { ReplyMaskUpdate, ReplyRequestStart, ReplySendSegmentResult, RequestMaskUpdate, RequestStart, SendSegmentResult } from './grpc_message_interface';
+import { ReceiveImage, ReceiveJson, ReplyMaskUpdate, ReplyRequestStart, ReplySendSegmentResult, RequestMaskUpdate, RequestStart, SendImage, SendJson, SendSegmentResult } from './grpc_message_interface';
+import { JSON_DIR } from '../modules/const';
 import Jimp = require('jimp');
+import path = require('path');
 
 export class SegmentationInterface{
   client_url:string
@@ -42,7 +44,35 @@ export class SegmentationInterface{
     callback(null,response);
   }
 
-  UpdateMask(req_id:number,data:Array<Array<number>>){
+  ImageTransfer(call:grpc.ServerUnaryCall<SendImage, ReceiveImage>,
+    callback:grpc.sendUnaryData<ReceiveImage>
+    ) {
+      const request:SendImage = call.request 
+      
+      console.log(request.filename)
+
+      var image = new Jimp(request.width, request.height);
+      image.rgba(request.is_rgba);
+      image.bitmap.data = request.image;
+      image.write(path.join(IMAGE_DIR,request.filename),(err,value)=>{})
+
+      const response: ReceiveImage = { success:true }
+      callback(null,response);
+  }
+
+  JsonTransfer(call:grpc.ServerUnaryCall<SendJson, ReceiveJson>,
+    callback:grpc.sendUnaryData<ReceiveJson>
+    ) {
+      const request:SendJson = call.request 
+      
+      console.log(request.filename)
+      fs.writeFileSync(path.join(JSON_DIR,request.filename),request.data)
+
+      const response: ReceiveImage = { success:true }
+      callback(null,response);
+  }
+
+  UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
     const masks:Array<Buffer> = []
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))

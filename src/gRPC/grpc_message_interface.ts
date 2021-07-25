@@ -1,3 +1,24 @@
+export interface SendImage{
+	filename:string;
+	image:Buffer;
+	is_rgba:boolean;
+	width:number;
+	height:number;
+}
+
+export interface ReceiveImage{
+	success:boolean;
+}
+
+export interface SendJson{
+	filename:string;
+	data:string;
+}
+
+export interface ReceiveJson{
+	success:boolean;
+}
+
 export interface SendSegmentResult{
 	req_id:number;
 	mask:Buffer;
