@@ -140,20 +140,39 @@ describe('upload blank file', function() {
 });
 
 
-describe('get result', function() {
-    it.only('get reulst file', function(done) {
+describe.only('get result', function() {
+    it('get reulst sucess', function(done) {
         var req_id = 0
-        supertest(app).post('/upload/segmentation/mask')
-            .send({req_id:30,
-                mask:fs.readFileSync("test/resource/rle.json", 'utf8')
-            })
+        supertest(app).get('/upload/segmentation/result')
+            .query({req_id:300})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 console.log(res.body)
                 if (err) return done(err);
-                expect(res.body.success).to.equal(true)
+                expect(res.body.complete).to.equal(true)
                 done();
-            })
-
+        })
+    });
+    it('get reulst mask', function(done) {
+        var req_id = 0
+        supertest(app).get('/upload/segmentation/result/mask')
+            .query({req_id:300})
+            .expect(200)
+            .end(function(err:Error, res:supertest.Response) {
+                if (err) return done(err);
+                expect(res.body).to.be.instanceof(Buffer)
+                done();
+        })
+    });
+    it('get reulst inpaint', function(done) {
+        var req_id = 0
+        supertest(app).get('/upload/segmentation/result/inpaint')
+        .query({req_id:300})
+            .expect(200)
+            .end(function(err:Error, res:supertest.Response) {
+                if (err) return done(err);
+                expect(res.body).to.be.instanceof(Buffer)
+                done();
+        })
     });
 });
