@@ -49,4 +49,4 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("0.0.0.0:50050","127.0.0.1:50051")
+export const grpcSocket = new GRPCSocket("0.0.0.0:50050","172.17.0.1:50051")
