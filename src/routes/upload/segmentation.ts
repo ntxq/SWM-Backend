@@ -92,6 +92,7 @@ router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}.png`
 	if(!fs.existsSync(inpaint)){
 		next(createError(404))
+		return;
 	}
 	res.sendFile(inpaint)
 });
@@ -101,6 +102,7 @@ router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
 	if(!fs.existsSync(mask)){
 		next(createError(404))
+		return;
 	}
 	res.sendFile(mask)
 });
@@ -110,6 +112,7 @@ router.post('/mask', (req:Request,res:Response,next:NextFunction) => {
 	const mask = JSON.parse(req.body['mask'])['result']
 	if(mask == undefined){
 		next(createError(400))
+		return;
 	}
 	const mask_path = `${IMAGE_DIR}/mask/${req_id}.json`
 	fs.writeFile(mask_path,JSON.stringify(mask),(err)=>{
