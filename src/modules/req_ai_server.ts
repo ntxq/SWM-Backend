@@ -1,9 +1,3 @@
-import fs from 'fs';
-import { IMAGE_DIR } from 'src/modules/const';
-export function req_now_step(req_id:number,step:number){
-	return step+1
-}
-
 export function save_ocr_result(data:number){
 	return 0
 }
