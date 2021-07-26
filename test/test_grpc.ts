@@ -9,7 +9,7 @@ describe('GRPC connection', function() {
         grpcSocket.segmentation.Start(300,(err:Error,res:ReplyRequestStart)=>{
             expect(res.status_code).to.equal(200)
             expect(res.req_id).to.equal("300")
-            // done()
+            done()
         })
     });
     it('Update mask', function(done) {
@@ -19,7 +19,7 @@ describe('GRPC connection', function() {
         })
         grpcSocket.segmentation.UpdateMask(300,masks,(err:Error,res:ReplyRequestStart)=>{
         })
-        // done()
+        done()
     });
     // UpdateMask
 });
