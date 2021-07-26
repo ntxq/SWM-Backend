@@ -160,7 +160,7 @@ describe.only('get result', function() {
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
-                expect(res.body).to.be.instanceof(Buffer)
+                expect(res.body.mask).to.be.instanceof(Array)
                 done();
         })
     });

@@ -1,6 +1,6 @@
 import express from 'express';
 import fs from 'fs';
-import { IMAGE_DIR } from 'src/modules/const';
+import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
 import path from 'path';
 import { mysql_connection, Procedure } from 'src/sql/sql_connection';
 import { grpcSocket } from 'src/gRPC/grpc_socket';
@@ -82,7 +82,7 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 router.get('/result', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
 	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}.png`
-	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
+	const mask = `${JSON_DIR}/mask/${req_id}.json`
 	const complete = fs.existsSync(mask) && fs.existsSync(inpaint)
 	res.send({complete:complete})
 });
@@ -99,12 +99,12 @@ router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 
 router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const mask = `${IMAGE_DIR}/mask/${req_id}.png`
+	const mask = `${JSON_DIR}/mask/${req_id}.json`
 	if(!fs.existsSync(mask)){
 		next(createError(404))
 		return;
 	}
-	res.sendFile(mask)
+	res.send({mask:require(mask)})
 });
 
 router.post('/mask', (req:Request,res:Response,next:NextFunction) => {

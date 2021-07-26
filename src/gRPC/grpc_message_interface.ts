@@ -46,7 +46,7 @@ export interface RequestMaskUpdate{
 	req_id:number;
 	mask_rles:Buffer[];
 	image:Buffer;
-	mask_image:Buffer;
+	mask_before:Buffer;
 	cut_ranges:string;
 }
 
