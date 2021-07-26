@@ -16,11 +16,11 @@ var packageDefinition = protoLoader.loadSync(
 });
   
 class GRPCSocket{
-  client_url: string
-  server_url: string
-  server: grpc.Server
-  segmentation: SegmentationInterface
-  proto: GrpcObject
+  client_url: string;
+  server_url: string;
+  server: grpc.Server;
+  segmentation: SegmentationInterface;
+  proto: GrpcObject;
 
   constructor(server_url:string,client_url:string) {
     this.client_url = client_url
@@ -40,8 +40,8 @@ class GRPCSocket{
       ImageTransfer: this.segmentation.ImageTransfer,
       JsonTransfer: this.segmentation.JsonTransfer
     });
-    
-    server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), () => {
+
+    server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
       console.log('start listening grpc')
       server.start();
     }); 
@@ -49,4 +49,4 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("0.0.0.0:50050","172.17.0.1:50051")
+export const grpcSocket = new GRPCSocket("0.0.0.0:4000","172.17.0.1:4001")
