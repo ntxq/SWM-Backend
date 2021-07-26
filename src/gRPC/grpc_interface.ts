@@ -87,13 +87,14 @@ export class SegmentationInterface{
     this.client.UpdateMask(request, function(err:Error | null, response:ReplyMaskUpdate) {
       if(err){
         console.error(err)
-        return
+        return callback && callback(err,null)
       }
       console.log('Greeting:', response);
+      return callback && callback(null,response)
     });
   }
 
-  Start(req_id:number){
+  Start(req_id:number,callback?:Function | undefined){
     fs.readFile(`${IMAGE_DIR}/original/${req_id}.png`, (err, data) => {
       if (err) {
         console.error(err)
@@ -103,9 +104,10 @@ export class SegmentationInterface{
       this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
         if(err){
           console.error(err)
-          return
+          return callback && callback(err,null)
         }
         console.log('Greeting:', response.status_code);
+        return callback && callback(null,response)
       });
     })
   }
