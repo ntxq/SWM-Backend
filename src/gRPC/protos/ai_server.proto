@@ -4,6 +4,10 @@ syntax = "proto3";
 
 package ai_server;
 
+service OCR {
+  rpc Start (RequestStart) returns (ReplyRequestStart) {}
+}
+
 service Segmentation {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
   rpc ImageTransfer (SendImage) returns (ReceiveImage) {}

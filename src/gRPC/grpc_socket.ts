@@ -2,7 +2,7 @@ var PROTO_PATH = __dirname + '/protos/ai_server.proto';
 
 import grpc = require('@grpc/grpc-js');
 import protoLoader = require('@grpc/proto-loader');
-import { SegmentationInterface } from './grpc_interface';
+import { SegmentationInterface, OCRInterface } from './grpc_interface';
 import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 
@@ -20,6 +20,7 @@ class GRPCSocket{
   server_url: string;
   server: grpc.Server;
   segmentation: SegmentationInterface;
+  OCR: OCRInterface;
   proto: GrpcObject;
 
   constructor(server_url:string,client_url:string) {
@@ -28,6 +29,7 @@ class GRPCSocket{
     this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as GrpcObject;
 
     this.segmentation = new SegmentationInterface(this.client_url,this.proto)
+    this.OCR = new OCRInterface(this.client_url,this.proto)
     this.server = this.openServer()
   }
 
@@ -39,6 +41,10 @@ class GRPCSocket{
       OnComplete: this.segmentation.OnComplete,
       ImageTransfer: this.segmentation.ImageTransfer,
       JsonTransfer: this.segmentation.JsonTransfer
+    });
+
+    const OCR = this.proto.OCR as ServiceClientConstructor
+    server.addService(OCR.service, {
     });
 
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
