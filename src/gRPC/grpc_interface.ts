@@ -81,7 +81,7 @@ export class SegmentationInterface{
     const request:RequestMaskUpdate = {
       req_id:req_id, 
       mask_rles:masks, 
-      image:fs.readFileSync(`${IMAGE_DIR}/inpaint/${req_id}.png`),
+      image:fs.readFileSync(`${IMAGE_DIR}/original/${req_id}.png`),
       cut_ranges:JSON.stringify(require(`${JSON_DIR}/cut/${req_id}.json`))
     }
 
