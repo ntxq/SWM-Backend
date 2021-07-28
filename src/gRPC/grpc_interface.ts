@@ -77,13 +77,11 @@ export class SegmentationInterface{
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))
     })
-    const mask_before = Buffer.from(require(`${JSON_DIR}/mask/${req_id}.json`))
-
+    
     const request:RequestMaskUpdate = {
       req_id:req_id, 
       mask_rles:masks, 
       image:fs.readFileSync(`${IMAGE_DIR}/inpaint/${req_id}.png`),
-      mask_before:mask_before,
       cut_ranges:JSON.stringify(require(`${JSON_DIR}/cut/${req_id}.json`))
     }
     this.client.UpdateMask(request, function(err:Error | null, response:ReplyMaskUpdate) {
