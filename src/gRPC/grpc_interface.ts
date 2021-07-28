@@ -87,7 +87,7 @@ export class SegmentationInterface{
 
     {
       fs.renameSync(`${IMAGE_DIR}/inpaint/${req_id}.png`, `${IMAGE_DIR}/inpaint/old/${req_id}.png`)
-      fs.renameSync(`${JSON_DIR}/mask/${req_id}.png`, `${JSON_DIR}/mask/old/${req_id}.png`)
+      fs.renameSync(`${JSON_DIR}/mask/${req_id}.json`, `${JSON_DIR}/mask/old/${req_id}.json`)
     }
     
 
