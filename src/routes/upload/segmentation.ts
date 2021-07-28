@@ -81,9 +81,10 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 
 router.get('/result', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
+	const blank = `${IMAGE_DIR}/blank/${req_id}.png`
 	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}.png`
 	const mask = `${JSON_DIR}/mask/${req_id}.json`
-	const complete = fs.existsSync(mask) && fs.existsSync(inpaint)
+	const complete = fs.existsSync(blank) || (fs.existsSync(mask) && fs.existsSync(inpaint))
 	res.send({complete:complete})
 });
 
