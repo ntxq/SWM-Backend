@@ -14,7 +14,7 @@ interface BBox{
 	originalWidth:number,
 	originalHeight:number,
 	originalText:string,
-	translatedText:string
+	translatedText?:string
 }
 
 interface ResponseBBox extends BBox{

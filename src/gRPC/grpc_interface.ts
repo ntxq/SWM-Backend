@@ -158,7 +158,7 @@ export class OCRInterface{
       const request:SendJson = call.request 
       
       console.log(request.filename)
-      fs.writeFileSync(path.join(JSON_DIR,request.filename),request.data)
+      fs.writeFileSync(path.join(JSON_DIR,request.filename), JSON.stringify(JSON.parse(request.data), null, 4))
 
       const response: ReceiveImage = { success:true }
       callback(null,response);
