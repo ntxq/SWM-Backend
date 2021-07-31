@@ -6,6 +6,7 @@ package ai_server;
 
 service OCR {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
+  rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
 }
 
 service Segmentation {

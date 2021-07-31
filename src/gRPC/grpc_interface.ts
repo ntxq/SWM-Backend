@@ -146,9 +146,21 @@ export class OCRInterface{
           console.error(err)
           return callback && callback(err,null)
         }
-        console.log('Greeting:', response.status_code);
+        console.log('Greeting_OCR:', response.status_code);
         return callback && callback(null,response)
       });
     })
+  }
+  
+  JsonTransfer(call:grpc.ServerUnaryCall<SendJson, ReceiveJson>,
+    callback:grpc.sendUnaryData<ReceiveJson>
+    ) {
+      const request:SendJson = call.request 
+      
+      console.log(request.filename)
+      fs.writeFileSync(path.join(JSON_DIR,request.filename),request.data)
+
+      const response: ReceiveImage = { success:true }
+      callback(null,response);
   }
 }

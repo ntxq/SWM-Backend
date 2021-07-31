@@ -16,20 +16,22 @@ var packageDefinition = protoLoader.loadSync(
 });
   
 class GRPCSocket{
-  client_url: string;
+  segmentation_client_url: string;
+  recognition_client_url: string;
   server_url: string;
   server: grpc.Server;
   segmentation: SegmentationInterface;
   OCR: OCRInterface;
   proto: GrpcObject;
 
-  constructor(server_url:string,client_url:string) {
-    this.client_url = client_url
+  constructor(server_url:string,segmentation_client_url:string,recognition_client_url:string) {
+    this.segmentation_client_url = segmentation_client_url
+    this.recognition_client_url = recognition_client_url
     this.server_url = server_url
     this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as GrpcObject;
 
-    this.segmentation = new SegmentationInterface(this.client_url,this.proto)
-    this.OCR = new OCRInterface(this.client_url,this.proto)
+    this.segmentation = new SegmentationInterface(this.segmentation_client_url,this.proto)
+    this.OCR = new OCRInterface(this.recognition_client_url,this.proto)
     this.server = this.openServer()
   }
 
@@ -45,6 +47,7 @@ class GRPCSocket{
 
     const OCR = this.proto.OCR as ServiceClientConstructor
     server.addService(OCR.service, {
+      JsonTransfer: this.OCR.JsonTransfer
     });
 
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
@@ -55,4 +58,4 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("0.0.0.0:4000","172.17.0.1:4001")
+export const grpcSocket = new GRPCSocket("0.0.0.0:4000","172.17.0.1:4001","172.17.0.1:5001")
