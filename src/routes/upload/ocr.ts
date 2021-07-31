@@ -9,21 +9,27 @@ var router = express.Router();
 
 interface BBox{
 	bbox_id:number,
-	x:number,
-	y:number,
-	width:number,
-	height:number,
+	originalX:number,
+	originalY:number,
+	originalWidth:number,
+	originalHeight:number,
+	originalText:string,
+	translatedText:string
 }
 
 interface ResponseBBox extends BBox{
-	original:string,
-	translated:string,
 }
 
 interface RequestBBox extends BBox{
-	status:string,
-	target:string,
-	text:string,
+	translatedX:number,
+	translatedY:number,
+	translatedWidth:number,
+	translatedHeight:number,
+	fontColor:string,
+	fontSize:string,
+	fontFamily:string,
+	fontWeight:string,
+	fontStyle:string
 }
 
 
