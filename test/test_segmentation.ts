@@ -4,67 +4,7 @@ import { expect } from "chai"
 import fs from 'fs';
 import path from 'path';
 import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
-
-function clearDirectory(directory:string){
-    fs.readdir(directory, (err, files) => {
-        if (err) throw err;
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(directory)
-            }
-        }
-    });
-}
-function clearTestImage(){
-    const directory = IMAGE_DIR
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            console.error(err)
-            throw err;
-        }
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(file_path)
-            }
-        }
-    });
-}
-
-function clearTestJSON(){
-    const directory = JSON_DIR
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            console.error(err)
-            throw err;
-        }
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(file_path)
-            }
-        }
-    });
-}
+import { clearTestImage, clearTestJSON } from './utils';
 
 describe('upload source', function() {
     it('valid file', function(done) {
