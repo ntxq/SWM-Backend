@@ -120,3 +120,4 @@ class mysqlConnection{
 }
 
 export const mysql_connection = new mysqlConnection()
+export { mysqlConnection }

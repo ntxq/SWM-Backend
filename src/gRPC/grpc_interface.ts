@@ -3,8 +3,9 @@ import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
 import { IMAGE_DIR } from 'src/modules/const';
-import { ReceiveImage, ReceiveJson, ReplyMaskUpdate, ReplyRequestStart, ReplySendSegmentResult, RequestMaskUpdate, RequestStart, SendImage, SendJson, SendSegmentResult } from './grpc_message_interface';
+import * as MESSAGE from './grpc_message_interface';
 import { JSON_DIR } from '../modules/const';
+import { queryManager } from '../sql/mysqlConnectionManager';
 import Jimp = require('jimp');
 import path = require('path');
 
@@ -21,85 +22,6 @@ export class SegmentationInterface{
     this.client = new segmentation(this.client_url,grpc.credentials.createInsecure(),
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
-  
-  OnComplete(call:grpc.ServerUnaryCall<SendSegmentResult, ReplySendSegmentResult>,
-    callback:grpc.sendUnaryData<ReplySendSegmentResult>
-    ) {
-    const request:SendSegmentResult = call.request 
-
-    var inpaint = new Jimp(request.width, request.height);
-    inpaint.rgba(false);
-    inpaint.bitmap.data = request.inpaint;
-    inpaint.write(`${IMAGE_DIR}/inpaint/${request.req_id}.png`,(err,value)=>{})
-
-    var mask = new Jimp(request.width, request.height);
-    mask.rgba(true);
-    mask.bitmap.data = request.mask;
-    mask.write(`${IMAGE_DIR}/mask/${request.req_id}.png`,(err,value)=>{})
-    
-    const response: ReplySendSegmentResult = {
-      req_id:request.req_id,
-      status_code:200
-    }
-    callback(null,response);
-  }
-
-  ImageTransfer(call:grpc.ServerUnaryCall<SendImage, ReceiveImage>,
-    callback:grpc.sendUnaryData<ReceiveImage>
-    ) {
-      const request:SendImage = call.request 
-      
-      console.log(request.filename)
-
-      var image = new Jimp(request.width, request.height);
-      image.rgba(request.is_rgba);
-      image.bitmap.data = request.image;
-      image.write(path.join(IMAGE_DIR,request.filename),(err,value)=>{})
-
-      const response: ReceiveImage = { success:true }
-      callback(null,response);
-  }
-
-  JsonTransfer(call:grpc.ServerUnaryCall<SendJson, ReceiveJson>,
-    callback:grpc.sendUnaryData<ReceiveJson>
-    ) {
-      const request:SendJson = call.request 
-      
-      console.log(request.filename)
-      fs.writeFileSync(path.join(JSON_DIR,request.filename),request.data)
-
-      const response: ReceiveImage = { success:true }
-      callback(null,response);
-  }
-
-  UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
-    const masks:Array<Buffer> = []
-    data.forEach((mask)=>{
-      masks.push(Buffer.from(mask))
-    })
-    
-    const request:RequestMaskUpdate = {
-      req_id:req_id, 
-      mask_rles:masks, 
-      image:fs.readFileSync(`${IMAGE_DIR}/original/${req_id}.png`),
-      cut_ranges:JSON.stringify(require(`${JSON_DIR}/cut/${req_id}.json`))
-    }
-
-    {
-      fs.renameSync(`${IMAGE_DIR}/inpaint/${req_id}.png`, `${IMAGE_DIR}/inpaint/old/${req_id}.png`)
-      fs.renameSync(`${JSON_DIR}/mask/${req_id}.json`, `${JSON_DIR}/mask/old/${req_id}.json`)
-    }
-    
-
-    this.client.UpdateMask(request, function(err:Error | null, response:ReplyMaskUpdate) {
-      if(err){
-        console.error(err)
-        return callback && callback(err,null)
-      }
-      console.log('Greeting:', response);
-      return callback && callback(null,response)
-    });
-  }
 
   Start(req_id:number,callback?:Function | undefined){
     fs.readFile(`${IMAGE_DIR}/original/${req_id}.png`, (err, data) => {
@@ -107,8 +29,8 @@ export class SegmentationInterface{
         console.error(err)
         return
       }
-      const request:RequestStart = {req_id:req_id, image:data}
-      this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
+      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
+      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
           console.error(err)
           return callback && callback(err,null)
@@ -118,6 +40,69 @@ export class SegmentationInterface{
       });
     })
   }
+
+  ImageTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
+    callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>
+    ) {
+      const request:MESSAGE.SendImage = call.request 
+
+      var image = new Jimp(request.width, request.height);
+      image.rgba(request.is_rgba);
+      image.bitmap.data = request.image;
+      const filepath = path.join(IMAGE_DIR,request.filename)
+      image.write(filepath,(err,value)=>{
+        queryManager.update_cut(request.req_id, request.type,request.index,filepath)
+        const response: MESSAGE.ReceiveImage = { success:true }
+        callback(null,response);
+      })
+  }
+
+  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
+    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
+    ) {
+      const request:MESSAGE.SendJson = call.request 
+
+      fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
+
+      const response: MESSAGE.ReceiveJson = { success:true }
+      callback(null,response);
+  }
+
+  UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
+    const masks:Array<Buffer> = []
+    data.forEach((mask)=>{
+      masks.push(Buffer.from(mask))
+    })
+    
+    const request:MESSAGE.RequestMaskUpdate = {
+      req_id:req_id, 
+      mask_rles:masks, 
+      image:fs.readFileSync(`${IMAGE_DIR}/original/${req_id}.png`),
+      cut_ranges:JSON.stringify(require(`${JSON_DIR}/cut/${req_id}.json`))
+    }
+
+    queryManager.update_progress(req_id,'cut').then(()=>{
+      this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
+        if(err){
+          console.error(err)
+          return callback && callback(err,null)
+        }
+        console.log('Greeting:', response);
+        return callback && callback(null,response)
+      });
+    })
+  }
+
+  UpdateProgress(call:grpc.ServerUnaryCall<MESSAGE.SendUpdateProgress, MESSAGE.ReplySendUpdateProgress>,
+    callback:grpc.sendUnaryData<MESSAGE.ReplySendUpdateProgress>
+    ) {
+      const request:MESSAGE.SendUpdateProgress = call.request 
+      queryManager.update_progress(request.req_id,request.status).then(()=>{
+        const response: MESSAGE.ReplySendUpdateProgress = {}
+        callback(null,response);
+      })
+  }
+  
 }
 
 export class OCRInterface{
@@ -140,8 +125,8 @@ export class OCRInterface{
         console.error(err)
         return
       }
-      const request:RequestStart = {req_id:req_id, image:data}
-      this.client.Start(request, function(err:Error | null, response:ReplyRequestStart) {
+      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
+      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
           console.error(err)
           return callback && callback(err,null)
@@ -151,16 +136,15 @@ export class OCRInterface{
       });
     })
   }
-  
-  JsonTransfer(call:grpc.ServerUnaryCall<SendJson, ReceiveJson>,
-    callback:grpc.sendUnaryData<ReceiveJson>
-    ) {
-      const request:SendJson = call.request 
-      
-      console.log(request.filename)
-      fs.writeFileSync(path.join(JSON_DIR,request.filename), JSON.stringify(JSON.parse(request.data), null, 4))
 
-      const response: ReceiveImage = { success:true }
+  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
+    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
+    ) {
+      const request:MESSAGE.SendJson = call.request 
+
+      fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
+
+      const response: MESSAGE.ReceiveJson = { success:true }
       callback(null,response);
   }
 }
