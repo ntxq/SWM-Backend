@@ -7,7 +7,7 @@ import fs from 'fs';
 
 var router = express.Router();
 
-interface BBox{
+export interface BBox{
 	bbox_id:number,
 	originalX:number,
 	originalY:number,

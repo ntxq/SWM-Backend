@@ -3,6 +3,7 @@ import mysql, { Connection } from 'mysql';
 import { IMAGE_DIR } from 'src/modules/const';
 import fs from 'fs';
 import path from 'path';
+import { BBox } from 'src/routes/upload/ocr';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
 	constructor(){
@@ -191,7 +192,6 @@ export class mysqlConnectionManager{
 				query:'sp_get_cut_range',
 				parameters:[req_id],
 				callback:(rows:any,err:any)=>{ 
-					console.log(rows)
 					for(const row of rows) {
 						console.log(row)
 						ranges.set(`${row["cut_idx"]}`, [row["cut_start"],row["cut_end"]])
@@ -250,6 +250,28 @@ export class mysqlConnectionManager{
 					break
 			}
 			mysql_connection.callProcedure(procedure)
+		})
+	}
+
+	set_bboxes(req_id:number,bboxes:Array<BBox>){
+		const procedures = Array<Procedure>();
+		for(const bbox of bboxes) {
+			var procedure:Procedure = {
+				query:'sp_set_bbox',
+				parameters:[req_id,bbox.bbox_id,bbox.originalX,
+							bbox.originalY,bbox.originalWidth,
+							bbox.originalHeight,bbox.originalText],
+				callback:(rows:any,err:any)=>{ }
+			};
+			procedures.push(procedure)
+		}
+		return new Promise<void>((resolve, reject) => {
+			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
+				if(err){
+					return;
+				}
+				resolve()
+			})
 		})
 	}
 }

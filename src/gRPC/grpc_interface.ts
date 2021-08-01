@@ -148,7 +148,11 @@ export class OCRInterface{
       const request:MESSAGE.SendJson = call.request 
 
       fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
-
+      switch(request.type){
+        case "bbox":
+          queryManager.set_bboxes(request.req_id,JSON.parse(request.data))
+          break;
+      }
       const response: MESSAGE.ReceiveJson = { success:true }
       callback(null,response);
   }
