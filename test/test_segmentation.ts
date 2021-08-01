@@ -10,6 +10,7 @@ describe('upload source', function() {
     it('valid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_img.png')
+            .field({title:"test project"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -20,10 +21,10 @@ describe('upload source', function() {
     });
     it('multiple file', function(done) {
         supertest(app).post('/upload/segmentation/source')
-            // .send({data:'x'})
             .attach('source', 'test/resource/test_img.png')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_img copy 2.png')
+            .field({title:"test project"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -40,6 +41,7 @@ describe('upload source', function() {
     it('invalid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"test project"})
             .expect(415)
             .end(function(err, res) {
                 if (err) return done(err);
@@ -52,6 +54,7 @@ describe('upload source', function() {
             .attach('source', 'test/resource/test_txt.txt')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"test project"})
             .expect(415)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -74,6 +77,7 @@ describe('upload blank', function() {
             .attach('source', 'test/resource/test_img.png')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_img copy 2.png')
+            .field({title:"blank test"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -120,6 +124,7 @@ describe('upload blank', function() {
     it('invalid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"blank test"})
             .expect(415)
             .end(function(err, res) {
                 if (err) return done(err);
@@ -139,6 +144,7 @@ describe('get result', function() {
     before(function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_img.png')
+            .field({title:"masking test"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -166,7 +172,6 @@ describe('get result', function() {
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
-                console.log(res.body.complete)
                 expect(res.body.complete).to.be.a("boolean")
                 done();
         })
@@ -221,6 +226,7 @@ describe('update mask', function(){
         {
             var res = await supertest(app).post('/upload/segmentation/source')
                 .attach('source', 'test/resource/test_img.png')
+                .field({title:"masking update test"})
                 .expect(200)
             expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
             expect(res.body.req_ids["test_img.png"]).to.be.a('number')
