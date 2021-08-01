@@ -14,15 +14,16 @@ var router = express.Router();
 router.post('/source', multer_image.array('source'), (req:Request,res:Response) => {
 	const req_id_map = new Map<string,number>();
 	//todo 최준영 제대로 된 user id 로 변환
-	const user_id = 123123123
+	const projet_id = 1
 	const files = req.files as Express.Multer.File[];
 	const procedures = Array<Procedure>();
 	for(var i =0;i<files.length;i++){
 		const file = files[i]
 		const procedure:Procedure = {
 			query:'sp_add_original_source',
-			parameters:[user_id,file.originalname],
+			parameters:[projet_id,file.originalname],
 			callback:(rows:any,err:any)=>{
+				console.error(err)
 				const req_id = rows['id']
 				const old_path = file.path
 				const new_path = `${IMAGE_DIR}/original/${req_id}${path.extname(file.originalname)}`
@@ -51,7 +52,7 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 		const blank_file = files[i];
 		const procedure:Procedure = {
 			query:'sp_set_balnk_source',
-			parameters:[req_id,user_id,blank_file.originalname],
+			parameters:[req_id,true],
 			callback:(rows:any,err:any)=>{
 				if(err){
 					res.status(400);
