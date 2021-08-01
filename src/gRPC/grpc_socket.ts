@@ -40,9 +40,9 @@ class GRPCSocket{
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor
     server.addService(Segmentation.service, {
-      OnComplete: this.segmentation.OnComplete,
       ImageTransfer: this.segmentation.ImageTransfer,
-      JsonTransfer: this.segmentation.JsonTransfer
+      JsonTransfer: this.segmentation.JsonTransfer,
+      UpdateProgress: this.segmentation.UpdateProgress
     });
 
     const OCR = this.proto.OCR as ServiceClientConstructor
@@ -51,6 +51,10 @@ class GRPCSocket{
     });
 
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
+      if(error){
+        console.error(error);
+        return;
+      }
       console.log('start listening grpc')
       server.start();
     }); 

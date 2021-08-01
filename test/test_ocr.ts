@@ -6,12 +6,13 @@ import path from 'path';
 import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
 import { clearTestImage, clearTestJSON } from './utils';
 
-describe.only('process OCR', function() {
+describe('process OCR', function() {
 	this.timeout(300000); 
     var req_id = 0
     before(function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_img.png')
+            .field({title:"OCR test"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
