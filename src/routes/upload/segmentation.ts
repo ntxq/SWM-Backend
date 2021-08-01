@@ -69,9 +69,9 @@ router.get('/result', (req:Request,res:Response) => {
 	})
 });
 
-router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
+router.get('/result/inpaint', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const inpaint = `${IMAGE_DIR}/inpaint/${req_id}_0.png`
+	const inpaint = await queryManager.get_path(req_id,"inpaint")
 	if(!fs.existsSync(inpaint)){
 		next(createError(404))
 		return;
@@ -79,9 +79,9 @@ router.get('/result/inpaint', (req:Request,res:Response,next:NextFunction) => {
 	res.sendFile(inpaint)
 });
 
-router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
+router.get('/result/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const mask = `${JSON_DIR}/mask/${req_id}.json`
+	const mask = await queryManager.get_path(req_id,'mask')
 	if(!fs.existsSync(mask)){
 		next(createError(404))
 		return;
@@ -89,14 +89,14 @@ router.get('/result/mask', (req:Request,res:Response,next:NextFunction) => {
 	res.send({mask:require(mask)})
 });
 
-router.post('/mask', (req:Request,res:Response,next:NextFunction) => {
+router.post('/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.body['req_id'] as string)
 	const mask = JSON.parse(req.body['mask'])['result']
 	if(mask == undefined){
 		next(createError(400))
 		return;
 	}
-	const mask_path = `${IMAGE_DIR}/mask/${req_id}.json`
+	const mask_path = await queryManager.get_path(req_id,'mask')
 	fs.writeFile(mask_path,JSON.stringify(mask),(err)=>{
 		console.log(err)
 	})

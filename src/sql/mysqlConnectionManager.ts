@@ -15,6 +15,7 @@ export class mysqlConnectionManager{
 				query:'sp_add_project',
 				parameters:[user_id,title],
 				callback:(rows:any,err:any)=>{
+					rows = rows[0]
 					if(err) {
 						reject(err);
 						return;
@@ -101,6 +102,7 @@ export class mysqlConnectionManager{
 				query:'sp_check_progress',
 				parameters:[req_id,status],
 				callback:(rows:any,err:any)=>{
+					rows = rows[0]
 					if(err) {
 						reject(err);
 						return;
@@ -129,16 +131,20 @@ export class mysqlConnectionManager{
 			mysql_connection.callProcedure(procedure)
 		})
 	}
+
 	update_cut(req_id:number, type:string,index:number,filepath:string){
 		//cut,mask,inpaint
 		const path:Array<string|null> = [null,null,null]
 		switch (type) {
 			case 'cut':
 				path[0] = filepath
+				break;
 			case 'mask':
 				path[1] = filepath
+				break;
 			case 'inpaint':
 				path[2] = filepath
+				break;
 		}
 		return new Promise<void>((resolve, reject) => {
 
@@ -152,6 +158,96 @@ export class mysqlConnectionManager{
 					}
 					resolve()
 				}
+			}
+			mysql_connection.callProcedure(procedure)
+		})
+	}
+
+	set_cut_ranges(req_id:number, json:JSON){
+		const procedures = Array<Procedure>();
+		for(const [index,range] of  Object.entries(json)){
+			console.log(index,range)
+			const procedure:Procedure = {
+				query:'sp_set_cut_ranges',
+				parameters:[req_id,parseInt(index),range[0],range[1]],
+				callback:(rows:any,err:any)=>{ }
+			}
+			procedures.push(procedure)
+		}
+		return new Promise<void>((resolve, reject) => {
+			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
+				if(err){
+					return;
+				}
+				resolve()
+			})
+		})
+	}
+
+	get_cut_range(req_id:number){
+		return new Promise<Map<string,Array<number>>>((resolve, reject) => {
+			const ranges:Map<string,Array<number>> = new Map<string,Array<number>>();
+			var procedure:Procedure = {
+				query:'sp_get_cut_range',
+				parameters:[req_id],
+				callback:(rows:any,err:any)=>{ 
+					console.log(rows)
+					for(const row of rows) {
+						console.log(row)
+						ranges.set(`${row["cut_idx"]}`, [row["cut_start"],row["cut_end"]])
+					}
+					console.log(ranges)
+					resolve(ranges)
+				}
+			};
+			mysql_connection.callProcedure(procedure)
+		})
+	}
+
+	get_path(req_id:number,type:string,index:number = 0){
+		var procedure:Procedure = {query:"",parameters:[],callback:()=>{}};
+		return new Promise<string>((resolve, reject) => {
+			switch(type){
+				case "original":
+					procedure = {
+						query:'sp_get_original_path',
+						parameters:[req_id],
+						callback:(rows:any,err:any)=>{ 
+							rows = rows[0]
+							resolve(rows['path'])
+						}
+					}
+					break
+				case "cut":
+					procedure = {
+						query:'sp_get_paths',
+						parameters:[req_id,index],
+						callback:(rows:any,err:any)=>{ 
+							rows = rows[0]
+							resolve(rows['cut_path'])
+						}
+					}
+					break;
+				case "inpaint":
+					procedure = {
+						query:'sp_get_paths',
+						parameters:[req_id,index],
+						callback:(rows:any,err:any)=>{ 
+							rows = rows[0]
+							resolve(rows['inpaint_path'])
+						}
+					}
+					break;
+				case "mask":
+					procedure = {
+						query:'sp_get_paths',
+						parameters:[req_id,index],
+						callback:(rows:any,err:any)=>{ 
+							rows = rows[0]
+							resolve(rows['mask_path'])
+						}
+					}
+					break
 			}
 			mysql_connection.callProcedure(procedure)
 		})

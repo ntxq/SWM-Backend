@@ -48,12 +48,7 @@ class mysqlConnection{
 			}
 
 			try{
-				if(Array.isArray(rows)){
-					procedure.callback(...rows[0],null)
-				}
-				else{
-					procedure.callback(rows,null)
-				}
+				procedure.callback(rows[0],null)
 			}
 			catch(error){
 				procedure.callback(rows,err)

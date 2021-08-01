@@ -23,8 +23,8 @@ export class SegmentationInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
-  Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(`${IMAGE_DIR}/original/${req_id}.png`, (err, data) => {
+  async Start(req_id:number,callback?:Function | undefined){
+    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
       if (err) {
         console.error(err)
         return
@@ -63,22 +63,27 @@ export class SegmentationInterface{
       const request:MESSAGE.SendJson = call.request 
 
       fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
-
+      switch(request.type){
+        case "cut":
+          queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
+          break;
+      }
       const response: MESSAGE.ReceiveJson = { success:true }
       callback(null,response);
   }
 
-  UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
+  async UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
     const masks:Array<Buffer> = []
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))
     })
-    
+
+    const cut_ranges = await queryManager.get_cut_range(req_id)
     const request:MESSAGE.RequestMaskUpdate = {
       req_id:req_id, 
       mask_rles:masks, 
-      image:fs.readFileSync(`${IMAGE_DIR}/original/${req_id}.png`),
-      cut_ranges:JSON.stringify(require(`${JSON_DIR}/cut/${req_id}.json`))
+      image:fs.readFileSync(await queryManager.get_path(req_id,"original")),
+      cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
 
     queryManager.update_progress(req_id,'cut').then(()=>{
@@ -119,8 +124,8 @@ export class OCRInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
-  Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(`${IMAGE_DIR}/original/${req_id}.png`, (err, data) => {
+  async Start(req_id:number,callback?:Function | undefined){
+    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
       if (err) {
         console.error(err)
         return
