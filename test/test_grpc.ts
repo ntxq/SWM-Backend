@@ -46,8 +46,8 @@ describe('GRPC connection', function() {
             masks.push(rle)
 
             grpcSocket.segmentation.UpdateMask(req_id,masks,(err:Error,res:ReplyRequestStart)=>{
+                done()
             })
-            done()
         });
     })
 });
