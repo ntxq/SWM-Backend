@@ -4,6 +4,7 @@ import { Request, Response } from 'express-serve-static-core'
 import { grpcSocket } from 'src/gRPC/grpc_socket';
 import { JSON_DIR } from 'src/modules/const';
 import fs from 'fs';
+import { queryManager } from '../../sql/mysqlConnectionManager';
 
 var router = express.Router();
 
@@ -17,28 +18,16 @@ export interface BBox{
 	translatedText?:string
 }
 
-interface ResponseBBox extends BBox{
-}
-
-interface RequestBBox extends BBox{
+export interface TranslateBBox extends BBox{
 	translatedX:number,
 	translatedY:number,
 	translatedWidth:number,
 	translatedHeight:number,
 	fontColor:string,
-	fontSize:string,
+	fontSize:number,
 	fontFamily:string,
 	fontWeight:string,
 	fontStyle:string
-}
-
-
-interface StyleBBox{
-	bbox_id:number,
-	target:string,
-	fontSize:string,
-	fontColor:string,
-	fontType:string,
 }
 
 router.get('/select', (req:Request,res:Response) => {
@@ -49,31 +38,24 @@ router.get('/select', (req:Request,res:Response) => {
 
 router.get('/result', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const bbox = `${JSON_DIR}/bbox/${req_id}.json`
-	const complete = fs.existsSync(bbox)
-	res.send({complete:complete})
+	queryManager.check_progress(req_id,'bbox').then((complete)=>{
+		res.send({complete:complete})
+	})
 });
 
 router.get('/result/bbox', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const bboxList:ResponseBBox[] = require(`${JSON_DIR}/bbox/${req_id}.json`)
-	res.send({bboxList:bboxList})
+	queryManager.get_bboxes(req_id).then((bboxList:BBox[])=>{
+		res.send({bboxList:bboxList})
+	})
 });
 
 router.post('/edit', (req:Request,res:Response) => {
 	const req_id = parseInt(req.body['req_id'])
-	const bboxList:RequestBBox[] = JSON.parse(req.body['bboxList'])
-	// UpdateBbox(req_id,bboxList)
-	res.send({success:true})
+	const bboxList:TranslateBBox[] = JSON.parse(req.body['bboxList'])
+	queryManager.set_bboxes_with_translate(req_id,bboxList).then(()=>{
+		res.send({success:true})
+	})
 });
-
-// Deprecated route (see wiki)
-
-// router.post('/styles', (req:Request,res:Response) => {
-// 	const req_id = parseInt(req.body['req_id'])
-// 	const bboxList:StyleBBox[] = JSON.parse(req.body['bboxList'])
-// 	// UpdateBboxStyle(req_id,bboxList)
-// 	res.send({success:true})
-// });
 
 export default router;

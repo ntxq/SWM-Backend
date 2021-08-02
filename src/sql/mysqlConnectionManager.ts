@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { BBox } from 'src/routes/upload/ocr';
 import { resolve } from 'path/posix';
+import { TranslateBBox } from '../routes/upload/ocr';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
 	constructor(){
@@ -272,6 +273,54 @@ export class mysqlConnectionManager{
 				parameters:[req_id,bbox.bbox_id,bbox.originalX,
 							bbox.originalY,bbox.originalWidth,
 							bbox.originalHeight,bbox.originalText],
+				callback:(rows:any,err:any)=>{ }
+			};
+			procedures.push(procedure)
+		}
+		return new Promise<void>((resolve, reject) => {
+			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
+				if(err){
+					return;
+				}
+				resolve()
+			})
+		})
+	}
+
+	get_bboxes(req_id:number){
+		return new Promise<Array<BBox>>((resolve, reject) => {
+			const result:Array<BBox> = Array<BBox>();
+			var procedure:Procedure = {
+				query:'sp_get_bbox',
+				parameters:[req_id],
+				callback:(rows:any,err:any)=>{ 
+					for(const row of rows) {
+						const bbox:BBox = {
+							bbox_id:row["bbox_id"],
+							originalX:row["originalX"],
+							originalY:row["originalY"],
+							originalWidth:row["originalWidth"],
+							originalHeight:row["originalHeight"],
+							originalText:row["originalText"]
+						}
+						result.push(bbox)
+					}
+					resolve(result)
+				}
+			};
+			mysql_connection.callProcedure(procedure)
+		})
+	}
+
+	set_bboxes_with_translate(req_id:number,bboxList:TranslateBBox[]){
+		const procedures = Array<Procedure>();
+		for(const bbox of bboxList) {
+			var procedure:Procedure = {
+				query:'sp_set_bbox_with_translate',
+				parameters:[req_id,bbox.bbox_id,"English",
+							bbox.originalX,bbox.originalY,bbox.originalWidth,bbox.originalHeight,bbox.originalText,
+							bbox.translatedX,bbox.translatedY,bbox.translatedWidth,bbox.translatedHeight,bbox.translatedText,
+							bbox.fontColor,bbox.fontSize,bbox.fontFamily,bbox.fontWeight,bbox.fontStyle],
 				callback:(rows:any,err:any)=>{ }
 			};
 			procedures.push(procedure)
