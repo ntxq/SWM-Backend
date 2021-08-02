@@ -61,11 +61,14 @@ export class SegmentationInterface{
     callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
     ) {
       const request:MESSAGE.SendJson = call.request 
-
-      fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
+      const filepath = path.join(JSON_DIR,request.filename)
+      fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
       switch(request.type){
         case "cut":
           queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
+          break;
+        case "mask":
+          queryManager.set_mask_rle_file_paths(request.req_id,filepath)
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }
@@ -150,7 +153,9 @@ export class OCRInterface{
       fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
       switch(request.type){
         case "bbox":
-          queryManager.set_bboxes(request.req_id,JSON.parse(request.data))
+          queryManager.set_bboxes(request.req_id,JSON.parse(request.data)).then(()=>{
+            queryManager.update_progress(request.req_id,'bbox')
+          })
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }

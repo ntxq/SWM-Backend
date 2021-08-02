@@ -4,6 +4,7 @@ import { IMAGE_DIR } from 'src/modules/const';
 import fs from 'fs';
 import path from 'path';
 import { BBox } from 'src/routes/upload/ocr';
+import { resolve } from 'path/posix';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
 	constructor(){
@@ -70,6 +71,17 @@ export class mysqlConnectionManager{
 			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
 				resolve()
 			})
+		})
+	}
+
+	set_mask_rle_file_paths(req_id:number,path:string){
+		return new Promise<void>((resolve, reject) => {
+			const procedure:Procedure = {
+				query:'sp_set_mask_rle_file_path',
+				parameters:[req_id,path],
+				callback:()=>{resolve()}
+			}
+			mysql_connection.callProcedure(procedure)
 		})
 	}
 
@@ -193,7 +205,6 @@ export class mysqlConnectionManager{
 				parameters:[req_id],
 				callback:(rows:any,err:any)=>{ 
 					for(const row of rows) {
-						console.log(row)
 						ranges.set(`${row["cut_idx"]}`, [row["cut_start"],row["cut_end"]])
 					}
 					console.log(ranges)
@@ -242,6 +253,16 @@ export class mysqlConnectionManager{
 					procedure = {
 						query:'sp_get_paths',
 						parameters:[req_id,index],
+						callback:(rows:any,err:any)=>{ 
+							rows = rows[0]
+							resolve(rows['mask_path'])
+						}
+					}
+					break
+				case "mask_rle":
+					procedure = {
+						query:'sp_get_original_path',
+						parameters:[req_id],
 						callback:(rows:any,err:any)=>{ 
 							rows = rows[0]
 							resolve(rows['mask_path'])
