@@ -61,8 +61,8 @@ export class mysqlConnectionManager{
 		const procedures = Array<Procedure>();
 		for(const [req_id,path] of path_id_map){
 			const procedure:Procedure = {
-				query:'sp_set_original_file_path',
-				parameters:[req_id,path],
+				query:'sp_update_cut',
+				parameters:[req_id,0,path,null,null,null],
 				callback:()=>{}
 			}
 			procedures.push(procedure)
@@ -71,17 +71,6 @@ export class mysqlConnectionManager{
 			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
 				resolve()
 			})
-		})
-	}
-
-	set_mask_rle_file_paths(req_id:number,path:string){
-		return new Promise<void>((resolve, reject) => {
-			const procedure:Procedure = {
-				query:'sp_set_mask_rle_file_path',
-				parameters:[req_id,path],
-				callback:()=>{resolve()}
-			}
-			mysql_connection.callProcedure(procedure)
 		})
 	}
 
@@ -147,7 +136,7 @@ export class mysqlConnectionManager{
 
 	update_cut(req_id:number, type:string,index:number,filepath:string){
 		//cut,mask,inpaint
-		const path:Array<string|null> = [null,null,null]
+		const path:Array<string|null> = [null,null,null,null]
 		switch (type) {
 			case 'cut':
 				path[0] = filepath
@@ -155,8 +144,11 @@ export class mysqlConnectionManager{
 			case 'mask':
 				path[1] = filepath
 				break;
-			case 'inpaint':
+			case 'mask_image':
 				path[2] = filepath
+				break;
+			case 'inpaint':
+				path[3] = filepath
 				break;
 		}
 		return new Promise<void>((resolve, reject) => {
@@ -179,7 +171,6 @@ export class mysqlConnectionManager{
 	set_cut_ranges(req_id:number, json:JSON){
 		const procedures = Array<Procedure>();
 		for(const [index,range] of  Object.entries(json)){
-			console.log(index,range)
 			const procedure:Procedure = {
 				query:'sp_set_cut_ranges',
 				parameters:[req_id,parseInt(index),range[0],range[1]],
@@ -207,7 +198,6 @@ export class mysqlConnectionManager{
 					for(const row of rows) {
 						ranges.set(`${row["cut_idx"]}`, [row["cut_start"],row["cut_end"]])
 					}
-					console.log(ranges)
 					resolve(ranges)
 				}
 			};
@@ -221,11 +211,11 @@ export class mysqlConnectionManager{
 			switch(type){
 				case "original":
 					procedure = {
-						query:'sp_get_original_path',
-						parameters:[req_id],
+						query:'sp_get_paths',
+						parameters:[req_id,0],
 						callback:(rows:any,err:any)=>{ 
 							rows = rows[0]
-							resolve(rows['path'])
+							resolve(rows['cut_path'])
 						}
 					}
 					break
@@ -252,20 +242,20 @@ export class mysqlConnectionManager{
 				case "mask":
 					procedure = {
 						query:'sp_get_paths',
-						parameters:[req_id,index],
+						parameters:[req_id,0],
 						callback:(rows:any,err:any)=>{ 
 							rows = rows[0]
 							resolve(rows['mask_path'])
 						}
 					}
 					break
-				case "mask_rle":
+				case "mask_image":
 					procedure = {
-						query:'sp_get_original_path',
-						parameters:[req_id],
+						query:'sp_get_paths',
+						parameters:[req_id,index],
 						callback:(rows:any,err:any)=>{ 
 							rows = rows[0]
-							resolve(rows['mask_path'])
+							resolve(rows['mask_image_path'])
 						}
 					}
 					break

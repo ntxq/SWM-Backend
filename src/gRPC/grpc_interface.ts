@@ -68,7 +68,7 @@ export class SegmentationInterface{
           queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
           break;
         case "mask":
-          queryManager.set_mask_rle_file_paths(request.req_id,filepath)
+          queryManager.update_cut(request.req_id, request.type,0,filepath)
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }
@@ -88,7 +88,6 @@ export class SegmentationInterface{
       image:fs.readFileSync(await queryManager.get_path(req_id,"original")),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
-
     queryManager.update_progress(req_id,'cut').then(()=>{
       this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
         if(err){

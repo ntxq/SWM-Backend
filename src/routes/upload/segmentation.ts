@@ -81,7 +81,7 @@ router.get('/result/inpaint', async (req:Request,res:Response,next:NextFunction)
 
 router.get('/result/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const mask = await queryManager.get_path(req_id,'mask_rle')
+	const mask = await queryManager.get_path(req_id,'mask')
 	if(!fs.existsSync(mask)){
 		next(createError(404))
 		return;
