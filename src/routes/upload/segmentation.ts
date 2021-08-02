@@ -105,8 +105,9 @@ router.post('/mask', async (req:Request,res:Response,next:NextFunction) => {
 	for(var i =0;i<mask.length;i++){
 		rle.push(mask[i]['value']['rle'])
 	}
-	grpcSocket.segmentation.UpdateMask(req_id,rle)
-	res.send({success:true})
+	grpcSocket.segmentation.UpdateMask(req_id,rle,()=>{
+		res.send({success:true})
+	})
 });
 
 export default router;
