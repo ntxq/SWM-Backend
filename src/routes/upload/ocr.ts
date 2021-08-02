@@ -61,17 +61,19 @@ router.get('/result/bbox', (req:Request,res:Response) => {
 });
 
 router.post('/edit', (req:Request,res:Response) => {
-	const req_id = parseInt(req.params['req_id'])
-	const bboxList:RequestBBox[] = JSON.parse(req.params['bboxList'])
+	const req_id = parseInt(req.body['req_id'])
+	const bboxList:RequestBBox[] = JSON.parse(req.body['bboxList'])
 	// UpdateBbox(req_id,bboxList)
 	res.send({success:true})
 });
 
-router.post('/styles', (req:Request,res:Response) => {
-	const req_id = parseInt(req.params['req_id'])
-	const bboxList:StyleBBox[] = JSON.parse(req.params['bboxList'])
-	// UpdateBboxStyle(req_id,bboxList)
-	res.send({success:true})
-});
+// Deprecated route (see wiki)
+
+// router.post('/styles', (req:Request,res:Response) => {
+// 	const req_id = parseInt(req.body['req_id'])
+// 	const bboxList:StyleBBox[] = JSON.parse(req.body['bboxList'])
+// 	// UpdateBboxStyle(req_id,bboxList)
+// 	res.send({success:true})
+// });
 
 export default router;
