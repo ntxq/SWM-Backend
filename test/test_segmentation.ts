@@ -257,6 +257,8 @@ describe('update mask', function(){
             .send({req_id:req_id, mask:JSON.stringify(mask)})
             .expect(200)
         expect(res.body.success).to.equal(true)
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
         expect(res.body.complete).to.equal(false)
