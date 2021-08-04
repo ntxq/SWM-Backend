@@ -4,20 +4,34 @@ syntax = "proto3";
 
 package ai_server;
 
+service OCR {
+  rpc Start (RequestStart) returns (ReplyRequestStart) {}
+  rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
+}
+
 service Segmentation {
   rpc Start (RequestStart) returns (ReplyRequestStart) {}
   rpc ImageTransfer (SendImage) returns (ReceiveImage) {}
   rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
+  rpc UpdateProgress (SendUpdateProgress) returns (ReplySendUpdateProgress) {}
   rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
-  rpc OnComplete (SendSegmentResult) returns (ReplySendSegmentResult) {}
 }
 
+message SendUpdateProgress{
+  int64 req_id = 1;
+  string status = 2;
+}
+message ReplySendUpdateProgress{}
+
 message SendImage{
-  string filename = 1;
-  bytes image = 2;
-  bool is_rgba = 3;
-  int32 width = 4;
-  int32 height = 5;
+  int64 req_id = 1;
+  string type = 2;
+  int32 index = 3;
+  bytes image = 4;
+  bool is_rgba = 5;
+  int32 width = 6;
+  int32 height = 7;
+  string filename = 8;
 }
 
 message ReceiveImage{
@@ -25,8 +39,10 @@ message ReceiveImage{
 }
 
 message SendJson{
-  string filename = 1;
-  string data = 2;
+  int64 req_id = 1;
+  string type = 2;
+  string data = 4;
+  string filename = 5;
 }
 
 message ReceiveJson{

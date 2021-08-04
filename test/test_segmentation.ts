@@ -4,72 +4,13 @@ import { expect } from "chai"
 import fs from 'fs';
 import path from 'path';
 import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
-
-function clearDirectory(directory:string){
-    fs.readdir(directory, (err, files) => {
-        if (err) throw err;
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(directory)
-            }
-        }
-    });
-}
-function clearTestImage(){
-    const directory = IMAGE_DIR
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            console.error(err)
-            throw err;
-        }
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(file_path)
-            }
-        }
-    });
-}
-
-function clearTestJSON(){
-    const directory = JSON_DIR
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            console.error(err)
-            throw err;
-        }
-      
-        for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                fs.unlink(file_path, err => {
-                    if (err) throw err;
-                });
-            }
-            else{
-                clearDirectory(file_path)
-            }
-        }
-    });
-}
+import { clearTestImage, clearTestJSON } from './utils';
 
 describe('upload source', function() {
     it('valid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_img.png')
+            .field({title:"test project"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -80,10 +21,10 @@ describe('upload source', function() {
     });
     it('multiple file', function(done) {
         supertest(app).post('/upload/segmentation/source')
-            // .send({data:'x'})
             .attach('source', 'test/resource/test_img.png')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_img copy 2.png')
+            .field({title:"test project"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -100,6 +41,7 @@ describe('upload source', function() {
     it('invalid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"test project"})
             .expect(415)
             .end(function(err, res) {
                 if (err) return done(err);
@@ -112,6 +54,7 @@ describe('upload source', function() {
             .attach('source', 'test/resource/test_txt.txt')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"test project"})
             .expect(415)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -134,6 +77,7 @@ describe('upload blank', function() {
             .attach('source', 'test/resource/test_img.png')
             .attach('source', 'test/resource/test_img copy.png')
             .attach('source', 'test/resource/test_img copy 2.png')
+            .field({title:"blank test"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -180,6 +124,7 @@ describe('upload blank', function() {
     it('invalid file', function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_txt.txt')
+            .field({title:"blank test"})
             .expect(415)
             .end(function(err, res) {
                 if (err) return done(err);
@@ -199,6 +144,7 @@ describe('get result', function() {
     before(function(done) {
         supertest(app).post('/upload/segmentation/source')
             .attach('source', 'test/resource/test_img.png')
+            .field({title:"masking test"})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -226,7 +172,6 @@ describe('get result', function() {
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
-                console.log(res.body.complete)
                 expect(res.body.complete).to.be.a("boolean")
                 done();
         })
@@ -281,6 +226,7 @@ describe('update mask', function(){
         {
             var res = await supertest(app).post('/upload/segmentation/source')
                 .attach('source', 'test/resource/test_img.png')
+                .field({title:"masking update test"})
                 .expect(200)
             expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
             expect(res.body.req_ids["test_img.png"]).to.be.a('number')
@@ -311,6 +257,8 @@ describe('update mask', function(){
             .send({req_id:req_id, mask:JSON.stringify(mask)})
             .expect(200)
         expect(res.body.success).to.equal(true)
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
         expect(res.body.complete).to.equal(false)
