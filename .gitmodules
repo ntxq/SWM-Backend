@@ -1,0 +1,4 @@
+[submodule "frontend"]
+	path = frontend
+	url = git@git.swmgit.org:swm-12/12_swm38/frontend.git
+	branch = develop
