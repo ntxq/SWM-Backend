@@ -4,12 +4,12 @@ SWM 마에스트로 12기 팀 전지적 번역 시점의 프로젝트 백엔드 
 
 ### server architecture diagram
 - 현재 아키텍쳐
-![server_architecture_current](/swm-12/12_swm38/backend/uploads/4e716875be3292b89f19430a521dbe12/Server-Architecture-Current.svg)
+![server_architecture_current](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/3/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
 - 최종 릴리즈 구상 아키텍쳐
-![server_architecture_goal](/swm-12/12_swm38/backend/uploads/64f40d5943f32d46192254daf6d62d29/Server-Architecture-Goal.svg)
+![server_architecture_goal](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/5/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
 
 ### DB structure
-![DB_structure](/uploads/a330557190a76458add8a7b14892e078/SWM_Diagram-DB_Diagram.svg)
+![DB_structure](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/4/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
 
 ### Technologies
 - Express
