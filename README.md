@@ -1,17 +1,22 @@
-### Node Express template project
+### 전지적 번역 시점 백엔드
 
-This project is based on a GitLab [Project Template](https://docs.gitlab.com/ee/gitlab-basics/create-project.html).
+SWM 마에스트로 12기 팀 전지적 번역 시점의 프로젝트 백엔드 레포지토리입니다. 서버의 API문서는 [여기](https://git.swmgit.org/swm-12/12_swm38/backend/-/wikis/client-server-API)서 확인할 수 있습니다. 
 
-Improvements can be proposed in the [original project](https://gitlab.com/gitlab-org/project-templates/express).
+### server architecture diagram
+- 현재 아키텍쳐
+![server_architecture_current](/swm-12/12_swm38/backend/uploads/4e716875be3292b89f19430a521dbe12/Server-Architecture-Current.svg)
+- 최종 릴리즈 구상 아키텍쳐
+![server_architecture_goal](/swm-12/12_swm38/backend/uploads/64f40d5943f32d46192254daf6d62d29/Server-Architecture-Goal.svg)
 
-### CI/CD with Auto DevOps
+### DB structure
+![DB_structure](/uploads/a330557190a76458add8a7b14892e078/SWM_Diagram-DB_Diagram.svg)
 
-This template is compatible with [Auto DevOps](https://docs.gitlab.com/ee/topics/autodevops/).
-
-If Auto DevOps is not already enabled for this project, you can [turn it on](https://docs.gitlab.com/ee/topics/autodevops/#enabling-auto-devops) in the project settings.
-
-### Developing with Gitpod
-
-This template has a fully-automated dev setup for [Gitpod](https://docs.gitlab.com/ee/integration/gitpod.html).
-
-If you open this project in Gitpod, you'll get all Node dependencies pre-installed and Express will open a web preview.
+### Technologies
+- Express
+- gRPC
+- MySQL
+- Typescript
+- Mocha
+- Docker
+- Kubernetes (Future)
+- nginx (Future)
