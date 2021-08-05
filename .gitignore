@@ -6,6 +6,7 @@ data/**/*.json
 yarn.lock
 package-lock.json
 **/secret.ts
+.vscode
 
 # Logs
 logs
