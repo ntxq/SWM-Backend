@@ -1,6 +1,6 @@
-### 전지적 번역 시점 백엔드
+### Backend
 
-SWM 마에스트로 12기 팀 전지적 번역 시점의 프로젝트 백엔드 레포지토리입니다. 서버의 API문서는 [여기](https://git.swmgit.org/swm-12/12_swm38/backend/-/wikis/client-server-API)서 확인할 수 있습니다. 
+<!-- SWM 마에스트로 12기 팀 전지적 번역 시점의 프로젝트 백엔드 레포지토리입니다. 서버의 API문서는 [여기](https://git.swmgit.org/swm-12/12_swm38/backend/-/wikis/client-server-API)서 확인할 수 있습니다.  -->
 
 ### Server Architecture Diagram
 - 현재 아키텍쳐
