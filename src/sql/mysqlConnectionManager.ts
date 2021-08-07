@@ -169,16 +169,6 @@ export class mysqlConnectionManager{
 		var procedure:Procedure = {query:"",parameters:[],callback:()=>{}};
 		return new Promise<string>((resolve, reject) => {
 			switch(type){
-				case "original":
-					procedure = {
-						query:'sp_get_paths',
-						parameters:[req_id,0],
-						callback:(rows:any,err:any)=>{ 
-							rows = rows[0]
-							resolve(rows['cut_path'])
-						}
-					}
-					break
 				case "cut":
 					procedure = {
 						query:'sp_get_paths',

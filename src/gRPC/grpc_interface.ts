@@ -41,12 +41,12 @@ export class SegmentationInterface{
   }
 
   async Start(req_id:number,index:number=0,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"original",index), (err, data) => {
+    fs.readFile(await queryManager.get_path(req_id,"cut",index), (err, data) => {
       if (err) {
         console.error(err)
         return
       }
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
+      const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
           console.error(err)
@@ -111,7 +111,7 @@ export class SegmentationInterface{
       req_id:req_id, 
       mask_rles:masks, 
       index:index,
-      image:fs.readFileSync(await queryManager.get_path(req_id,"original")),
+      image:fs.readFileSync(await queryManager.get_path(req_id,"cut")),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
 

@@ -46,35 +46,30 @@ router.post('/source', multer_image.array('source'), async (req:Request,res:Resp
 });
 
 router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,next:NextFunction) => {
-	//todo 최준영 제대로 된 user id 로 변환
 	const blank_not_exist_ids:number[] = JSON.parse(req.body.empty_id)
 	const map_ids:number[] = JSON.parse(req.body.map_ids);
 	const files = req.files as Express.Multer.File[];
-	const req_id_map = new Map<string,number>();
-	//set query and response data
-	const id_path_map = new Map<number,string>();
-	for(var i =0;i<map_ids.length;i++){
-		const req_id = map_ids[i]
-		const blank_file = files[i];
 
-		const old_path = blank_file.path
-		const new_path = `${IMAGE_DIR}/inpaint/${req_id}_0${path.extname(blank_file.originalname)}`
-		fs.promises.rename(old_path, new_path)
-		req_id_map.set(blank_file.originalname,req_id)
-		id_path_map.set(req_id,new_path)
-	}
 	//send start ai processing signal
 	blank_not_exist_ids.forEach(req_id=>{
 		grpcSocket.segmentation.Start(req_id)
 	})
-	//set inpaints on db
-	const promise_all = new Array<Promise<void>>();
-	for(const [req_id,file_path] of id_path_map){
-		promise_all.push(queryManager.update_user_upload_inpaint(req_id,'inpaint',0,file_path))
+
+	//set query and response data
+	const promise_all = new Array<Promise<void|MESSAGE.ReplyRequestMakeCut>>();
+	for(var i =0;i<map_ids.length;i++){
+		const req_id = map_ids[i]
+		const blank_file = files[i];
+		const old_path = blank_file.path
+		const new_path = `${IMAGE_DIR}/inpaint/${req_id}_0${path.extname(blank_file.originalname)}`
+		fs.promises.rename(old_path, new_path)
+		promise_all.push(queryManager.update_user_upload_inpaint(req_id,'inpaint',0,new_path))
+		promise_all.push(
+			grpcSocket.segmentation.MakeCutsFromWholeImage(req_id,'inpaint',new_path)
+		);
 	}
-	console.log(111213)
 	Promise.all(promise_all).then(()=>{
-		res.send({req_ids:Object.fromEntries(req_id_map)})
+		res.send({success:true})
 	})
 })
 

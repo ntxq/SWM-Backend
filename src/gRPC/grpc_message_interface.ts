@@ -38,6 +38,7 @@ export interface ReplyRequestMakeCut{
 
 export interface RequestStart{
 	req_id:number;
+	index:number;
 	image:Buffer;
 }
 
