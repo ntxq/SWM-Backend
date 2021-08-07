@@ -23,21 +23,29 @@ export class SegmentationInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
-  async Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
+  async Start(req_id:number,index:number=0,callback?:Function | undefined){
+    fs.readFile(await queryManager.get_path(req_id,"original",index), (err, data) => {
       if (err) {
         console.error(err)
         return
       }
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
-      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
+      const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
           console.error(err)
           return callback && callback(err,null)
         }
         console.log('Greeting:', response.status_code);
         return callback && callback(null,response)
-      });
+      }
+
+      if(index == 0){
+        this.client.StartWholeImage(request, cb);
+      }
+      else{
+        this.client.StartCut(request, cb);
+      }
+      
     })
   }
 
@@ -68,14 +76,14 @@ export class SegmentationInterface{
           queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
           break;
         case "mask":
-          queryManager.update_cut(request.req_id, request.type,0,filepath)
+          queryManager.update_cut(request.req_id, request.type,request.index,filepath)
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }
       callback(null,response);
   }
 
-  async UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
+  async UpdateMask(req_id:number,index:number,data:Array<Array<number>>,callback?:Function | undefined){
     const masks:Array<Buffer> = []
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))
@@ -85,10 +93,12 @@ export class SegmentationInterface{
     const request:MESSAGE.RequestMaskUpdate = {
       req_id:req_id, 
       mask_rles:masks, 
+      index:index,
       image:fs.readFileSync(await queryManager.get_path(req_id,"original")),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
-    queryManager.update_progress(req_id,'cut').then(()=>{
+
+    queryManager.update_progress(req_id,index,'cut').then(()=>{
       this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
         if(err){
           console.error(err)
@@ -99,17 +109,6 @@ export class SegmentationInterface{
       });
     })
   }
-
-  UpdateProgress(call:grpc.ServerUnaryCall<MESSAGE.SendUpdateProgress, MESSAGE.ReplySendUpdateProgress>,
-    callback:grpc.sendUnaryData<MESSAGE.ReplySendUpdateProgress>
-    ) {
-      const request:MESSAGE.SendUpdateProgress = call.request 
-      queryManager.update_progress(request.req_id,request.status).then(()=>{
-        const response: MESSAGE.ReplySendUpdateProgress = {}
-        callback(null,response);
-      })
-  }
-  
 }
 
 export class OCRInterface{

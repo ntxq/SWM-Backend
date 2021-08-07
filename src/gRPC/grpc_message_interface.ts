@@ -15,6 +15,7 @@ export interface ReceiveImage{
 
 export interface SendJson{
 	req_id:number;
+	index:number;
 	type:string;
 	data:string;
 	filename:string;
@@ -37,6 +38,7 @@ export interface ReplyRequestStart{
 export interface RequestMaskUpdate{
 	req_id:number;
 	mask_rles:Buffer[];
+	index:number;
 	image:Buffer;
 	cut_ranges:string;
 }
@@ -44,12 +46,4 @@ export interface RequestMaskUpdate{
 export interface ReplyMaskUpdate{
 	req_id:number;
 	status_code:number;
-}
-
-export interface SendUpdateProgress{
-	req_id:number;
-	status:string;
-}
-
-export interface ReplySendUpdateProgress{
 }

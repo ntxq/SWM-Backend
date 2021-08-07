@@ -10,21 +10,15 @@ service OCR {
 }
 
 service Segmentation {
-  rpc Start (RequestStart) returns (ReplyRequestStart) {}
+  rpc StartWholeImage (RequestStart) returns (ReplyRequestStart) {}
+  rpc StartCut (RequestStart) returns (ReplyRequestStart) {}
+  rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
   rpc ImageTransfer (SendImage) returns (ReceiveImage) {}
   rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
-  rpc UpdateProgress (SendUpdateProgress) returns (ReplySendUpdateProgress) {}
-  rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
 }
-
-message SendUpdateProgress{
-  int64 req_id = 1;
-  string status = 2;
-}
-message ReplySendUpdateProgress{}
 
 message SendImage{
-  int64 req_id = 1;
+  int32 req_id = 1;
   string type = 2;
   int32 index = 3;
   bytes image = 4;
@@ -39,8 +33,9 @@ message ReceiveImage{
 }
 
 message SendJson{
-  int64 req_id = 1;
-  string type = 2;
+  int32 req_id = 1;
+  int32 index = 2;
+  string type = 3;
   string data = 4;
   string filename = 5;
 }
@@ -50,18 +45,19 @@ message ReceiveJson{
 }
 
 message RequestMaskUpdate{
-  int64 req_id = 1;
+  int32 req_id = 1;
   repeated bytes mask_rles = 2;
-  bytes image = 3;
-  string cut_ranges = 4;
+  int32 index = 3;
+  bytes image = 4;
+  string cut_ranges = 5;
 }
 
 message ReplyMaskUpdate{
-  int64 req_id = 1;
+  int32 req_id = 1;
   int32 status_code = 2;
 }
 message SendSegmentResult{
-  int64 req_id = 1;
+  int32 req_id = 1;
   bytes mask = 2;
   bytes inpaint = 3;
   int32 width = 4;
@@ -69,16 +65,17 @@ message SendSegmentResult{
 
 }
 message ReplySendSegmentResult{
-  int64 req_id = 1;
+  int32 req_id = 1;
   int32 status_code = 2;
 }
 
 message RequestStart {
-  int64 req_id = 1;
-  bytes image = 2;
+  int32 req_id = 1;
+  int32 index = 2;
+  bytes image = 3;
 }
 
 message ReplyRequestStart {
-  int64 req_id = 1;
+  int32 req_id = 1;
   int32 status_code = 2;
 }

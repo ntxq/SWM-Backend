@@ -41,8 +41,7 @@ class GRPCSocket{
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor
     server.addService(Segmentation.service, {
       ImageTransfer: this.segmentation.ImageTransfer,
-      JsonTransfer: this.segmentation.JsonTransfer,
-      UpdateProgress: this.segmentation.UpdateProgress
+      JsonTransfer: this.segmentation.JsonTransfer
     });
 
     const OCR = this.proto.OCR as ServiceClientConstructor

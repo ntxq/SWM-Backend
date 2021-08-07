@@ -18,9 +18,12 @@ router.post('/source', multer_image.array('source'), async (req:Request,res:Resp
 
 	const project_id = await queryManager.add_project(user_id,req.body['title'])
 	const files = req.files as Express.Multer.File[];
-
-	queryManager.add_original_sources(project_id,files).then(([req_id_map,path_id_map] : [Map<string,number>,Map<number,string>])=>{
-		queryManager.set_original_file_paths(path_id_map).then(()=>{
+	queryManager.add_request(project_id,files).then(([req_id_map,path_id_map] : [Map<string,number>,Map<number,string>])=>{
+		const promise_all = Array<Promise<void>>()
+		for(const [req_id,path] of path_id_map){
+			promise_all.push(queryManager.update_cut(req_id,'cut',0,path))
+		}
+		Promise.all(promise_all).then(()=>{
 			res.send({req_ids:Object.fromEntries(req_id_map)})
 		})
 	})
@@ -40,7 +43,7 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 		const blank_file = files[i];
 
 		const old_path = blank_file.path
-		const new_path = `${IMAGE_DIR}/blank/${req_id}${path.extname(blank_file.originalname)}`
+		const new_path = `${IMAGE_DIR}/inpaint/${req_id}_0${path.extname(blank_file.originalname)}`
 		fs.promises.rename(old_path, new_path)
 		req_id_map.set(blank_file.originalname,req_id)
 		id_path_map.set(req_id,new_path)
@@ -52,26 +55,38 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 	})
 
 	//set inpaints on db
-	queryManager.set_blanks(id_path_map).then((status_code)=>{
-		if(status_code !== 200){
-			res.statusCode = status_code
-			next(createError(res.statusCode));
-			return;
-		}
+	const promise_all = new Array<Promise<void>>();
+	for(const [req_id,file_path] of id_path_map){
+		promise_all.push(queryManager.update_user_upload_inpaint(req_id,'inpaint',0,file_path))
+	}
+	Promise.all(promise_all).then(()=>{
 		res.send({req_ids:Object.fromEntries(req_id_map)})
 	})
 })
 
+router.get('/cut', async (req:Request,res:Response,next:NextFunction) => {
+	const req_id = parseInt(req.query['req_id'] as string)
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	const cut = await queryManager.get_path(req_id,"cut",cut_id)
+	if(!fs.existsSync(cut)){
+		next(createError(404))
+		return;
+	}
+	res.sendFile(cut)
+});
+
 router.get('/result', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	queryManager.check_progress(req_id,'inpaint').then((complete)=>{
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	queryManager.check_progress(req_id,'inpaint',cut_id).then((complete)=>{
 		res.send({complete:complete})
 	})
 });
 
 router.get('/result/inpaint', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const inpaint = await queryManager.get_path(req_id,"inpaint")
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	const inpaint = await queryManager.get_path(req_id,"inpaint",cut_id)
 	if(!fs.existsSync(inpaint)){
 		next(createError(404))
 		return;
@@ -81,7 +96,8 @@ router.get('/result/inpaint', async (req:Request,res:Response,next:NextFunction)
 
 router.get('/result/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	const mask = await queryManager.get_path(req_id,'mask')
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	const mask = await queryManager.get_path(req_id,'mask',cut_id)
 	if(!fs.existsSync(mask)){
 		next(createError(404))
 		return;
@@ -91,12 +107,13 @@ router.get('/result/mask', async (req:Request,res:Response,next:NextFunction) =>
 
 router.post('/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const req_id = parseInt(req.body['req_id'] as string)
+	const cut_id = parseInt(req.body['cut_id'] as string)
 	const mask = JSON.parse(req.body['mask'])['result']
 	if(mask == undefined){
 		next(createError(400))
 		return;
 	}
-	const mask_path = await queryManager.get_path(req_id,'mask')
+	const mask_path = await queryManager.get_path(req_id,'mask',cut_id)
 	fs.writeFile(mask_path,JSON.stringify(mask),(err)=>{
 		console.log(err)
 	})
@@ -105,7 +122,7 @@ router.post('/mask', async (req:Request,res:Response,next:NextFunction) => {
 	for(var i =0;i<mask.length;i++){
 		rle.push(mask[i]['value']['rle'])
 	}
-	grpcSocket.segmentation.UpdateMask(req_id,rle,()=>{
+	grpcSocket.segmentation.UpdateMask(req_id,cut_id,rle,()=>{
 		res.send({success:true})
 	})
 });

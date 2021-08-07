@@ -1,10 +1,8 @@
 import { mysqlConnection, mysql_connection, Procedure } from 'src/sql/sql_connection';
-import mysql, { Connection } from 'mysql';
 import { IMAGE_DIR } from 'src/modules/const';
 import fs from 'fs';
 import path from 'path';
 import { BBox } from 'src/routes/upload/ocr';
-import { resolve } from 'path/posix';
 import { TranslateBBox } from '../routes/upload/ocr';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
@@ -31,7 +29,7 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	add_original_sources(project_id:number,files:Express.Multer.File[]){
+	add_request(project_id:number,files:Express.Multer.File[]){
 		const req_id_map = new Map<string,number>();
 		const path_id_map = new Map<number,string>();
 		const procedures = Array<Procedure>();
@@ -43,7 +41,7 @@ export class mysqlConnectionManager{
 				callback:(rows:any,err:any)=>{
 					const req_id = rows['id']
 					const old_path = file.path
-					const new_path = `${IMAGE_DIR}/original/${req_id}${path.extname(file.originalname)}`
+					const new_path = `${IMAGE_DIR}/cut/${req_id}_0${path.extname(file.originalname)}`
 					fs.promises.rename(old_path, new_path)
 					req_id_map.set(file.originalname,req_id)
 					path_id_map.set(req_id,new_path)
@@ -58,52 +56,11 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	set_original_file_paths(path_id_map:Map<number,string>){
-		const procedures = Array<Procedure>();
-		for(const [req_id,path] of path_id_map){
-			const procedure:Procedure = {
-				query:'sp_update_cut',
-				parameters:[req_id,0,path,null,null,null],
-				callback:()=>{}
-			}
-			procedures.push(procedure)
-		}
-		return new Promise<void>((resolve, reject) => {
-			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-				resolve()
-			})
-		})
-	}
-
-	set_blanks(id_path_map:Map<number,string>){
-		const procedures = Array<Procedure>();
-		var status_code = 200
-		for(const [req_id,file_path] of id_path_map){
-			const procedure:Procedure = {
-				query:'sp_set_blank',
-				parameters:[req_id,file_path],
-				callback:(rows:any,err:any)=>{
-					if(err) status_code = 400;
-				}
-			}
-			procedures.push(procedure)
-		}
-		return new Promise<number>((resolve, reject) => {
-			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-				if(err){
-					resolve(400)
-					return;
-				}
-				resolve(status_code)
-			})
-		})
-	}
-
-	check_progress(req_id:number,status:string){
+	check_progress(req_id:number,status:string,index:number){
 		return new Promise<boolean>((resolve, reject) => {
 			const procedure:Procedure = {
-				query:'sp_check_progress',
-				parameters:[req_id,status],
+				query:'sp_check_progress_2',
+				parameters:[req_id,index,status],
 				callback:(rows:any,err:any)=>{
 					rows = rows[0]
 					if(err) {
@@ -118,11 +75,11 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	update_progress(req_id:number,status:string){
+	update_progress(req_id:number,index:number,status:string){
 		return new Promise<void>((resolve, reject) => {
 			const procedure:Procedure = {
-				query:'sp_update_progress',
-				parameters:[req_id,status],
+				query:'sp_update_progress_2',
+				parameters:[req_id,index,status],
 				callback:(rows:any,err:any)=>{
 					if(err) {
 						reject(err);
@@ -135,7 +92,11 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	update_cut(req_id:number, type:string,index:number,filepath:string){
+	update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string){
+		return this.update_cut(req_id,type,index,filepath,true)
+	}
+
+	update_cut(req_id:number, type:string,index:number,filepath:string,is_user_upload_inpaint=false){
 		//cut,mask,inpaint
 		const path:Array<string|null> = [null,null,null,null]
 		switch (type) {
@@ -155,8 +116,8 @@ export class mysqlConnectionManager{
 		return new Promise<void>((resolve, reject) => {
 
 			const procedure:Procedure = {
-				query:'sp_update_cut',
-				parameters:[req_id,index,...path],
+				query:'sp_update_cut_2',
+				parameters:[req_id,index,...path,is_user_upload_inpaint],
 				callback:(rows:any,err:any)=>{
 					if(err) {
 						reject(err);
@@ -243,7 +204,7 @@ export class mysqlConnectionManager{
 				case "mask":
 					procedure = {
 						query:'sp_get_paths',
-						parameters:[req_id,0],
+						parameters:[req_id,index],
 						callback:(rows:any,err:any)=>{ 
 							rows = rows[0]
 							resolve(rows['mask_path'])

@@ -38,7 +38,8 @@ router.get('/select', (req:Request,res:Response) => {
 
 router.get('/result', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	queryManager.check_progress(req_id,'bbox').then((complete)=>{
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	queryManager.check_progress(req_id,'bbox',cut_id).then((complete)=>{
 		res.send({complete:complete})
 	})
 });
