@@ -30,8 +30,7 @@ export class mysqlConnectionManager{
 	}
 
 	add_request(project_id:number,files:Express.Multer.File[]){
-		const req_id_map = new Map<string,number>();
-		const path_id_map = new Map<number,string>();
+		const path_id_map = new Map<number,[string,string]>();
 		const procedures = Array<Procedure>();
 		for(var i =0;i<files.length;i++){
 			const file = files[i]
@@ -43,15 +42,14 @@ export class mysqlConnectionManager{
 					const old_path = file.path
 					const new_path = `${IMAGE_DIR}/cut/${req_id}_0${path.extname(file.originalname)}`
 					fs.promises.rename(old_path, new_path)
-					req_id_map.set(file.originalname,req_id)
-					path_id_map.set(req_id,new_path)
+					path_id_map.set(req_id,[new_path,file.originalname])
 				}
 			}
 			procedures.push(procedure)
 		}
-		return new Promise<[Map<string,number>,Map<number,string>]>((resolve, reject) => {
+		return new Promise<Map<number,[string,string]>>((resolve, reject) => {
 			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-				resolve([req_id_map,path_id_map])
+				resolve(path_id_map)
 			})
 		})
 	}

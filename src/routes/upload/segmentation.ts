@@ -2,8 +2,8 @@ import express from 'express';
 import fs from 'fs';
 import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
 import path from 'path';
-import { mysql_connection, Procedure } from 'src/sql/sql_connection';
 import { grpcSocket } from 'src/gRPC/grpc_socket';
+import * as MESSAGE from 'src/gRPC/grpc_message_interface';
 
 import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { multer_image } from 'src/routes/multer_options';
@@ -18,14 +18,30 @@ router.post('/source', multer_image.array('source'), async (req:Request,res:Resp
 
 	const project_id = await queryManager.add_project(user_id,req.body['title'])
 	const files = req.files as Express.Multer.File[];
-	queryManager.add_request(project_id,files).then(([req_id_map,path_id_map] : [Map<string,number>,Map<number,string>])=>{
-		const promise_all = Array<Promise<void>>()
-		for(const [req_id,path] of path_id_map){
-			promise_all.push(queryManager.update_cut(req_id,'cut',0,path))
+	queryManager.add_request(project_id,files).then((path_id_map : Map<number,[string,string]>)=>{
+		const promise_all = Array<Promise<void|MESSAGE.ReplyRequestMakeCut>>()
+		
+		for(const [req_id,pathes] of path_id_map){
+			const [new_path, original_path] = pathes;
+			promise_all.push(queryManager.update_cut(req_id,'cut',0,new_path))
+			promise_all.push(
+				grpcSocket.segmentation.MakeCutsFromWholeImage(req_id,'cut',new_path)
+			);
 		}
-		Promise.all(promise_all).then(()=>{
-			res.send({req_ids:Object.fromEntries(req_id_map)})
-		})
+
+		Promise.all(promise_all).then((replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
+			const response_id_map = new Map<string,object>();
+			for(const reply of replies){
+				if(reply){
+					const pathes = path_id_map.get(reply.req_id)
+					if(pathes){
+						const [new_path, original_path] = pathes
+						response_id_map.set(original_path,{req_id:reply.req_id, cut_count:reply.cut_count})
+					}
+				}
+			}
+			res.send({req_ids:Object.fromEntries(response_id_map)})
+		});
 	})
 });
 
@@ -35,7 +51,6 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 	const map_ids:number[] = JSON.parse(req.body.map_ids);
 	const files = req.files as Express.Multer.File[];
 	const req_id_map = new Map<string,number>();
-
 	//set query and response data
 	const id_path_map = new Map<number,string>();
 	for(var i =0;i<map_ids.length;i++){
@@ -48,17 +63,16 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 		req_id_map.set(blank_file.originalname,req_id)
 		id_path_map.set(req_id,new_path)
 	}
-
 	//send start ai processing signal
 	blank_not_exist_ids.forEach(req_id=>{
 		grpcSocket.segmentation.Start(req_id)
 	})
-
 	//set inpaints on db
 	const promise_all = new Array<Promise<void>>();
 	for(const [req_id,file_path] of id_path_map){
 		promise_all.push(queryManager.update_user_upload_inpaint(req_id,'inpaint',0,file_path))
 	}
+	console.log(111213)
 	Promise.all(promise_all).then(()=>{
 		res.send({req_ids:Object.fromEntries(req_id_map)})
 	})

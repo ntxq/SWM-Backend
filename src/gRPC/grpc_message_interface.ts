@@ -25,6 +25,17 @@ export interface ReceiveJson{
 	success:boolean;
 }
 
+export interface RequestMakeCut{
+	req_id:number;
+	type:string;
+	image:Buffer;
+}
+
+export interface ReplyRequestMakeCut{
+	req_id:number;
+	cut_count:number;
+}
+
 export interface RequestStart{
 	req_id:number;
 	image:Buffer;

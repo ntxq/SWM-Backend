@@ -23,6 +23,23 @@ export class SegmentationInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
+  async MakeCutsFromWholeImage(req_id:number,type:string,path:string){
+    return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve, reject) => {
+      fs.readFile(path,(err, data)=>{
+        const request:MESSAGE.RequestMakeCut = {req_id:req_id,type:type, image:data}
+        const cb = function(err:Error | null, response:MESSAGE.ReplyRequestMakeCut) {
+          if(err){
+            console.error(err)
+            reject(err)
+          }
+          resolve(response)
+        }
+  
+        this.client.MakeCutsFromWholeImage(request, cb);
+      })
+    })
+  }
+
   async Start(req_id:number,index:number=0,callback?:Function | undefined){
     fs.readFile(await queryManager.get_path(req_id,"original",index), (err, data) => {
       if (err) {
@@ -151,9 +168,9 @@ export class OCRInterface{
       fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
       switch(request.type){
         case "bbox":
-          queryManager.set_bboxes(request.req_id,JSON.parse(request.data)).then(()=>{
-            queryManager.update_progress(request.req_id,'bbox')
-          })
+          // queryManager.set_bboxes(request.req_id,JSON.parse(request.data)).then(()=>{
+          //   queryManager.update_progress(request.req_id,'bbox')
+          // })
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }
