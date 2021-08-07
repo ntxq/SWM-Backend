@@ -1,6 +1,5 @@
-import { Response } from 'express';
 import mysql, { Connection } from 'mysql';
-import { dbConnection } from './secret'
+import { dbConnection } from 'src/sql/secret'
 
 export interface Procedure{
 	query:string;

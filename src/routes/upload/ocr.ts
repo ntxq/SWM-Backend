@@ -2,9 +2,8 @@ import express from 'express';
 
 import { Request, Response } from 'express-serve-static-core'
 import { grpcSocket } from 'src/gRPC/grpc_socket';
-import { JSON_DIR } from 'src/modules/const';
-import fs from 'fs';
-import { queryManager } from '../../sql/mysqlConnectionManager';
+import { queryManager } from 'src/sql/mysqlConnectionManager';
+import * as MESSAGE from 'src/gRPC/grpc_message_interface';
 
 var router = express.Router();
 

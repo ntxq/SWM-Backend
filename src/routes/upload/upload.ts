@@ -1,8 +1,8 @@
 import createError from "http-errors"
 import express from 'express';
 
-import ocrRouter from './ocr'
-import segmentationRouter from './segmentation'
+import ocrRouter from 'src/routes/upload/ocr'
+import segmentationRouter from 'src/routes/upload/segmentation'
 
 import { Request, Response, NextFunction } from 'express-serve-static-core'
 

@@ -6,7 +6,7 @@ import cors = require("cors");
 import logger = require("morgan");
 import { Request, Response, NextFunction } from "express-serve-static-core";
 
-var uploadRouter = require("./routes/upload/upload.ts");
+var uploadRouter = require("src/routes/upload/upload.ts");
 
 var app = express();
 

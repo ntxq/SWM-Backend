@@ -3,9 +3,9 @@ import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
 import { IMAGE_DIR } from 'src/modules/const';
-import * as MESSAGE from './grpc_message_interface';
-import { JSON_DIR } from '../modules/const';
-import { queryManager } from '../sql/mysqlConnectionManager';
+import * as MESSAGE from 'src/gRPC/grpc_message_interface';
+import { JSON_DIR } from 'src/modules/const';
+import { queryManager } from 'src/sql/mysqlConnectionManager';
 import Jimp = require('jimp');
 import path = require('path');
 

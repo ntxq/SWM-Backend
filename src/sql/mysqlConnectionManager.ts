@@ -3,7 +3,7 @@ import { IMAGE_DIR } from 'src/modules/const';
 import fs from 'fs';
 import path from 'path';
 import { BBox } from 'src/routes/upload/ocr';
-import { TranslateBBox } from '../routes/upload/ocr';
+import { TranslateBBox } from 'src/routes/upload/ocr';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
 	constructor(){

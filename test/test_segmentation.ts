@@ -1,10 +1,9 @@
 import supertest = require('supertest');
 import app from 'src/app'
 import { expect } from "chai"
-import fs from 'fs';
 import path from 'path';
-import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
-import { clearTestImage, clearTestJSON } from './utils';
+import { JSON_DIR } from 'src/modules/const';
+import { clearTestImage, clearTestJSON } from 'test/utils';
 
 describe('upload source', function() {
     it('valid file', function(done) {
