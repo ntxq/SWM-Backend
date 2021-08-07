@@ -142,13 +142,13 @@ export class OCRInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
-  async Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
+  async Start(req_id:number,index:number,callback?:Function | undefined){
+    fs.readFile(await queryManager.get_path(req_id,"cut",index), (err, data) => {
       if (err) {
         console.error(err)
         return
       }
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
+      const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}
       this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
           console.error(err)
@@ -168,9 +168,8 @@ export class OCRInterface{
       fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
       switch(request.type){
         case "bbox":
-          // queryManager.set_bboxes(request.req_id,JSON.parse(request.data)).then(()=>{
-          //   queryManager.update_progress(request.req_id,'bbox')
-          // })
+          queryManager.set_bboxes(request.req_id,request.index,JSON.parse(request.data)).then(()=>{
+          })
           break;
       }
       const response: MESSAGE.ReceiveJson = { success:true }

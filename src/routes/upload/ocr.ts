@@ -31,8 +31,14 @@ export interface TranslateBBox extends BBox{
 
 router.get('/select', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	grpcSocket.OCR.Start(req_id)
-	res.send({success:true})
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	grpcSocket.OCR.Start(req_id,cut_id,(err:Error | null, response:MESSAGE.ReplyRequestStart)=>{
+		if(err){
+			res.send({success:false})
+			return;
+		}
+		res.send({success:true})
+	})
 });
 
 router.get('/result', (req:Request,res:Response) => {
@@ -45,15 +51,17 @@ router.get('/result', (req:Request,res:Response) => {
 
 router.get('/result/bbox', (req:Request,res:Response) => {
 	const req_id = parseInt(req.query['req_id'] as string)
-	queryManager.get_bboxes(req_id).then((bboxList:BBox[])=>{
+	const cut_id = parseInt(req.query['cut_id'] as string)
+	queryManager.get_bboxes(req_id,cut_id).then((bboxList:BBox[])=>{
 		res.send({bboxList:bboxList})
 	})
 });
 
 router.post('/edit', (req:Request,res:Response) => {
 	const req_id = parseInt(req.body['req_id'])
+	const cut_id = parseInt(req.query['cut_id'] as string)
 	const bboxList:TranslateBBox[] = JSON.parse(req.body['bboxList'])
-	queryManager.set_bboxes_with_translate(req_id,bboxList).then(()=>{
+	queryManager.set_bboxes_with_translate(req_id,cut_id,bboxList).then(()=>{
 		res.send({success:true})
 	})
 });

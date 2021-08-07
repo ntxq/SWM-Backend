@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { BBox } from 'src/routes/upload/ocr';
 import { TranslateBBox } from 'src/routes/upload/ocr';
+import { update_bbox } from 'src/modules/utils';
 export class mysqlConnectionManager{
 	connection:mysqlConnection;
 	constructor(){
@@ -214,34 +215,23 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	set_bboxes(req_id:number,bboxes:Array<BBox>){
-		const procedures = Array<Procedure>();
-		for(const bbox of bboxes) {
-			var procedure:Procedure = {
-				query:'sp_set_bbox',
-				parameters:[req_id,bbox.bbox_id,bbox.originalX,
-							bbox.originalY,bbox.originalWidth,
-							bbox.originalHeight,bbox.originalText],
-				callback:(rows:any,err:any)=>{ }
-			};
-			procedures.push(procedure)
-		}
+	set_bboxes(req_id:number,index:number,bboxes:Array<BBox>){
 		return new Promise<void>((resolve, reject) => {
-			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-				if(err){
-					return;
-				}
-				resolve()
-			})
+			var procedure:Procedure = {
+				query:'sp_set_bbox_2',
+				parameters:[req_id,index,bboxes],
+				callback:(rows:any,err:any)=>{ resolve() }
+			};
+			mysql_connection.callProcedure(procedure)
 		})
 	}
 
-	get_bboxes(req_id:number){
+	get_bboxes(req_id:number, cut_idx:number){
 		return new Promise<Array<BBox>>((resolve, reject) => {
 			const result:Array<BBox> = Array<BBox>();
 			var procedure:Procedure = {
-				query:'sp_get_bbox',
-				parameters:[req_id],
+				query:'sp_get_bbox_2',
+				parameters:[req_id,cut_idx],
 				callback:(rows:any,err:any)=>{ 
 					for(const row of rows) {
 						const bbox:BBox = {
@@ -261,26 +251,22 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	set_bboxes_with_translate(req_id:number,bboxList:TranslateBBox[]){
-		const procedures = Array<Procedure>();
-		for(const bbox of bboxList) {
-			var procedure:Procedure = {
-				query:'sp_set_bbox_with_translate',
-				parameters:[req_id,bbox.bbox_id,"English",
-							bbox.originalX,bbox.originalY,bbox.originalWidth,bbox.originalHeight,bbox.originalText,
-							bbox.translatedX,bbox.translatedY,bbox.translatedWidth,bbox.translatedHeight,bbox.translatedText,
-							bbox.fontColor,bbox.fontSize,bbox.fontFamily,bbox.fontWeight,bbox.fontStyle],
-				callback:(rows:any,err:any)=>{ }
-			};
-			procedures.push(procedure)
-		}
+	set_bboxes_with_translate(req_id:number,index:number,updated_bboxes:TranslateBBox[]){
+		this.get_bboxes(req_id,index).then((bboxes)=>{
+			updated_bboxes = update_bbox(bboxes,updated_bboxes)
+		})
 		return new Promise<void>((resolve, reject) => {
-			mysql_connection.callMultipleProcedure(procedures,(err:any,result:any)=>{
-				if(err){
-					return;
+			var procedure:Procedure = {
+				query:'sp_set_bbox_2',
+				parameters:[req_id,index,updated_bboxes],
+				callback:(rows:any,err:any)=>{ 
+					if(err){
+						return;
+					}
+					resolve()
 				}
-				resolve()
-			})
+			};
+			mysql_connection.callProcedure(procedure)
 		})
 	}
 }
