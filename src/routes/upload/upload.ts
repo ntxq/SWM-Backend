@@ -20,14 +20,13 @@ router.use(function(req, res, next) {
 router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
   // set locals, only providing error in development
   if(res.statusCode === 415){
-    res.status(415).send('error');
-    return;
+    return res.status(res.statusCode).send('error');
   }
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  res.status(err.status || 500);
+  res.status(err.statusCode || err.status || 500);
   res.send('error');
 });
 

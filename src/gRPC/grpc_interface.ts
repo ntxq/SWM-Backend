@@ -2,10 +2,11 @@ import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
-import { IMAGE_DIR } from 'src/modules/const';
+import { IMAGE_DIR, TEMP_ERROR_CODE } from 'src/modules/const';
 import * as MESSAGE from 'src/gRPC/grpc_message_interface';
 import { JSON_DIR } from 'src/modules/const';
 import { queryManager } from 'src/sql/mysqlConnectionManager';
+import createError from 'http-errors';
 import Jimp = require('jimp');
 import path = require('path');
 
@@ -142,21 +143,21 @@ export class OCRInterface{
       {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
   }
 
-  async Start(req_id:number,index:number,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"cut",index), (err, data) => {
-      if (err) {
-        console.error(err)
-        return
+  async Start(req_id:number,index:number){
+    const file_path = await queryManager.get_path(req_id,"cut",index)
+    return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
+      if(!file_path){
+        return reject(createError(TEMP_ERROR_CODE,"file not exist"));
       }
+      const data = fs.readFileSync(file_path);
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}
       this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
         if(err){
-          console.error(err)
-          return callback && callback(err,null)
+          return reject(createError(TEMP_ERROR_CODE,err.message))
         }
         console.log('Greeting_OCR:', response.status_code);
-        return callback && callback(null,response)
-      });
+        return resolve(response)
+      })
     })
   }
 
