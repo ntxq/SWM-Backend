@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { multer_image } from 'src/routes/multer_options';
 import createError from 'http-errors';
 import { queryManager } from 'src/sql/mysqlConnectionManager';
+import { TEMP_ERROR_CODE } from '../../modules/const';
 
 var router = express.Router();
 
@@ -78,7 +79,7 @@ router.get('/cut', async (req:Request,res:Response,next:NextFunction) => {
 	const cut_id = parseInt(req.query['cut_id'] as string)
 	const cut = await queryManager.get_path(req_id,"cut",cut_id)
 	if(!fs.existsSync(cut)){
-		next(createError(404))
+		next(createError(TEMP_ERROR_CODE))
 		return;
 	}
 	res.sendFile(cut)
