@@ -219,8 +219,10 @@ export class mysqlConnectionManager{
 		return new Promise<void>((resolve, reject) => {
 			var procedure:Procedure = {
 				query:'sp_set_bbox_2',
-				parameters:[req_id,index,bboxes],
-				callback:(rows:any,err:any)=>{ resolve() }
+				parameters:[req_id,index,JSON.stringify(bboxes)],
+				callback:(rows:any,err:any)=>{ 
+					resolve() 
+				}
 			};
 			mysql_connection.callProcedure(procedure)
 		})
@@ -233,6 +235,7 @@ export class mysqlConnectionManager{
 				query:'sp_get_bbox_2',
 				parameters:[req_id,cut_idx],
 				callback:(rows:any,err:any)=>{ 
+					rows = JSON.parse(rows[0]["bboxes"])
 					for(const row of rows) {
 						const bbox:BBox = {
 							bbox_id:row["bbox_id"],
@@ -258,7 +261,7 @@ export class mysqlConnectionManager{
 		return new Promise<void>((resolve, reject) => {
 			var procedure:Procedure = {
 				query:'sp_set_bbox_2',
-				parameters:[req_id,index,updated_bboxes],
+				parameters:[req_id,index,JSON.stringify(updated_bboxes)],
 				callback:(rows:any,err:any)=>{ 
 					if(err){
 						return;
