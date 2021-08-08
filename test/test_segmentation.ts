@@ -148,9 +148,9 @@ describe('get result', function() {
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
                 expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
-                expect(res.body.req_ids["test_img.png"]).to.be.a('number')
-                const _req_ids = res.body.req_ids
-                req_id = _req_ids["test_img.png"]
+                const response_object = res.body.req_ids["test_img.png"]
+                expect(response_object['req_id']).to.be.a('number')
+                req_id = response_object['req_id']
 
                 supertest(app).post('/upload/segmentation/blank')
                 .field('map_ids',`[]`)
@@ -167,7 +167,7 @@ describe('get result', function() {
 
     it('get result sucess', function(done) {
         supertest(app).get('/upload/segmentation/result')
-            .query({req_id:req_id})
+            .query({req_id:req_id,cut_id:1})
             .expect(200)
             .end(function(err:Error, res:supertest.Response) {
                 if (err) return done(err);
@@ -180,7 +180,7 @@ describe('get result', function() {
         before('wait sucess', async function() {
             this.timeout(1000 * 60 * 5); 
             while(true){
-                const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
+                const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id,cut_id:1}).expect(200)
                 expect(res.body.complete).to.be.a("boolean")
                 if(res.body.complete == true){
                     break;
@@ -190,7 +190,7 @@ describe('get result', function() {
         });
         it('get reulst inpaint', function(done) {
             supertest(app).get('/upload/segmentation/result/inpaint')
-            .query({req_id:req_id})
+            .query({req_id:req_id,cut_id:1})
                 .expect(200)
                 .end(function(err:Error, res:supertest.Response) {
                     if (err) return done(err);
@@ -200,7 +200,7 @@ describe('get result', function() {
         });
         it('get reulst mask', function(done) {
             supertest(app).get('/upload/segmentation/result/mask')
-                .query({req_id:req_id})
+                .query({req_id:req_id,cut_id:1})
                 .expect(200)
                 .end(function(err:Error, res:supertest.Response) {
                     if (err) return done(err);
@@ -219,6 +219,7 @@ describe('get result', function() {
 
 
 describe('update mask', function(){
+    this.timeout(10000); 
     var req_id:number = NaN
     before(async function() {
         this.timeout(1000 * 60 * 5); 
@@ -240,7 +241,7 @@ describe('update mask', function(){
             expect(res.body.req_ids).to.be.empty
         }
         while(true){
-            const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
+            const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id,cut_id:1}).expect(200)
             expect(res.body.complete).to.be.a("boolean")
             if(res.body.complete == true){
                 break;
@@ -249,17 +250,17 @@ describe('update mask', function(){
         }
     }); 
     it('update mask', async function() {
-        const rle = require(path.join(JSON_DIR,'mask',`${req_id}.json`))
+        const rle = require(path.join(JSON_DIR,'mask',`${req_id}_1.json`))
         const mask = {"result":[{"value":{"rle":rle}}]}
 
         var res = await supertest(app).post('/upload/segmentation/mask')
-            .send({req_id:req_id, mask:JSON.stringify(mask)})
+            .send({req_id:req_id, cut_id:1, mask:JSON.stringify(mask)})
             .expect(200)
         expect(res.body.success).to.equal(true)
         
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
+        res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id,cut_id:1}).expect(200)
         expect(res.body.complete).to.equal(false)
     });
 

@@ -23,16 +23,16 @@ describe('GRPC connection', function() {
             });
     }); 
     it('Segmentation start', function(done) {
-        grpcSocket.segmentation.Start(req_id,(err:Error,res:ReplyRequestStart)=>{
+        grpcSocket.segmentation.Start(req_id,0,(err:Error,res:ReplyRequestStart)=>{
             expect(res.status_code).to.equal(200)
-            expect(res.req_id).to.equal(`${req_id}`)
+            expect(res.req_id).to.equal(req_id)
             done()
         })
     });
     describe('Edit segmentation', function() {
         before(async function() {
             while(true){
-                const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id}).expect(200)
+                const res = await supertest(app).get('/upload/segmentation/result').query({req_id:req_id,cut_id:1}).expect(200)
                 expect(res.body.complete).to.be.a("boolean")
                 if(res.body.complete == true){
                     break;
@@ -42,10 +42,10 @@ describe('GRPC connection', function() {
         }); 
         it('Update mask', function(done) {
             var masks = new Array<Array<number>>();
-            const rle = require(`${JSON_DIR}/mask/${req_id}.json`)
+            const rle = require(`${JSON_DIR}/mask/${req_id}_1.json`)
             masks.push(rle)
 
-            grpcSocket.segmentation.UpdateMask(req_id,masks,(err:Error,res:ReplyRequestStart)=>{
+            grpcSocket.segmentation.UpdateMask(req_id,1,masks,(err:Error,res:ReplyRequestStart)=>{
                 done()
             })
         });
