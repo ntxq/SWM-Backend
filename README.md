@@ -4,9 +4,9 @@
 
 ## Server Architecture Diagram
 - 현재 아키텍쳐
-![server_architecture_current](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/3/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
+![server_architecture_current](https://git.swmgit.org/swm-12/12_swm38/backend/uploads/06513af13a44d5de52d5988037558359/SWM_Diagram-Current.png)
 - 최종 릴리즈 구상 아키텍쳐
-![server_architecture_goal](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/5/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
+![server_architecture_goal](https://git.swmgit.org/swm-12/12_swm38/backend/uploads/f2e49e2700da60ef792b26e82741e9f0/SWM_Diagram-Goal.png)
 
 ## DB Structure
 ![DB_structure](https://git.swmgit.org/swm-12/12_swm38/backend/-/design_management/designs/4/ac9d1a7fc4b98776acf79a9a0578ce39d540da01/raw_image)
