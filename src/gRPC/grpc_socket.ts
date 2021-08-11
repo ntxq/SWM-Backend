@@ -47,7 +47,8 @@ class GRPCSocket{
 
     const OCR = this.proto.OCR as ServiceClientConstructor
     server.addService(OCR.service, {
-      JsonTransfer: this.OCR.JsonTransfer
+      JsonTransfer: this.OCR.JsonTransfer,
+      UpdateProgress: this.OCR.UpdateProgress
     });
 
     server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
