@@ -164,6 +164,9 @@ router.post(
       next(createError(400));
       return;
     }
+
+    await queryManager.update_progress(req_id, cut_id, "mask");
+
     const mask_path = await queryManager.get_path(req_id, "mask", cut_id);
     fs.writeFile(mask_path, JSON.stringify(mask), (err) => {
       console.log(err);
