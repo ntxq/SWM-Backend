@@ -23,10 +23,12 @@ describe('GRPC connection', function () {
 			});
 	});
 	it('Segmentation start', function (done) {
-		grpcSocket.segmentation.Start(req_id, 0, (err: Error, res: ReplyRequestStart) => {
+		grpcSocket.segmentation.Start(req_id, 0).then(res=>{
 			expect(res.status_code).to.equal(200)
 			expect(res.req_id).to.equal(req_id)
 			done()
+		}).catch((err)=>{
+			done(err)
 		})
 	});
 	describe('Edit segmentation', function () {
@@ -45,8 +47,10 @@ describe('GRPC connection', function () {
 			const rle = require(`${JSON_DIR}/mask/${req_id}_1.json`)
 			masks.push(rle)
 
-			grpcSocket.segmentation.UpdateMask(req_id, 1, masks, (err: Error, res: ReplyRequestStart) => {
+			grpcSocket.segmentation.UpdateMask(req_id, 1, masks).then(()=>{
 				done()
+			}).catch((err)=>{
+				done(err)
 			})
 		});
 	})
