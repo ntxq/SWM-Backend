@@ -1,10 +1,12 @@
+import createError from "http-errors"
 import mysql, { Connection } from 'mysql';
 import { dbConnection } from 'src/sql/secret'
 
 export interface Procedure{
 	query:string;
 	parameters:Array<any>;
-	callback:Function;
+	callback?:Function;
+	select_unique:boolean;
 }
 
 class mysqlConnection{
@@ -36,47 +38,32 @@ class mysqlConnection{
 	}
 	 
 	callProcedure(procedure:Procedure){
-		const question_marks_arr = Array(procedure.parameters.length).fill('?');
-		const question_marks = question_marks_arr.join(',')
-		const sql = `CALL ${procedure.query}(${question_marks});`
-		this.connection.query(sql,procedure.parameters,function(err, rows, fields){
-			if(err){
-				console.error(err.message)
-				procedure.callback(rows,err)
-				return
-			}
-
-			try{
-				procedure.callback(rows[0],null)
-			}
-			catch(error){
-				procedure.callback(rows,err)
-				return
-			}
-		})
+		return this.callMultipleProcedure([procedure])
+		.then(rows=>{return rows[0];})
 	}
 
-	callMultipleProcedure(procedures:Array<Procedure>,callback:Function){
-		this.connection.getConnection((err,conn)=>{
-			if(err){
-				console.error(err);
-				throw err;
-			}
-			conn.beginTransaction(async ()=>{
-				try{
-					for(var i = 0;i<procedures.length;i++){
-						const procedure = procedures[i];
-						await this.execAsyncQuery(conn,procedure)
-					}
-					conn.commit();
-					conn.release();
-					callback(null,null)
-				} catch(error){
-					console.error(error);
-					conn.rollback();
-					conn.release();
-					callback(error,null)
+	callMultipleProcedure(procedures:Array<Procedure>){
+		return new Promise<Array<any>>((resolve,reject)=>{
+			this.connection.getConnection((err,conn)=>{
+				if(err){
+					console.error(err);
+					reject(new createError.InternalServerError)
+					return;
 				}
+				conn.beginTransaction(async ()=>{
+					Promise.all(
+						Array.from(procedures, procedure => this.execAsyncQuery(conn,procedure))
+					).then((rows)=>{
+						conn.commit();
+						conn.release();
+						resolve(rows)
+					}).catch((err)=>{
+						conn.commit();
+						conn.release();
+						console.error(err);
+						reject(new createError.InternalServerError)
+					})
+				})
 			})
 		})
 	}
@@ -89,18 +76,21 @@ class mysqlConnection{
 			conn.query(sql,procedure.parameters,function(err, rows, fields){
 				if(err){
 					console.error(err.message)
-					procedure.callback(rows,err)
 					rejects(err)
 				}
+				//Array라는 건 마지막이 OkPacket이라는 뜻
 				if(Array.isArray(rows)){
-					const result = JSON.parse(JSON.stringify(rows[0][0]));
-					if(result.error_msg){
-						procedure.callback(null,result.error_msg)
-						rejects(result.error_msg)
-					}
-					procedure.callback(result,null)
+					rows.pop()
 				}
-				else{
+				//단순 update문으로 OkPacket만 오는 경우는 parsing하지않는다
+				if(procedure.select_unique && Array.isArray(rows)){
+					rows = JSON.parse(JSON.stringify(rows[0][0]));
+				}
+				// if(rows.error_msg){
+				// 	rejects(rows.error_msg)
+				// 	return;
+				// }
+				if(procedure.callback){
 					procedure.callback(rows,null)
 				}
 				resolve(rows)
