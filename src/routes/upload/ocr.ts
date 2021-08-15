@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { grpcSocket } from 'src/gRPC/grpc_socket';
 import { queryManager } from 'src/sql/mysqlConnectionManager';
 import * as MESSAGE from 'src/gRPC/grpc_message_interface';
-import createHttpError from 'http-errors';
+import createError from "http-errors"
 
 var router = express.Router();
 
@@ -37,7 +37,7 @@ router.get('/select', (req:Request,res:Response, next:NextFunction) => {
 	.then((response)=>{
 		res.send({success:true})
 	})
-	.catch((err:createHttpError.HttpError)=>{
+	.catch((err:createError.HttpError)=>{
 		next(err);
 	})
 });

@@ -11,7 +11,7 @@ export class mysqlConnectionManager{
 		this.connection = mysql_connection
 	}
 
-	add_project(user_id:number,title:string){
+	add_project(user_id:number,title:string): Promise<number>{
 		const procedure:Procedure = {
 			query:'sp_add_project',
 			parameters:[user_id,title],
@@ -23,7 +23,7 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	add_request(project_id:number,files:Express.Multer.File[]){
+	add_request(project_id:number,files:Express.Multer.File[]): Promise<Map<number,[string,string]>>{
 		const path_id_map = new Map<number,[string,string]>();
 		const procedures = Array<Procedure>();
 		for(var i =0;i<files.length;i++){
@@ -47,7 +47,7 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	check_progress(req_id:number,status:string,index:number){
+	check_progress(req_id:number,status:string,index:number):Promise<boolean>{
 		const procedure:Procedure = {
 			query:'sp_check_progress_2',
 			parameters:[req_id,index,status],
@@ -59,7 +59,7 @@ export class mysqlConnectionManager{
 			})
 	}
 
-	update_progress(req_id:number,index:number,status:string){
+	update_progress(req_id:number,index:number,status:string):Promise<unknown>{
 		const procedure:Procedure = {
 			query:'sp_update_progress_2',
 			parameters:[req_id,index,status],
@@ -68,11 +68,11 @@ export class mysqlConnectionManager{
 		return mysql_connection.callProcedure(procedure)
 	}
 
-	update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string){
+	update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string):Promise<void>{
 		return this.update_cut(req_id,type,index,filepath,true)
 	}
 
-	update_cut(req_id:number, type:string,index:number,filepath:string,is_user_upload_inpaint=false){
+	update_cut(req_id:number, type:string,index:number,filepath:string,is_user_upload_inpaint=false):Promise<void>{
 		//cut,mask,inpaint
 		const path:Array<string|null> = [null,null,null,null]
 		switch (type) {
@@ -98,7 +98,7 @@ export class mysqlConnectionManager{
 		return mysql_connection.callProcedure(procedure)
 	}
 
-	set_cut_ranges(req_id:number, json:JSON){
+	set_cut_ranges(req_id:number, json:JSON):Promise<Array<unknown>>{
 		const procedures = Array<Procedure>();
 		for(const [index,range] of  Object.entries(json)){
 			const procedure:Procedure = {
@@ -111,7 +111,7 @@ export class mysqlConnectionManager{
 		return mysql_connection.callMultipleProcedure(procedures)
 	}
 
-	get_cut_range(req_id:number){
+	get_cut_range(req_id:number):Promise<Map<string,Array<number>>>{
 		const ranges:Map<string,Array<number>> = new Map<string,Array<number>>();
 		var procedure:Procedure = {
 			query:'sp_get_cut_range',
@@ -127,7 +127,7 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	get_path(req_id:number,type:string,index:number = 0){
+	get_path(req_id:number,type:string,index:number = 0):Promise<string>{
 		var procedure:Procedure = {
 			query:'sp_get_paths',
 			parameters:[req_id,index],
@@ -148,7 +148,7 @@ export class mysqlConnectionManager{
 			})
 	}
 
-	set_bboxes(req_id:number,index:number,bboxes:Array<BBox>){
+	set_bboxes(req_id:number,index:number,bboxes:Array<BBox>):Promise<unknown>{
 		var procedure:Procedure = {
 			query:'sp_set_bbox_2',
 			parameters:[req_id,index,JSON.stringify(bboxes)],
@@ -157,7 +157,7 @@ export class mysqlConnectionManager{
 		return mysql_connection.callProcedure(procedure)
 	}
 
-	get_bboxes(req_id:number, cut_idx:number){
+	get_bboxes(req_id:number, cut_idx:number):Promise<Array<BBox>>{
 		const result:Array<BBox> = Array<BBox>();
 		var procedure:Procedure = {
 			query:'sp_get_bbox_2',
@@ -181,7 +181,7 @@ export class mysqlConnectionManager{
 		})
 	}
 
-	set_bboxes_with_translate(req_id:number,index:number,updated_bboxes:TranslateBBox[]){
+	set_bboxes_with_translate(req_id:number,index:number,updated_bboxes:TranslateBBox[]):Promise<unknown>{
 		this.get_bboxes(req_id,index).then((bboxes)=>{
 			updated_bboxes = update_bbox(bboxes,updated_bboxes)
 		})

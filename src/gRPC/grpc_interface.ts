@@ -2,13 +2,14 @@ import { GrpcObject } from '@grpc/grpc-js';
 import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
 import fs from 'fs';
 import grpc = require('@grpc/grpc-js');
-import { IMAGE_DIR, TEMP_ERROR_CODE } from 'src/modules/const';
+import { IMAGE_DIR } from 'src/modules/const';
 import * as MESSAGE from 'src/gRPC/grpc_message_interface';
 import { JSON_DIR } from 'src/modules/const';
 import { queryManager } from 'src/sql/mysqlConnectionManager';
 import createError from 'http-errors';
 import Jimp = require('jimp');
 import path = require('path');
+import { handleGrpcError } from 'src/modules/utils';
 
 export class SegmentationInterface{
   client_url:string
@@ -30,8 +31,8 @@ export class SegmentationInterface{
         const request:MESSAGE.RequestMakeCut = {req_id:req_id,type:type, image:data}
         const cb = function(err:Error | null, response:MESSAGE.ReplyRequestMakeCut) {
           if(err){
-            console.error(err)
-            reject(err)
+            reject(handleGrpcError(err))
+						return;
           }
           resolve(response)
         }
@@ -41,67 +42,63 @@ export class SegmentationInterface{
     })
   }
 
-  async Start(req_id:number,index:number=0,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"cut",index), (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
+  async Start(req_id:number,index:number=0){
+		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
+			const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
-        if(err){
-          console.error(err)
-          return callback && callback(err,null)
-        }
+				if(err){
+					reject(handleGrpcError(err))
+					return;
+				}
         console.log('Greeting:', response.status_code);
-        return callback && callback(null,response)
+				resolve(response)
       }
-
       if(index == 0){
         this.client.StartWholeImage(request, cb);
       }
       else{
         this.client.StartCut(request, cb);
       }
-      
     })
   }
 
   ImageTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>
-    ) {
-      const request:MESSAGE.SendImage = call.request 
+		callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>) {
+		const request:MESSAGE.SendImage = call.request 
 
-      var image = new Jimp(request.width, request.height);
-      image.rgba(request.is_rgba);
-      image.bitmap.data = request.image;
-      const filepath = path.join(IMAGE_DIR,request.filename)
-      image.write(filepath,(err,value)=>{
-        queryManager.update_cut(request.req_id, request.type,request.index,filepath)
-        const response: MESSAGE.ReceiveImage = { success:true }
-        callback(null,response);
-      })
+		var image = new Jimp(request.width, request.height);
+		image.rgba(request.is_rgba);
+		image.bitmap.data = request.image;
+		const filepath = path.join(IMAGE_DIR,request.filename)
+		image.writeAsync(filepath).then((value)=>{
+			queryManager.update_cut(request.req_id, request.type,request.index,filepath)
+			
+		})
+		const response: MESSAGE.ReceiveImage = { success:true }
+		callback(null,response);
+		return response
   }
 
   JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
-    ) {
-      const request:MESSAGE.SendJson = call.request 
-      const filepath = path.join(JSON_DIR,request.filename)
-      fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
-      switch(request.type){
-        case "cut":
-          queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
-          break;
-        case "mask":
-          queryManager.update_cut(request.req_id, request.type,request.index,filepath)
-          break;
-      }
-      const response: MESSAGE.ReceiveJson = { success:true }
-      callback(null,response);
+		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
+		const request:MESSAGE.SendJson = call.request 
+		const filepath = path.join(JSON_DIR,request.filename)
+		fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
+		switch(request.type){
+			case "cut":
+				queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
+				break;
+			case "mask":
+				queryManager.update_cut(request.req_id, request.type,request.index,filepath)
+				break;
+		}
+		const response: MESSAGE.ReceiveJson = { success:true }
+		callback(null,response);
+		return response
   }
 
-  async UpdateMask(req_id:number,index:number,data:Array<Array<number>>,callback?:Function | undefined){
+  async UpdateMask(req_id:number,index:number,data:Array<Array<number>>){
     const masks:Array<Buffer> = []
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))
@@ -115,17 +112,17 @@ export class SegmentationInterface{
       image:fs.readFileSync(await queryManager.get_path(req_id,"cut")),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
-
-    queryManager.update_progress(req_id,index,'cut').then(()=>{
-      this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
-        if(err){
-          console.error(err)
-          return callback && callback(err,null)
-        }
-        console.log('Greeting:', response);
-        return callback && callback(null,response)
-      });
-    })
+		return new Promise(async (resolve,reject)=>{
+			await queryManager.update_progress(req_id,index,'cut')
+			this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
+				if(err){
+					reject(handleGrpcError(err))
+					return;
+				}
+				console.log('Greeting:', response);
+				resolve(response)
+			});
+		})
   }
 }
 
@@ -147,14 +144,15 @@ export class OCRInterface{
     const file_path = await queryManager.get_path(req_id,"cut",index)
     return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
       if(!file_path){
-        return reject(createError(TEMP_ERROR_CODE,"file not exist"));
+        return reject(createError.InternalServerError);
       }
       const data = fs.readFileSync(file_path);
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}
       this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
-        if(err){
-          return reject(createError(TEMP_ERROR_CODE,err.message))
-        }
+				if(err){
+					reject(handleGrpcError(err))
+					return;
+				}
         console.log('Greeting_OCR:', response.status_code);
         return resolve(response)
       })
@@ -162,18 +160,18 @@ export class OCRInterface{
   }
 
   JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
-    ) {
-      const request:MESSAGE.SendJson = call.request 
+		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
+		const request:MESSAGE.SendJson = call.request 
 
-      fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
-      switch(request.type){
-        case "bbox":
-          queryManager.set_bboxes(request.req_id,request.index,JSON.parse(request.data)).then(()=>{
-          })
-          break;
-      }
-      const response: MESSAGE.ReceiveJson = { success:true }
-      callback(null,response);
+		fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
+		switch(request.type){
+			case "bbox":
+				queryManager.set_bboxes(request.req_id,request.index,JSON.parse(request.data)).then(()=>{
+				})
+				break;
+		}
+		const response: MESSAGE.ReceiveJson = { success:true }
+		callback(null,response);
+		return response
   }
 }

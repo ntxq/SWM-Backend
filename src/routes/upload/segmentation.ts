@@ -9,17 +9,16 @@ import { Request, Response, NextFunction } from 'express-serve-static-core';
 import { multer_image } from 'src/routes/multer_options';
 import createError from 'http-errors';
 import { queryManager } from 'src/sql/mysqlConnectionManager';
-import { TEMP_ERROR_CODE } from '../../modules/const';
 
 var router = express.Router();
 
-router.post('/source', multer_image.array('source'), async (req:Request,res:Response) => {
+router.post('/source', multer_image.array('source'), async (req:Request,res:Response,next:NextFunction) => {
 	//todo 최준영 제대로 된 user id 로 변환
 	const user_id = 123123123
 
 	const project_id = await queryManager.add_project(user_id,req.body['title'])
 	const files = req.files as Express.Multer.File[];
-	queryManager.add_request(project_id,files).then((path_id_map : Map<number,[string,string]>)=>{
+	queryManager.add_request(project_id,files).then(async (path_id_map : Map<number,[string,string]>)=>{
 		const promise_all = Array<Promise<void|MESSAGE.ReplyRequestMakeCut>>()
 		
 		for(const [req_id,pathes] of path_id_map){
@@ -30,7 +29,7 @@ router.post('/source', multer_image.array('source'), async (req:Request,res:Resp
 			);
 		}
 
-		Promise.all(promise_all).then((replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
+		const response_id_map = await Promise.all(promise_all).then((replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
 			const response_id_map = new Map<string,object>();
 			for(const reply of replies){
 				if(reply){
@@ -41,8 +40,13 @@ router.post('/source', multer_image.array('source'), async (req:Request,res:Resp
 					}
 				}
 			}
-			res.send({req_ids:Object.fromEntries(response_id_map)})
+			return response_id_map
 		});
+		return response_id_map
+	}).then(response_id_map =>{
+		res.send({req_ids:Object.fromEntries(response_id_map)})
+	}).catch(error =>{
+		next(error)
 	})
 });
 
@@ -71,6 +75,8 @@ router.post('/blank', multer_image.array('blank'), (req:Request,res:Response,nex
 	}
 	Promise.all(promise_all).then(()=>{
 		res.send({success:true})
+	}).catch((err)=>{
+		next(err)
 	})
 })
 
@@ -79,17 +85,19 @@ router.get('/cut', async (req:Request,res:Response,next:NextFunction) => {
 	const cut_id = parseInt(req.query['cut_id'] as string)
 	const cut = await queryManager.get_path(req_id,"cut",cut_id)
 	if(!fs.existsSync(cut)){
-		next(createError(TEMP_ERROR_CODE))
+		next(createError.InternalServerError)
 		return;
 	}
 	res.sendFile(cut)
 });
 
-router.get('/result', (req:Request,res:Response) => {
+router.get('/result', (req:Request,res:Response, next:NextFunction) => {
 	const req_id = parseInt(req.query['req_id'] as string)
 	const cut_id = parseInt(req.query['cut_id'] as string)
 	queryManager.check_progress(req_id,'inpaint',cut_id).then((complete)=>{
 		res.send({complete:complete})
+	}).catch((err)=>{
+		next(err)
 	})
 });
 
@@ -98,7 +106,7 @@ router.get('/result/inpaint', async (req:Request,res:Response,next:NextFunction)
 	const cut_id = parseInt(req.query['cut_id'] as string)
 	const inpaint = await queryManager.get_path(req_id,"inpaint",cut_id)
 	if(!fs.existsSync(inpaint)){
-		next(createError(404))
+		next(createError.NotFound)
 		return;
 	}
 	res.sendFile(inpaint)
@@ -109,7 +117,7 @@ router.get('/result/mask', async (req:Request,res:Response,next:NextFunction) =>
 	const cut_id = parseInt(req.query['cut_id'] as string)
 	const mask = await queryManager.get_path(req_id,'mask',cut_id)
 	if(!fs.existsSync(mask)){
-		next(createError(404))
+		next(createError.NotFound)
 		return;
 	}
 	res.send({mask:require(mask)})
@@ -120,20 +128,25 @@ router.post('/mask', async (req:Request,res:Response,next:NextFunction) => {
 	const cut_id = parseInt(req.body['cut_id'] as string)
 	const mask = JSON.parse(req.body['mask'])['result']
 	if(mask == undefined){
-		next(createError(400))
+		next(createError.NotFound)
 		return;
 	}
 	const mask_path = await queryManager.get_path(req_id,'mask',cut_id)
-	fs.writeFile(mask_path,JSON.stringify(mask),(err)=>{
-		console.log(err)
-	})
+	try{
+		fs.writeFileSync(mask_path,JSON.stringify(mask))
+	}catch(error){
+		next(createError.InternalServerError)
+	}
 
 	const rle: Array<Array<number>> = []
 	for(var i =0;i<mask.length;i++){
 		rle.push(mask[i]['value']['rle'])
 	}
-	grpcSocket.segmentation.UpdateMask(req_id,cut_id,rle,()=>{
+	grpcSocket.segmentation.UpdateMask(req_id,cut_id,rle)
+	.then(()=>{
 		res.send({success:true})
+	}).catch((err)=>{
+		next(err)
 	})
 });
 

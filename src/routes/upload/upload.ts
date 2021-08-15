@@ -13,7 +13,7 @@ router.use('/segmentation', segmentationRouter);
 
 // catch 404 and forward to error handler
 router.use(function(req, res, next) {
-  next(createError(404));
+  next(createError.NotFound);
 });
 
 // error handler
