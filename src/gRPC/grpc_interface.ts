@@ -135,7 +135,7 @@ export class SegmentationInterface {
       req_id:req_id, 
       mask_rles:masks, 
       index:index,
-      image:fs.readFileSync(await queryManager.get_path(req_id,"cut")),
+      image:fs.readFileSync(await queryManager.get_path(req_id,"cut",index)),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
 		return new Promise(async (resolve,reject)=>{
