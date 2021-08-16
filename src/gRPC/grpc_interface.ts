@@ -60,8 +60,6 @@ export class SegmentationInterface {
 
   async Start(req_id:number,index:number=0){
 		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
-			const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
 					reject(handleGrpcError(err))
@@ -71,9 +69,21 @@ export class SegmentationInterface {
 				resolve(response)
       }
       if(index == 0){
-        this.client.StartWholeImage(request, cb);
+				const cut_count = (await queryManager.get_cut_range(req_id)).size
+				for(var i =1; i <= cut_count; i++){
+					var cut_path = await queryManager.get_path(req_id,"cut",i)
+					while(!cut_path || !fs.existsSync(cut_path)){
+						await new Promise(resolve => setTimeout(resolve, 1000));
+						cut_path = await queryManager.get_path(req_id,"cut",i)
+					}
+					const data = fs.readFileSync(cut_path)
+      		const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
+					this.client.StartCut(request, cb);
+				}
       }
       else{
+				const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
+      	const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
         this.client.StartCut(request, cb);
       }
     })
