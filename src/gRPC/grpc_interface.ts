@@ -5,9 +5,8 @@ import {
 } from "@grpc/grpc-js/build/src/make-client";
 import fs from "fs";
 import grpc = require("@grpc/grpc-js");
-import { IMAGE_DIR } from "src/modules/const";
+import { IMAGE_DIR, JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
-import { JSON_DIR } from "src/modules/const";
 import { queryManager } from "src/sql/mysqlConnectionManager";
 import createError from "http-errors";
 import Jimp = require("jimp");
