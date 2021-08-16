@@ -22,10 +22,8 @@ export class mysqlConnectionManager {
 			parameters:[user_id,title],
 			select_unique:true
 		}
-		return mysql_connection.callProcedure(procedure)
-		.then(row=>{
-				return row['id']
-		})
+		const row = await mysql_connection.callProcedure(procedure);
+		return row['id'];
 	}
 
 	async add_request(project_id:number,files:Express.Multer.File[]): Promise<Map<number,[string,string]>>{
@@ -47,32 +45,30 @@ export class mysqlConnectionManager {
 			}
 			procedures.push(procedure)
 		}
-		return mysql_connection.callMultipleProcedure(procedures).then(()=>{
-			return path_id_map
-		})
+		await mysql_connection.callMultipleProcedure(procedures);
+		return path_id_map;
 	}
 
 	check_progress(req_id:number,index:number):number{
 		return progressManager.getProgress(req_id,index);
 	}
 
-	update_progress(req_id:number,index:number,status:string):Promise<unknown>{
+	async update_progress(req_id:number,index:number,status:string):Promise<unknown>{
 		const procedure:Procedure = {
 			query:'sp_update_progress_2',
 			parameters:[req_id,index,status],
 			select_unique:true
 		}
-		return mysql_connection.callProcedure(procedure)
-			.then((rows)=>{
-				progressManager.updateProgress(req_id,index,status)
-			})
+		const rows = await mysql_connection.callProcedure(procedure);
+		progressManager.updateProgress(req_id, index, status);
+		return rows
 	}
 
-	update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string):Promise<void>{
+		update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string):Promise<void>{
 		return this.update_cut(req_id,type,index,filepath,true)
 	}
 
-	update_cut(req_id:number, type:string,index:number,filepath:string,is_user_upload_inpaint=false):Promise<void>{
+	async update_cut(req_id:number, type:string,index:number,filepath:string,is_user_upload_inpaint=false):Promise<void>{
 		//cut,mask,inpaint
 		const path:Array<string|null> = [null,null,null,null]
 		switch (type) {
@@ -95,10 +91,18 @@ export class mysqlConnectionManager {
 			parameters:[req_id,index,...path,is_user_upload_inpaint],
 			select_unique:true
 		}
-		return mysql_connection.callProcedure(procedure)
+		const rows = await mysql_connection.callProcedure(procedure);
+		progressManager.updateProgress(req_id, index, type);
+		if (index !== 0) {
+			progressManager.updatePart(req_id, 0, type);
+		}
+		else if(index === 0){
+			progressManager.restoreTotalPart(req_id, 0, type);
+		}
+		return rows;
 	}
 
-	set_cut_ranges(req_id:number, json:JSON):Promise<Array<unknown>>{
+	async set_cut_ranges(req_id:number, json:JSON):Promise<Array<unknown>>{
 		const procedures = Array<Procedure>();
 		for(const [index,range] of  Object.entries(json)){
 			const procedure:Procedure = {
@@ -108,7 +112,9 @@ export class mysqlConnectionManager {
 			}
 			procedures.push(procedure)
 		}
-		return mysql_connection.callMultipleProcedure(procedures)
+		const rows = await mysql_connection.callMultipleProcedure(procedures);
+		progressManager.updateTotalPart(req_id, 0, "cut", Object.entries(json).length);
+		return rows;
 	}
 
 	async get_cut_range(req_id:number):Promise<Map<string,Array<number>>>{
@@ -118,43 +124,45 @@ export class mysqlConnectionManager {
 			parameters:[req_id],
 			select_unique:false
 		};
-		return mysql_connection.callProcedure(procedure)
-		.then(rows=>{
-			for(const row of rows) {
-				ranges.set(`${row["cut_idx"]}`, [row["cut_start"],row["cut_end"]])
-			}
-			return ranges
-		})
+		const rows = await mysql_connection.callProcedure(procedure);
+		for (const row of rows) {
+			ranges.set(`${row["cut_idx"]}`, [row["cut_start"], row["cut_end"]]);
+		}
+		return ranges;
 	}
 
 	async get_path(req_id:number,type:string,index:number = 0):Promise<string>{
 		var procedure:Procedure = {
-			query:'sp_get_paths',
+			query:"sp_get_paths",
 			parameters:[req_id,index],
 			select_unique:true
 		};
-		return mysql_connection.callProcedure(procedure)
-			.then(row=>{
-				switch(type){
-					case "cut":
-								return row['cut_path']
-					case "inpaint":
-								return row['inpaint_path']
-					case "mask":
-								return row['mask_path']
-					case "mask_image":
-								return row['mask_image_path']
-				}	
-			})
+		const row = await mysql_connection.callProcedure(procedure);
+		switch (type) {
+			case "cut":
+				return row["cut_path"];
+			case "inpaint":
+				return row["inpaint_path"];
+			case "mask":
+				return row["mask_path"];
+			case "mask_image":
+				return row["mask_image_path"];
+		}
+		return ""
 	}
 
-	set_bboxes(req_id:number,index:number,bboxes:Array<BBox>):Promise<unknown>{
+	async set_bboxes(req_id:number,index:number,bboxes:Array<BBox>):Promise<unknown>{
 		var procedure:Procedure = {
 			query:'sp_set_bbox_2',
 			parameters:[req_id,index,JSON.stringify(bboxes)],
 			select_unique:true
 		};
-		return mysql_connection.callProcedure(procedure)
+		const rows = await mysql_connection.callProcedure(procedure);
+		progressManager.updateProgress(req_id, index, "bbox");
+		if (index !== 0) {
+			progressManager.updatePart(req_id, 0, "bbox");
+		}
+		return rows;
 	}
 
 	async get_bboxes(req_id:number, cut_idx:number):Promise<Array<BBox>>{
