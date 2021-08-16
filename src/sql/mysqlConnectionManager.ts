@@ -158,9 +158,10 @@ export class mysqlConnectionManager {
 			select_unique:true
 		};
 		const rows = await mysql_connection.callProcedure(procedure);
-		progressManager.updateProgress(req_id, index, "bbox");
+		//todo 최준영 detect-bbox-translate-complete 단계 구분 필요
+		progressManager.updateProgress(req_id, index, "complete");
 		if (index !== 0) {
-			progressManager.updatePart(req_id, 0, "bbox");
+			progressManager.updatePart(req_id, 0, "complete");
 		}
 		return rows;
 	}
