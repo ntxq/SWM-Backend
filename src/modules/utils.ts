@@ -1,5 +1,6 @@
 import path from "path";
 import { TranslateBBox, BBox } from 'src/routes/upload/ocr';
+import createError from "http-errors"
 
 export function isImageFile(file:Express.Multer.File):boolean{
 	// Allowed ext
@@ -18,4 +19,9 @@ export function isImageFile(file:Express.Multer.File):boolean{
 
 export function update_bbox(old_bbox:BBox[] | TranslateBBox[],new_bbox:BBox[] | TranslateBBox[]){
 	return new_bbox as TranslateBBox[];
+}
+
+export function handleGrpcError(err:Error){
+	console.log(err)
+	return new createError.ServiceUnavailable
 }
