@@ -9,6 +9,7 @@ import path from "path";
 import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
 import { update_bbox } from "src/modules/utils";
+import { progressManager } from "src/modules/progressManager";
 export class mysqlConnectionManager {
   connection: mysqlConnection;
   constructor() {
@@ -51,16 +52,8 @@ export class mysqlConnectionManager {
 		})
 	}
 
-	async check_progress(req_id:number,index:number):Promise<boolean>{
-		const procedure:Procedure = {
-			query:'sp_check_progress_3',
-			parameters:[req_id,index],
-			select_unique:true
-		}
-		return mysql_connection.callProcedure(procedure)
-			.then(row=>{
-				return Boolean(row['complete'])
-			})
+	check_progress(req_id:number,index:number):number{
+		return progressManager.getProgress(req_id,index);
 	}
 
 	update_progress(req_id:number,index:number,status:string):Promise<unknown>{
@@ -70,6 +63,9 @@ export class mysqlConnectionManager {
 			select_unique:true
 		}
 		return mysql_connection.callProcedure(procedure)
+			.then((rows)=>{
+				progressManager.updateProgress(req_id,index,status)
+			})
 	}
 
 	update_user_upload_inpaint(req_id:number, type:string,index:number,filepath:string):Promise<void>{

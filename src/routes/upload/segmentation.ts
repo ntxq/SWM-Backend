@@ -94,11 +94,8 @@ router.get("/cut", async (req:Request,res:Response,next:NextFunction) => {
 router.get("/result", (req:Request,res:Response, next:NextFunction) => {
 	const req_id = parseInt(req.query["req_id"] as string)
 	const cut_id = parseInt(req.query["cut_id"] as string)
-	queryManager.check_progress(req_id,cut_id).then((complete)=>{
-		res.send({complete})
-	}).catch((err)=>{
-		next(err)
-	})
+	const progress = queryManager.check_progress(req_id,cut_id)
+	res.send({progress: Math.min(progress,100)})
 });
 
 router.get("/result/inpaint", async (req:Request,res:Response,next:NextFunction) => {
