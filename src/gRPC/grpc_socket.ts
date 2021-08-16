@@ -61,4 +61,4 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("0.0.0.0:4000","172.17.0.1:4001","172.17.0.1:5001")
+export const grpcSocket = new GRPCSocket("0.0.0.0:4000","host.docker.internal:4001","host.docker.internal:5001")
