@@ -84,6 +84,10 @@ class mysqlConnection{
 				}
 				//단순 update문으로 OkPacket만 오는 경우는 parsing하지않는다
 				if(procedure.select_unique && Array.isArray(rows)){
+					if(rows[0][0] === undefined){
+						resolve(undefined)
+						return;
+					}
 					rows = JSON.parse(JSON.stringify(rows[0][0]));
 				}
 				// if(rows.error_msg){
