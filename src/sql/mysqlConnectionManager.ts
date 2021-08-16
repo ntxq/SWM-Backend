@@ -51,10 +51,10 @@ export class mysqlConnectionManager {
 		})
 	}
 
-	async check_progress(req_id:number,status:string,index:number):Promise<boolean>{
+	async check_progress(req_id:number,index:number):Promise<boolean>{
 		const procedure:Procedure = {
-			query:'sp_check_progress_2',
-			parameters:[req_id,index,status],
+			query:'sp_check_progress_3',
+			parameters:[req_id,index],
 			select_unique:true
 		}
 		return mysql_connection.callProcedure(procedure)
