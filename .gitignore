@@ -1,6 +1,6 @@
 data/**/*.png
 data/**/*.json
-
+**/settings.json
 *.pyc
 
 yarn.lock
