@@ -69,7 +69,7 @@ export class SegmentationInterface {
 				resolve(response)
       }
       if(index == 0){
-				const cut_count = (await queryManager.get_cut_range(req_id)).size
+				const cut_count = await queryManager.get_cut_count(req_id)
 				for(var i =1; i <= cut_count; i++){
 					var cut_path = await queryManager.get_path(req_id,"cut",i)
 					while(!cut_path || !fs.existsSync(cut_path)){

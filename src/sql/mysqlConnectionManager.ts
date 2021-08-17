@@ -60,6 +60,16 @@ export class mysqlConnectionManager {
 		await mysql_connection.callProcedure(procedure);
 	}
 
+	async get_cut_count(req_id:number):Promise<number>{
+		const procedure:Procedure = {
+			query:'sp_get_cut_count',
+			parameters:[req_id],
+			select_unique:true
+		}
+		const rows = await mysql_connection.callProcedure(procedure)
+		return rows["cut_count"]
+	}
+
 	check_progress(req_id:number,index:number):number{
 		return progressManager.getProgress(req_id,index);
 	}
