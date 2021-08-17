@@ -140,20 +140,23 @@ export class mysqlConnectionManager {
 			select_unique:true
 		};
 		const row = await mysql_connection.callProcedure(procedure);
-		if(row == undefined){
-			throw new createError.InternalServerError
-		}
-		switch (type) {
-			case "cut":
-				return row["cut_path"];
-			case "inpaint":
-				return row["inpaint_path"];
-			case "mask":
-				return row["mask_path"];
-			case "mask_image":
-				return row["mask_image_path"];
-		}
-		return ""
+
+    try {
+      switch (type) {
+        case "cut":
+          return row["cut_path"];
+        case "inpaint":
+          return row["inpaint_path"];
+        case "mask":
+          return row["mask_path"];
+        case "mask_image":
+          return row["mask_image_path"];
+        default:
+          return "";
+      }
+    } catch (e) {
+      return "";
+    }
 	}
 
 	async set_bboxes(req_id:number,index:number,bboxes:Array<BBox>):Promise<unknown>{
