@@ -37,9 +37,9 @@ class mysqlConnection{
 		return connection
 	}
 	 
-	callProcedure(procedure:Procedure){
-		return this.callMultipleProcedure([procedure])
-		.then(rows=>{return rows[0];})
+	async callProcedure(procedure:Procedure){
+		const rows = await this.callMultipleProcedure([procedure]);
+		return rows[0];
 	}
 
 	callMultipleProcedure(procedures:Array<Procedure>){
@@ -60,8 +60,12 @@ class mysqlConnection{
 					}).catch((err)=>{
 						conn.commit();
 						conn.release();
-						console.error(err);
-						reject(new createError.InternalServerError)
+						if(err instanceof createError.HttpError){
+							reject(err)
+						}
+						else{
+							reject(new createError.InternalServerError)
+						}
 					})
 				})
 			})
@@ -76,8 +80,15 @@ class mysqlConnection{
 			conn.query(sql,procedure.parameters,function(err, rows, fields){
 				if(err){
 					console.error(err.message)
-					rejects(err)
+					if(err.sqlState?.startsWith("SP")){
+						rejects(new createError[err.sqlState.slice(2)])
+					}
+					else{
+						rejects(new createError.InternalServerError)
+					}
+					return;
 				}
+
 				//Array라는 건 마지막이 OkPacket이라는 뜻
 				if(Array.isArray(rows)){
 					rows.pop()
@@ -90,10 +101,7 @@ class mysqlConnection{
 					}
 					rows = JSON.parse(JSON.stringify(rows[0][0]));
 				}
-				// if(rows.error_msg){
-				// 	rejects(rows.error_msg)
-				// 	return;
-				// }
+
 				if(procedure.callback){
 					procedure.callback(rows,null)
 				}

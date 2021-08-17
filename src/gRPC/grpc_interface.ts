@@ -57,7 +57,7 @@ export class SegmentationInterface {
     });
   }
 
-  async Start(req_id:number,index:number=0){
+  async Start(req_id:number,index:number=0):Promise<MESSAGE.ReplyRequestStart>{
 		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
@@ -171,7 +171,7 @@ export class OCRInterface {
     const file_path = await queryManager.get_path(req_id, "cut", index);
     return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
       if(!file_path){
-        return reject(createError.InternalServerError);
+        return reject(new createError.InternalServerError);
       }
       const data = fs.readFileSync(file_path);
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}

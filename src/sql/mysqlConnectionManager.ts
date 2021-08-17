@@ -10,6 +10,8 @@ import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
 import { update_bbox } from "src/modules/utils";
 import { progressManager } from "src/modules/progressManager";
+import createError from "http-errors"
+
 export class mysqlConnectionManager {
   connection: mysqlConnection;
   constructor() {
@@ -138,6 +140,9 @@ export class mysqlConnectionManager {
 			select_unique:true
 		};
 		const row = await mysql_connection.callProcedure(procedure);
+		if(row == undefined){
+			throw new createError.InternalServerError
+		}
 		switch (type) {
 			case "cut":
 				return row["cut_path"];
