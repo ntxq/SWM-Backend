@@ -59,6 +59,7 @@ export class SegmentationInterface {
 
   async Start(req_id:number,index:number=0):Promise<MESSAGE.ReplyRequestStart>{
 		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
+			try{
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
 					reject(handleGrpcError(err))
@@ -85,6 +86,11 @@ export class SegmentationInterface {
       	const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
         this.client.StartCut(request, cb);
       }
+			}
+			catch(err){
+				console.error(err)
+				reject(new createError.InternalServerError)
+			}
     })
   }
 

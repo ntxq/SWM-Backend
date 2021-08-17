@@ -81,7 +81,7 @@ class mysqlConnection{
 				if(err){
 					console.error(err.message)
 					if(err.sqlState?.startsWith("SP")){
-						rejects(new createError[err.sqlState.slice(2)])
+						rejects(createError(err.sqlState.slice(2)))
 					}
 					else{
 						rejects(new createError.InternalServerError)
