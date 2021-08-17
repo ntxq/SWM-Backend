@@ -33,19 +33,19 @@
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/reseult":{
+		"/upload/segmentation/result":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/reseult/mask":{
+		"/upload/segmentation/result/mask":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/reseult/inpaint":{
+		"/upload/segmentation/result/inpaint":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
