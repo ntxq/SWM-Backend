@@ -51,6 +51,15 @@ export class mysqlConnectionManager {
 		return path_id_map;
 	}
 
+	async set_cut_count(req_id:number,cut_count:number){
+		const procedure:Procedure = {
+			query:'sp_set_cut_count',
+			parameters:[req_id,cut_count],
+			select_unique:true
+		}
+		await mysql_connection.callProcedure(procedure);
+	}
+
 	check_progress(req_id:number,index:number):number{
 		return progressManager.getProgress(req_id,index);
 	}
@@ -132,7 +141,12 @@ export class mysqlConnectionManager {
 		}
 		return ranges;
 	}
-
+	/*
+		todo 최준영
+		req_id와 index가 유효하지 않은 경우 -> invalid request
+		req_id와 index가 유효하고 row가 없는 경우 -> early request
+		req_id와 index가 유효하고 row가 있는 경우 -> early request
+	*/
 	async get_path(req_id:number,type:string,index:number = 0):Promise<string>{
 		var procedure:Procedure = {
 			query:"sp_get_paths",

@@ -36,18 +36,23 @@ router.post("/source", multer_image.array("source"), asyncRouterWrap(async (req:
 		}
 
 		const response_id_map = await Promise.all(promise_all)
-			.then((replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
+			.then(async (replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
 				const response_id_map = new Map<string,object>();
-				for(const reply of replies){
-					if(reply){
-						const pathes = path_id_map.get(reply.req_id)
-						if(pathes){
-							const [new_path, original_path] = pathes
-							response_id_map.set(original_path,{req_id:reply.req_id, cut_count:reply.cut_count})
+				try{
+					for(const reply of replies){
+						if(reply){
+							const pathes = path_id_map.get(reply.req_id)
+							if(pathes){
+								const [new_path, original_path] = pathes
+								response_id_map.set(original_path,{req_id:reply.req_id, cut_count:reply.cut_count})
+								await queryManager.set_cut_count(reply.req_id,reply.cut_count)
+							}
 						}
 					}
+					return response_id_map
+				}catch(err){
+					throw(new createError.InternalServerError)
 				}
-				return response_id_map
 		});
 		return response_id_map
 	}).then(response_id_map =>{
