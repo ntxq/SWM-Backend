@@ -11,7 +11,7 @@ import { queryManager } from "src/sql/mysqlConnectionManager";
 import createError from "http-errors";
 import Jimp = require("jimp");
 import path = require("path");
-import { handleGrpcError } from "src/modules/utils";
+import { handleGrpcError, s3 } from "src/modules/utils";
 
 export class SegmentationInterface {
   client_url: string;
@@ -34,27 +34,26 @@ export class SegmentationInterface {
   }
 
   async MakeCutsFromWholeImage(req_id: number, type: string, path: string) {
-    return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve, reject) => {
-      fs.readFile(path, (err, data) => {
-        const request: MESSAGE.RequestMakeCut = {
-          req_id: req_id,
-          type: type,
-          image: data,
-        };
-        const cb = function (
-          err: Error | null,
-          response: MESSAGE.ReplyRequestMakeCut
-        ) {
-          if (err) {
-            reject(handleGrpcError(err))
-						return;
-          }
-          resolve(response);
-        };
-
-        this.client.MakeCutsFromWholeImage(request, cb);
-      });
-    });
+		// const data = await s3.download(path) as Buffer;
+		const data = fs.readFileSync(path)
+		const request: MESSAGE.RequestMakeCut = {
+			req_id: req_id,
+			type: type,
+			image: data,
+		};
+		return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve,reject)=>{
+			const cb = function (
+				err: Error | null,
+				response: MESSAGE.ReplyRequestMakeCut
+			) {
+				if (err) {
+					reject(handleGrpcError(err))
+				}
+				resolve(response)
+			};
+	
+			this.client.MakeCutsFromWholeImage(request, cb);
+		})
   }
 
   async Start(req_id:number,index:number=0):Promise<MESSAGE.ReplyRequestStart>{
@@ -68,17 +67,24 @@ export class SegmentationInterface {
         console.log('Greeting:', response.status_code);
 				resolve(response)
       }
+			//todo 최준영
       if(index == 0){
 				const cut_count = await queryManager.get_cut_count(req_id)
 				for(var i =1; i <= cut_count; i++){
-					var cut_path = await queryManager.get_path(req_id,"cut",i)
-					while(!cut_path || !fs.existsSync(cut_path)){
-						await new Promise(resolve => setTimeout(resolve, 1000));
-						cut_path = await queryManager.get_path(req_id,"cut",i)
+					try{
+						var cut_path = await queryManager.get_path(req_id,"cut",i)
+						const data = fs.readFileSync(cut_path)
+						const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
+						this.client.StartCut(request, cb);
 					}
-					const data = fs.readFileSync(cut_path)
-      		const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
-					this.client.StartCut(request, cb);
+					catch(err){
+						if(err instanceof createError.HttpError){
+							await new Promise(resolve => setTimeout(resolve, 1000));
+						}
+						else{
+							throw err;
+						}
+					}
 				}
       }
       else{
@@ -88,7 +94,6 @@ export class SegmentationInterface {
       }
 			}
 			catch(err){
-				console.error(err)
 				reject(new createError.InternalServerError)
 			}
     })
@@ -102,6 +107,7 @@ export class SegmentationInterface {
 		image.rgba(request.is_rgba);
 		image.bitmap.data = request.image;
 		const filepath = path.join(IMAGE_DIR,request.filename)
+		s3.upload(filepath,request.image)
 		image.writeAsync(filepath).then((value)=>{
 			queryManager.update_cut(request.req_id, request.type,request.index,filepath)
 			
@@ -116,6 +122,7 @@ export class SegmentationInterface {
 		const request:MESSAGE.SendJson = call.request 
 		const filepath = path.join(JSON_DIR,request.filename)
 		fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
+		s3.upload(filepath,Buffer.from(JSON.stringify(JSON.parse(request.data))))
 		switch(request.type){
 			case "cut":
 				queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
@@ -197,6 +204,9 @@ export class OCRInterface {
 		const request:MESSAGE.SendJson = call.request 
 
 		fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
+		s3.upload(path.join(JSON_DIR,request.filename),
+			Buffer.from(JSON.stringify(JSON.parse(request.data), null, 4)))
+
 		switch(request.type){
 			case "bbox":
 				queryManager.set_bboxes(request.req_id,request.index,JSON.parse(request.data)).then(()=>{

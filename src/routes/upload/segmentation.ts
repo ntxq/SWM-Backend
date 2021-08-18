@@ -9,7 +9,7 @@ import { Request, Response, NextFunction } from "express-serve-static-core";
 import { multer_image } from "src/routes/multer_options";
 import createError from "http-errors";
 import { queryManager } from "src/sql/mysqlConnectionManager";
-import { asyncRouterWrap, validateParameters } from "src/modules/utils";
+import { asyncRouterWrap, s3, validateParameters } from "src/modules/utils";
 
 var router = express.Router();
 
@@ -26,7 +26,6 @@ router.post("/source", multer_image.array("source"), asyncRouterWrap(async (req:
 	const files = req.files as Express.Multer.File[];
 	queryManager.add_request(project_id,files).then(async (path_id_map : Map<number,[string,string]>)=>{
 		const promise_all = Array<Promise<void|MESSAGE.ReplyRequestMakeCut>>()
-		
 		for(const [req_id,pathes] of path_id_map){
 			const [new_path, original_path] = pathes;
 			promise_all.push(queryManager.update_cut(req_id,"cut",0,new_path))
@@ -34,7 +33,6 @@ router.post("/source", multer_image.array("source"), asyncRouterWrap(async (req:
 				grpcSocket.segmentation.MakeCutsFromWholeImage(req_id,"cut",new_path)
 			);
 		}
-
 		const response_id_map = await Promise.all(promise_all)
 			.then(async (replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
 				const response_id_map = new Map<string,object>();
@@ -74,9 +72,10 @@ router.post("/blank", multer_image.array("blank"), (req:Request,res:Response,nex
 	const files = req.files as Express.Multer.File[];
 
 	//send start ai processing signal
-	blank_not_exist_ids.forEach(req_id=>{
-		grpcSocket.segmentation.Start(req_id)
-	})
+	//todo 최준영 how to catch exception?
+		blank_not_exist_ids.forEach((req_id)=>{
+			grpcSocket.segmentation.Start(req_id)
+		})
 
 	//set query and response data
 	const promise_all = new Array<Promise<void|MESSAGE.ReplyRequestMakeCut>>();
@@ -179,6 +178,7 @@ router.post("/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFu
 	const mask_path = await queryManager.get_path(req_id,"mask",cut_id)
 	try{
 		fs.writeFileSync(mask_path,JSON.stringify(mask))
+		s3.upload(mask_path,Buffer.from(JSON.stringify(mask)))
 	}catch(error){
 		next(new createError.InternalServerError)
 	}
@@ -258,6 +258,7 @@ router.post(
     fs.writeFile(mask_path, JSON.stringify(mask), (err) => {
       console.log(err);
     });
+		s3.upload(mask_path, Buffer.from(JSON.stringify(mask)))
 
     const rle: Array<Array<number>> = [];
     for (var i = 0; i < mask.length; i++) {

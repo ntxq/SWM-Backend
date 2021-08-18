@@ -1,8 +1,11 @@
 import path from "path";
 import { TranslateBBox, BBox } from 'src/routes/upload/ocr';
 import createError from "http-errors"
+import AWS, { Credentials } from "aws-sdk"
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import assert from "assert";
+import { Readable } from "stream";
+import { credentials } from "src/sql/secret";
 const requests =  require("src/routes/requests.json");
 
 type RequestParams = {
@@ -79,3 +82,72 @@ export function validateParameters(request:Request){
 	}
 }
 
+
+class S3{
+	s3:AWS.S3;
+	bucket:string;
+	ACL:string;
+
+	constructor(){
+		AWS.config.region = 'ap-northeast-2';
+		AWS.config.credentials = credentials
+		this.s3 = new AWS.S3();
+		this.bucket = "swm-images-db";
+		this.ACL = "public-read";
+	}
+
+	async upload(filename:string,buffer:Buffer){
+		const param:AWS.S3.Types.PutObjectRequest = {
+			Bucket:this.bucket, 
+			ACL:this.ACL,
+			Key:filename,
+			Body:buffer,
+		}
+		this.s3.upload(param, function(err, data){
+			if(err){
+				throw new createError.InternalServerError
+			}
+			return data
+		})
+	}
+
+	async streamToString (stream: Readable): Promise<string> {
+		return await new Promise((resolve, reject) => {
+			const chunks: Uint8Array[] = [];
+			stream.on('data', (chunk) => chunks.push(chunk));
+			stream.on('error', reject);
+			stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+		});
+	}
+
+	async download(filename:string):Promise<Buffer|string>{
+		var params:AWS.S3.Types.GetObjectRequest = { 
+			Bucket: this.bucket, 
+			Key: filename
+		};
+		return new Promise<Buffer|string>((resolve,reject)=>{
+			this.s3.getObject(params, (err, data) => {
+				if(err || data.Body === undefined){
+					reject(err);
+					return;
+				}
+				if(data.Body instanceof Readable){
+					this.streamToString(data.Body).then((data)=>{
+						resolve(data);
+					})
+				}
+				else if(typeof(data.Body) === "string"){
+					resolve(data.Body)
+				}
+				else if(data.Body instanceof Buffer){
+					resolve(data.Body)
+				}
+				else{
+					resolve(data.Body.toString())
+				}
+			});
+		})
+	}
+}
+
+export const s3 = new S3();
