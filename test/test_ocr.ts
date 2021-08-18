@@ -48,8 +48,8 @@ describe('process OCR', function () {
 		while (true) {
 			await new Promise(resolve => setTimeout(resolve, 2000));
 			const res = await supertest(app).get('/upload/OCR/result').query({ req_id: req_id, cut_id: cut_id }).expect(200)
-			expect(res.body.complete).to.be.a('boolean')
-			if (res.body.complete == true) {
+			expect(res.body.progress).to.be.a("number")
+			if (res.body.progress == 100) {
 				break
 			}
 		}
@@ -107,8 +107,8 @@ describe('process OCR', function () {
 		while (true) {
 			await new Promise(resolve => setTimeout(resolve, 2000));
 			const res = await supertest(app).get('/upload/OCR/result').query({ req_id: req_id, cut_id: cut_id }).expect(200)
-			expect(res.body.complete).to.be.a('boolean')
-			if (res.body.complete == true) {
+			expect(res.body.progress).to.be.a("number")
+			if (res.body.progress == 100) {
 				break
 			}
 		}

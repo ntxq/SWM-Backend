@@ -97,7 +97,7 @@ describe('upload blank', function () {
 			});
 	});
 
-	it.only('blank file', function (done) {
+	it('blank file', function (done) {
 		supertest(app).post('/upload/segmentation/blank')
 			.field('map_ids', `[${req_ids[0]}, ${req_ids[1]}]`)
 			.field('empty_id', `[]`)
@@ -175,7 +175,7 @@ describe('get result', function () {
 			.expect(200)
 			.end(function (err: Error, res: supertest.Response) {
 				if (err) return done(err);
-				expect(res.body.complete).to.be.a("boolean")
+				expect(res.body.progress).to.be.a("number")
 				done();
 			})
 	});
@@ -185,8 +185,9 @@ describe('get result', function () {
 			this.timeout(1000 * 60 * 5);
 			while (true) {
 				const res = await supertest(app).get('/upload/segmentation/result').query({ req_id: req_id, cut_id: 1 }).expect(200)
-				expect(res.body.complete).to.be.a("boolean")
-				if (res.body.complete == true) {
+				console.log(res.body)
+				expect(res.body.progress).to.be.a("number")
+				if (res.body.progress == 100) {
 					break;
 				}
 				await new Promise(resolve => setTimeout(resolve, 2000));
@@ -246,8 +247,8 @@ describe('update mask', function () {
 		}
 		while (true) {
 			const res = await supertest(app).get('/upload/segmentation/result').query({ req_id: req_id, cut_id: 1 }).expect(200)
-			expect(res.body.complete).to.be.a("boolean")
-			if (res.body.complete == true) {
+			expect(res.body.progress).to.be.a("number")
+			if (res.body.progress == 100) {
 				break;
 			}
 			await new Promise(resolve => setTimeout(resolve, 2000));
@@ -265,7 +266,7 @@ describe('update mask', function () {
 		await new Promise(resolve => setTimeout(resolve, 2000));
 
 		res = await supertest(app).get('/upload/segmentation/result').query({ req_id: req_id, cut_id: 1 }).expect(200)
-		expect(res.body.complete).to.equal(false)
+		expect(res.body.progress).to.be.a("number")
 	});
 
 	after(function (done) {

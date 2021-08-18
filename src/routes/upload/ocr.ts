@@ -5,6 +5,7 @@ import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysqlConnectionManager";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import createHttpError from "http-errors";
+import { validateParameters } from "src/modules/utils";
 
 var router = express.Router();
 
@@ -31,6 +32,11 @@ export interface TranslateBBox extends BBox {
 }
 
 router.get("/select", (req: Request, res: Response, next: NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+	}
   const req_id = parseInt(req.query["req_id"] as string);
   const cut_id = parseInt(req.query["cut_id"] as string);
   grpcSocket.OCR.Start(req_id, cut_id)
@@ -42,14 +48,24 @@ router.get("/select", (req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-router.get("/result", (req: Request, res: Response) => {
+router.get("/result", (req: Request, res: Response, next: NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+	}
   const req_id = parseInt(req.query["req_id"] as string);
   const cut_id = parseInt(req.query["cut_id"] as string);
   const progress = queryManager.check_progress(req_id, cut_id)
 	res.send({progress:Math.max(0,progress-100)})
 });
 
-router.get("/result/bbox", (req: Request, res: Response) => {
+router.get("/result/bbox", (req: Request, res: Response, next: NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+	}
   const req_id = parseInt(req.query["req_id"] as string);
   const cut_id = parseInt(req.query["cut_id"] as string);
   queryManager.get_bboxes(req_id, cut_id).then((bboxList: BBox[]) => {
@@ -57,7 +73,12 @@ router.get("/result/bbox", (req: Request, res: Response) => {
   });
 });
 
-router.post("/edit", (req: Request, res: Response) => {
+router.post("/edit", (req: Request, res: Response, next: NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+	}
   const req_id = parseInt(req.body["req_id"]);
   const cut_id = parseInt(req.body["cut_id"] as string);
   const bboxList: TranslateBBox[] = JSON.parse(req.body["bboxList"]);

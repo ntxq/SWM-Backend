@@ -5,9 +5,8 @@ import {
 } from "@grpc/grpc-js/build/src/make-client";
 import fs from "fs";
 import grpc = require("@grpc/grpc-js");
-import { IMAGE_DIR } from "src/modules/const";
+import { IMAGE_DIR, JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
-import { JSON_DIR } from "src/modules/const";
 import { queryManager } from "src/sql/mysqlConnectionManager";
 import createError from "http-errors";
 import Jimp = require("jimp");
@@ -58,10 +57,9 @@ export class SegmentationInterface {
     });
   }
 
-  async Start(req_id:number,index:number=0){
+  async Start(req_id:number,index:number=0):Promise<MESSAGE.ReplyRequestStart>{
 		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
-			const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
+			try{
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
 					reject(handleGrpcError(err))
@@ -71,11 +69,28 @@ export class SegmentationInterface {
 				resolve(response)
       }
       if(index == 0){
-        this.client.StartWholeImage(request, cb);
+				const cut_count = await queryManager.get_cut_count(req_id)
+				for(var i =1; i <= cut_count; i++){
+					var cut_path = await queryManager.get_path(req_id,"cut",i)
+					while(!cut_path || !fs.existsSync(cut_path)){
+						await new Promise(resolve => setTimeout(resolve, 1000));
+						cut_path = await queryManager.get_path(req_id,"cut",i)
+					}
+					const data = fs.readFileSync(cut_path)
+      		const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
+					this.client.StartCut(request, cb);
+				}
       }
       else{
+				const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
+      	const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
         this.client.StartCut(request, cb);
       }
+			}
+			catch(err){
+				console.error(err)
+				reject(new createError.InternalServerError)
+			}
     })
   }
 
@@ -125,7 +140,7 @@ export class SegmentationInterface {
       req_id:req_id, 
       mask_rles:masks, 
       index:index,
-      image:fs.readFileSync(await queryManager.get_path(req_id,"cut")),
+      image:fs.readFileSync(await queryManager.get_path(req_id,"cut",index)),
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
 		return new Promise(async (resolve,reject)=>{
@@ -162,7 +177,7 @@ export class OCRInterface {
     const file_path = await queryManager.get_path(req_id, "cut", index);
     return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
       if(!file_path){
-        return reject(createError.InternalServerError);
+        return reject(new createError.InternalServerError);
       }
       const data = fs.readFileSync(file_path);
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}

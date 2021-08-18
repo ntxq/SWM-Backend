@@ -9,13 +9,19 @@ import { Request, Response, NextFunction } from "express-serve-static-core";
 import { multer_image } from "src/routes/multer_options";
 import createError from "http-errors";
 import { queryManager } from "src/sql/mysqlConnectionManager";
+import { asyncRouterWrap, validateParameters } from "src/modules/utils";
 
 var router = express.Router();
 
-router.post("/source", multer_image.array("source"), async (req:Request,res:Response,next:NextFunction) => {
+router.post("/source", multer_image.array("source"), asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	//todo 최준영 제대로 된 user id 로 변환
 	const user_id = 123123123
-
 	const project_id = await queryManager.add_project(user_id,req.body["title"])
 	const files = req.files as Express.Multer.File[];
 	queryManager.add_request(project_id,files).then(async (path_id_map : Map<number,[string,string]>)=>{
@@ -29,18 +35,24 @@ router.post("/source", multer_image.array("source"), async (req:Request,res:Resp
 			);
 		}
 
-		const response_id_map = await Promise.all(promise_all).then((replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
-			const response_id_map = new Map<string,object>();
-			for(const reply of replies){
-				if(reply){
-					const pathes = path_id_map.get(reply.req_id)
-					if(pathes){
-						const [new_path, original_path] = pathes
-						response_id_map.set(original_path,{req_id:reply.req_id, cut_count:reply.cut_count})
+		const response_id_map = await Promise.all(promise_all)
+			.then(async (replies:Array<void|MESSAGE.ReplyRequestMakeCut>)=>{
+				const response_id_map = new Map<string,object>();
+				try{
+					for(const reply of replies){
+						if(reply){
+							const pathes = path_id_map.get(reply.req_id)
+							if(pathes){
+								const [new_path, original_path] = pathes
+								response_id_map.set(original_path,{req_id:reply.req_id, cut_count:reply.cut_count})
+								await queryManager.set_cut_count(reply.req_id,reply.cut_count)
+							}
+						}
 					}
+					return response_id_map
+				}catch(err){
+					throw(new createError.InternalServerError)
 				}
-			}
-			return response_id_map
 		});
 		return response_id_map
 	}).then(response_id_map =>{
@@ -48,9 +60,15 @@ router.post("/source", multer_image.array("source"), async (req:Request,res:Resp
 	}).catch(error =>{
 		next(error)
 	})
-});
+}));
 
 router.post("/blank", multer_image.array("blank"), (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const blank_not_exist_ids:number[] = JSON.parse(req.body.empty_id)
 	const map_ids:number[] = JSON.parse(req.body.map_ids);
 	const files = req.files as Express.Multer.File[];
@@ -80,25 +98,43 @@ router.post("/blank", multer_image.array("blank"), (req:Request,res:Response,nex
 	})
 })
 
-router.get("/cut", async (req:Request,res:Response,next:NextFunction) => {
+router.get("/cut", asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const req_id = parseInt(req.query["req_id"] as string)
 	const cut_id = parseInt(req.query["cut_id"] as string)
 	const cut = await queryManager.get_path(req_id,"cut",cut_id)
 	if(!fs.existsSync(cut)){
-		next(createError.InternalServerError)
+		next(new createError.InternalServerError)
 		return;
 	}
 	res.sendFile(cut)
-});
+}));
 
 router.get("/result", (req:Request,res:Response, next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const req_id = parseInt(req.query["req_id"] as string)
 	const cut_id = parseInt(req.query["cut_id"] as string)
 	const progress = queryManager.check_progress(req_id,cut_id)
 	res.send({progress: Math.min(progress,100)})
 });
 
-router.get("/result/inpaint", async (req:Request,res:Response,next:NextFunction) => {
+router.get("/result/inpaint", asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const req_id = parseInt(req.query["req_id"] as string)
 	const cut_id = parseInt(req.query["cut_id"] as string)
 	const inpaint = await queryManager.get_path(req_id,"inpaint",cut_id)
@@ -107,9 +143,15 @@ router.get("/result/inpaint", async (req:Request,res:Response,next:NextFunction)
 		return;
 	}
 	res.sendFile(inpaint)
-});
+}));
 
-router.get("/result/mask", async (req:Request,res:Response,next:NextFunction) => {
+router.get("/result/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const req_id = parseInt(req.query["req_id"] as string)
 	const cut_id = parseInt(req.query["cut_id"] as string)
 	const mask = await queryManager.get_path(req_id,"mask",cut_id)
@@ -118,9 +160,15 @@ router.get("/result/mask", async (req:Request,res:Response,next:NextFunction) =>
 		return;
 	}
 	res.send({mask:require(mask)})
-});
+}));
 
-router.post("/mask", async (req:Request,res:Response,next:NextFunction) => {
+router.post("/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
+	try{
+		validateParameters(req)
+	}catch(err){
+		next(err)
+		return
+	}
 	const req_id = parseInt(req.body["req_id"] as string)
 	const cut_id = parseInt(req.body["cut_id"] as string)
 	const mask = JSON.parse(req.body["mask"])["result"]
@@ -132,7 +180,7 @@ router.post("/mask", async (req:Request,res:Response,next:NextFunction) => {
 	try{
 		fs.writeFileSync(mask_path,JSON.stringify(mask))
 	}catch(error){
-		next(createError.InternalServerError)
+		next(new createError.InternalServerError)
 	}
 
 	const rle: Array<Array<number>> = []
@@ -145,11 +193,17 @@ router.post("/mask", async (req:Request,res:Response,next:NextFunction) => {
 	}).catch((err)=>{
 		next(err)
 	})
-});
+}));
 
 router.get(
   "/result/inpaint",
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
+		try{
+			validateParameters(req)
+		}catch(err){
+			next(err)
+			return
+		}
     const req_id = parseInt(req.query["req_id"] as string);
     const cut_id = parseInt(req.query["cut_id"] as string);
     const inpaint = await queryManager.get_path(req_id, "inpaint", cut_id);
@@ -159,11 +213,17 @@ router.get(
     }
     res.sendFile(inpaint);
   }
-);
+));
 
 router.get(
   "/result/mask",
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
+		try{
+			validateParameters(req)
+		}catch(err){
+			next(err)
+			return
+		}
     const req_id = parseInt(req.query["req_id"] as string);
     const cut_id = parseInt(req.query["cut_id"] as string);
     const mask = await queryManager.get_path(req_id, "mask", cut_id);
@@ -173,11 +233,17 @@ router.get(
     }
     res.send({ mask: require(mask) });
   }
-);
+));
 
 router.post(
   "/mask",
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
+		try{
+			validateParameters(req)
+		}catch(err){
+			next(err)
+			return
+		}
     const req_id = parseInt(req.body["req_id"] as string);
     const cut_id = parseInt(req.body["cut_id"] as string);
     const mask = JSON.parse(req.body["mask"])["result"];
@@ -201,6 +267,6 @@ router.post(
       res.send({ success: true });
     });
   }
-);
+));
 
 export default router;

@@ -10,6 +10,8 @@ import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
 import { update_bbox } from "src/modules/utils";
 import { progressManager } from "src/modules/progressManager";
+import createError from "http-errors"
+
 export class mysqlConnectionManager {
   connection: mysqlConnection;
   constructor() {
@@ -47,6 +49,25 @@ export class mysqlConnectionManager {
 		}
 		await mysql_connection.callMultipleProcedure(procedures);
 		return path_id_map;
+	}
+
+	async set_cut_count(req_id:number,cut_count:number){
+		const procedure:Procedure = {
+			query:'sp_set_cut_count',
+			parameters:[req_id,cut_count],
+			select_unique:true
+		}
+		await mysql_connection.callProcedure(procedure);
+	}
+
+	async get_cut_count(req_id:number):Promise<number>{
+		const procedure:Procedure = {
+			query:'sp_get_cut_count',
+			parameters:[req_id],
+			select_unique:true
+		}
+		const rows = await mysql_connection.callProcedure(procedure)
+		return rows["cut_count"]
 	}
 
 	check_progress(req_id:number,index:number):number{
@@ -130,7 +151,12 @@ export class mysqlConnectionManager {
 		}
 		return ranges;
 	}
-
+	/*
+		todo 최준영
+		req_id와 index가 유효하지 않은 경우 -> invalid request
+		req_id와 index가 유효하고 row가 없는 경우 -> early request
+		req_id와 index가 유효하고 row가 있는 경우 -> early request
+	*/
 	async get_path(req_id:number,type:string,index:number = 0):Promise<string>{
 		var procedure:Procedure = {
 			query:"sp_get_paths",
@@ -138,17 +164,23 @@ export class mysqlConnectionManager {
 			select_unique:true
 		};
 		const row = await mysql_connection.callProcedure(procedure);
-		switch (type) {
-			case "cut":
-				return row["cut_path"];
-			case "inpaint":
-				return row["inpaint_path"];
-			case "mask":
-				return row["mask_path"];
-			case "mask_image":
-				return row["mask_image_path"];
-		}
-		return ""
+
+    try {
+      switch (type) {
+        case "cut":
+          return row["cut_path"];
+        case "inpaint":
+          return row["inpaint_path"];
+        case "mask":
+          return row["mask_path"];
+        case "mask_image":
+          return row["mask_image_path"];
+        default:
+          return "";
+      }
+    } catch (e) {
+      return "";
+    }
 	}
 
 	async set_bboxes(req_id:number,index:number,bboxes:Array<BBox>):Promise<unknown>{
@@ -158,9 +190,10 @@ export class mysqlConnectionManager {
 			select_unique:true
 		};
 		const rows = await mysql_connection.callProcedure(procedure);
-		progressManager.updateProgress(req_id, index, "bbox");
+		//todo 최준영 detect-bbox-translate-complete 단계 구분 필요
+		progressManager.updateProgress(req_id, index, "complete");
 		if (index !== 0) {
-			progressManager.updatePart(req_id, 0, "bbox");
+			progressManager.updatePart(req_id, 0, "complete");
 		}
 		return rows;
 	}
