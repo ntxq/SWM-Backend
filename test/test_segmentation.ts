@@ -143,18 +143,22 @@ describe('upload blank', function () {
 });
 
 describe('get result', function () {
+	this.timeout(1000 * 60 * 5);
 	var req_id: number = NaN
+	var cut_count: number = NaN
+	const image_name = "test_img_big.png"
 	before(function (done) {
 		supertest(app).post('/upload/segmentation/source')
-			.attach('source', 'test/resource/test_img.png')
+			.attach('source', `test/resource/${image_name}`)
 			.field({ title: "masking test" })
 			.expect(200)
 			.end(function (err: Error, res: supertest.Response) {
 				if (err) return done(err);
-				expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
-				const res_body = res.body.req_ids["test_img.png"]
+				expect(res.body.req_ids).to.hasOwnProperty(image_name)
+				const res_body = res.body.req_ids[image_name]
 				expect(res_body['req_id']).to.be.a('number')
 				req_id = res_body['req_id']
+				cut_count = res_body['cut_count']
 
 				supertest(app).post('/upload/segmentation/blank')
 					.field('map_ids', `[]`)
@@ -167,6 +171,28 @@ describe('get result', function () {
 						done();
 					});
 			});
+	});
+
+	it.only('get cuts', async function (done) {
+		try{
+			for(var i = 1; i<= cut_count;i++){
+				while (true){
+					const res = await supertest(app).get('/upload/segmentation/cut')
+					.query({ req_id: req_id, cut_id: i })
+					if(res.statusCode == 200){
+						break;
+					}
+					else if(res.statusCode !== 500 && res.statusCode !== 400){
+						expect(res.statusCode).to.be.equal(500)
+					}
+					await new Promise(resolve => setTimeout(resolve, 2000));
+				}
+			}
+			done();
+		}
+		catch(err){
+			done(err);
+		}
 	});
 
 	it('get result sucess', function (done) {

@@ -9,14 +9,15 @@ describe('GRPC connection', function () {
 	this.timeout(300000);
 	var req_id = 0
 	before(function (done) {
+		const image_name = "test_img_big.png"
 		supertest(app).post('/upload/segmentation/source')
-			.attach('source', 'test/resource/test_img.png')
+			.attach('source', `test/resource/${image_name}`)
 			.field({ title: "GRPC test" })
 			.expect(200)
 			.end(function (err: Error, res: supertest.Response) {
 				if (err) return done(err);
-				expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
-				const res_body = res.body.req_ids["test_img.png"]
+				expect(res.body.req_ids).to.hasOwnProperty(image_name)
+				const res_body = res.body.req_ids[image_name]
 				expect(res_body["req_id"]).to.be.a('number')
 				req_id = res_body["req_id"]
 				done()
