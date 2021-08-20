@@ -1,0 +1,7 @@
+BEGIN
+START TRANSACTION;
+	INSERT INTO PROJECTS(user_id,PROJECTS.name) 
+			VALUES (p_user_id,p_name);
+    SELECT LAST_INSERT_ID() as id;
+COMMIT;
+END
