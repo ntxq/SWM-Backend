@@ -8,7 +8,7 @@ import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { multer_image } from "src/routes/multer_options";
 import createError from "http-errors";
-import { queryManager } from "src/sql/mysqlConnectionManager";
+import { queryManager } from "src/sql/mysql_connection_manager";
 import { asyncRouterWrap, s3, validateParameters } from "src/modules/utils";
 
 var router = express.Router();

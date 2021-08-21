@@ -2,7 +2,7 @@ import express from "express";
 
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { grpcSocket } from "src/gRPC/grpc_socket";
-import { queryManager } from "src/sql/mysqlConnectionManager";
+import { queryManager } from "src/sql/mysql_connection_manager";
 import createHttpError from "http-errors";
 import { validateParameters } from "src/modules/utils";
 

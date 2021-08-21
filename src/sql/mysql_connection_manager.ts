@@ -8,7 +8,7 @@ import path from "path";
 import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
 import { s3, updateBbox } from "src/modules/utils";
-import { progressManager } from "src/modules/progressManager";
+import { progressManager } from "src/modules/progress_manager";
 import createError from "http-errors"
 
 export class mysqlConnectionManager {

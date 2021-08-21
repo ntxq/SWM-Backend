@@ -6,7 +6,7 @@ import {
 import grpc = require("@grpc/grpc-js");
 import { IMAGE_DIR, JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
-import { queryManager } from "src/sql/mysqlConnectionManager";
+import { queryManager } from "src/sql/mysql_connection_manager";
 import createError from "http-errors";
 import Jimp = require("jimp");
 import path = require("path");
