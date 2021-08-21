@@ -1,6 +1,5 @@
 import {
   mysqlConnection,
-  mysql_connection,
   Procedure,
 } from "./sql_connection";
 import fs from "fs";
@@ -10,9 +9,9 @@ async function backup(){
 	var procedure:Procedure = {
 		query:"sp_get_stored_procedures",
 		parameters:[],
-		select_unique:false
+		selectUnique:false
 	};
-	const rows = await mysql_connection.callProcedure(procedure);
+	const rows = await mysqlConnection.callProcedure(procedure);
 	for(const row of rows[0]){
 		console.log(row)
 		const text = row["ROUTINE_DEFINITION"]

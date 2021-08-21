@@ -5,13 +5,13 @@ import path from 'path';
 export function clearDirectory(directory:string,extensions:Array<string>){
     const files = fs.readdirSync(directory)
     for (const file of files) {
-        const file_path = path.join(directory, file)
-        if(!fs.lstatSync(file_path).isDirectory()){
-            if(extensions.includes(path.extname(file_path)))
-                fs.unlinkSync(file_path)
+        const filePath = path.join(directory, file)
+        if(!fs.lstatSync(filePath).isDirectory()){
+            if(extensions.includes(path.extname(filePath)))
+                fs.unlinkSync(filePath)
         }
         else if(file != directory){
-            clearDirectory(file_path,extensions)
+            clearDirectory(filePath,extensions)
         }
     }
 }
@@ -20,14 +20,14 @@ export function clearTestImage(){
     const extensions = ['.png']
     const files = fs.readdirSync(directory)
     for (const file of files) {
-        const file_path = path.join(directory, file)
-        if(!fs.lstatSync(file_path).isDirectory()){
-            if(extensions.includes(path.extname(file_path)))
-                fs.unlinkSync(file_path)
+        const filePath = path.join(directory, file)
+        if(!fs.lstatSync(filePath).isDirectory()){
+            if(extensions.includes(path.extname(filePath)))
+                fs.unlinkSync(filePath)
         }
         else{
             
-            clearDirectory(file_path,extensions)
+            clearDirectory(filePath,extensions)
         }
     }
 }
@@ -42,13 +42,13 @@ export function clearTestJSON(){
         }
       
         for (const file of files) {
-            const file_path = path.join(directory, file)
-            if(!fs.lstatSync(file_path).isDirectory()){
-                if(extensions.includes(path.extname(file_path)))
-                    fs.unlinkSync(file_path)
+            const filePath = path.join(directory, file)
+            if(!fs.lstatSync(filePath).isDirectory()){
+                if(extensions.includes(path.extname(filePath)))
+                    fs.unlinkSync(filePath)
             }
             else{
-                clearDirectory(file_path,extensions)
+                clearDirectory(filePath,extensions)
             }
         }
     });

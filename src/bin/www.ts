@@ -10,12 +10,12 @@ import createError from 'http-errors'
 /**
  * Get port from environment and store in Express.
  */
-var port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 /**
  * Create HTTP server.
  */
-var server = http.createServer(app);
+const server = http.createServer(app);
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -28,7 +28,7 @@ server.on('listening', onListening);
  * Normalize a port into a number, string, or false.
  */
 function normalizePort(val:string) {
-    var port = parseInt(val, 10);
+    const port = parseInt(val, 10);
     if (isNaN(port)) {
         // named pipe
         return val;
@@ -48,7 +48,7 @@ function onError(error:createError.HttpError) {
     if (error.syscall !== 'listen') {
         throw error;
     }
-    var bind = typeof port === 'string'
+    const bind = typeof port === 'string'
         ? 'Pipe ' + port
         : 'Port ' + port;
     // handle specific listen errors with friendly messages
@@ -69,8 +69,8 @@ function onError(error:createError.HttpError) {
  * Event listener for HTTP server "listening" event.
  */
 function onListening() {
-    var addr = server.address() as AddressInfo;
-    var bind = typeof addr === 'string'
+    const addr = server.address() as AddressInfo;
+    const bind = typeof addr === 'string'
         ? 'pipe ' + addr
         : 'port ' + addr.port;
     debug('Listening on ' + bind);

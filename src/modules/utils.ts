@@ -20,15 +20,11 @@ export function isImageFile(file:Express.Multer.File):boolean{
 	// Check mime
 	const mimetype = filetypes.test(file.mimetype);
  
-	if(mimetype && extname){
-		return true;
-	} else {
-		return false;
-	}
+	return mimetype && extname
 }
 
-export function update_bbox(old_bbox:BBox[] | TranslateBBox[],new_bbox:BBox[] | TranslateBBox[]){
-	return new_bbox as TranslateBBox[];
+export function updateBbox(oldBbox:BBox[] | TranslateBBox[],newBbox:BBox[] | TranslateBBox[]){
+	return newBbox as TranslateBBox[];
 }
 
 export function handleGrpcError(err:Error){
@@ -36,10 +32,10 @@ export function handleGrpcError(err:Error){
 	return new createError.ServiceUnavailable
 }
 
-export const asyncRouterWrap = (asyncFn:Function) => {
+export const asyncRouterWrap = (asyncFuntion:Function) => {
 		return (async (req:Request, res:Response, next:NextFunction) => {
 			try {
-				return await asyncFn(req, res, next)
+				return await asyncFuntion(req, res, next)
 			} catch (error) {
 				return next(error)
 			}
@@ -49,30 +45,30 @@ export const asyncRouterWrap = (asyncFn:Function) => {
 export function validateParameters(request:Request){
 	try{
 		const url = request.baseUrl + request.path
-		const req_param_parser = requests[request.method][url]
-		for(const type of Object.keys(req_param_parser)){
-			var req_params:RequestParams = {}
+		const requestChecker = requests[request.method][url]
+		for(const type of Object.keys(requestChecker)){
+			var requestParameters:RequestParams = {}
 			switch(type){
 				case "body":
-					req_params = JSON.parse(JSON.stringify(request.body))
+					requestParameters = JSON.parse(JSON.stringify(request.body))
 					break
 				case "query":
-					req_params = JSON.parse(JSON.stringify(request.query))
+					requestParameters = JSON.parse(JSON.stringify(request.query))
 					break
 				case "params":
-					req_params = JSON.parse(JSON.stringify(request.params))
+					requestParameters = JSON.parse(JSON.stringify(request.params))
 					break
 					
 			}
-			for(const [param_name,param_type] of Object.entries(req_param_parser[type])){
-				if(param_type == "number"){
-					assert(parseInt(req_params[param_name]) !== NaN)
+			for(const [parameterName,parameterType] of Object.entries(requestChecker[type])){
+				if(parameterType == "number"){
+					assert(parseInt(requestParameters[parameterName]) !== NaN)
 				}
-				else if(param_type == "object"){
-					assert(JSON.parse(req_params[param_name]))
+				else if(parameterType == "object"){
+					assert(JSON.parse(requestParameters[parameterName]))
 				}
 				else{
-					assert(typeof(req_params[param_name]) == param_type)
+					assert(typeof(requestParameters[parameterName]) == parameterType)
 				}
 			}
 		}
@@ -97,14 +93,14 @@ class S3{
 	}
 
 	async upload(filename:string,buffer:Buffer){
-		const param:AWS.S3.Types.PutObjectRequest = {
+		const parameter:AWS.S3.Types.PutObjectRequest = {
 			Bucket:this.bucket, 
 			ACL:this.ACL,
 			Key:filename,
 			Body:buffer,
 		}
 		return new Promise<void>((resolve,reject)=>{
-			this.s3.upload(param, function(err, data){
+			this.s3.upload(parameter, function(err, data){
 				if(err){
 					reject(new createError.InternalServerError)
 				}
@@ -115,7 +111,7 @@ class S3{
 		
 	}
 
-	async streamToString (stream: Readable): Promise<string> {
+	private async streamToString (stream: Readable): Promise<string> {
 		return await new Promise((resolve, reject) => {
 			const chunks: Uint8Array[] = [];
 			stream.on('data', (chunk) => chunks.push(chunk));
@@ -125,12 +121,12 @@ class S3{
 	}
 
 	async download(filename:string):Promise<Buffer|string>{
-		var params:AWS.S3.Types.GetObjectRequest = { 
+		var parameter:AWS.S3.Types.GetObjectRequest = { 
 			Bucket: this.bucket, 
 			Key: filename
 		};
 		return new Promise<Buffer|string>((resolve,reject)=>{
-			this.s3.getObject(params, (err, data) => {
+			this.s3.getObject(parameter, (err, data) => {
 				if(err || data.Body === undefined){
 					reject(err);
 					return;

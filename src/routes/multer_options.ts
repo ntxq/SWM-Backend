@@ -7,7 +7,9 @@ var storage = multer.memoryStorage()
 
 var fileFilter = function(req:Request, file:Express.Multer.File, cb:FileFilterCallback){
 	if(!isImageFile(file)){
-		(req.res as Response).statusCode = 415
+		if(req.res){
+			req.res.statusCode = 415
+		}
 		// req.h = 'goes wrong on the mimetype';
 		cb(Error('Error: Images Only!'));
 	}

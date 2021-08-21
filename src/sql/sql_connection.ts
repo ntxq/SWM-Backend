@@ -6,13 +6,19 @@ export interface Procedure{
 	query:string;
 	parameters:Array<any>;
 	callback?:Function;
-	select_unique:boolean;
+	selectUnique:boolean;
 }
 
-class mysqlConnection{
+export class MysqlConnection{
 	connection:mysql.Pool;
-	constructor(){
+	private static instance:MysqlConnection;
+
+	private constructor(){
 		this.connection = this.connect();
+	}
+
+	static getInstance(){
+		return this.instance || (this.instance = new this());
 	}
 	
 	connect():mysql.Pool{
@@ -74,10 +80,10 @@ class mysqlConnection{
 
 	private execAsyncQuery(conn:Connection,procedure:Procedure){
 		return new Promise((resolve,rejects)=>{
-			const question_marks_arr = Array(procedure.parameters.length).fill('?');
-			const question_marks = question_marks_arr.join(',')
-			const sql = `CALL ${procedure.query}(${question_marks});`
-			conn.query(sql,procedure.parameters,async function(err, rows, fields){
+			const questionMarksArray = Array(procedure.parameters.length).fill('?');
+			const questionMarks = questionMarksArray.join(',')
+			const query = `CALL ${procedure.query}(${questionMarks});`
+			conn.query(query,procedure.parameters,async function(err, rows, fields){
 				if(err){
 					console.error(err.message)
 					if(err.sqlState?.startsWith("SP")){
@@ -94,7 +100,7 @@ class mysqlConnection{
 					rows.pop()
 				}
 				//단순 update문으로 OkPacket만 오는 경우는 parsing하지않는다
-				if(procedure.select_unique && Array.isArray(rows)){
+				if(procedure.selectUnique && Array.isArray(rows)){
 					if(rows[0][0] === undefined){
 						resolve(undefined)
 						return;
@@ -110,10 +116,9 @@ class mysqlConnection{
 		});
 	}
 
-	destroy_connection() {
+	destroyConnection() {
 		this.connection.end();
 	}
 }
 
-export const mysql_connection = new mysqlConnection()
-export { mysqlConnection }
+export const mysqlConnection = MysqlConnection.getInstance()

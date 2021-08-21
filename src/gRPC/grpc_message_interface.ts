@@ -1,12 +1,12 @@
 export interface SendImage{
 	req_id:number;
 	type:string;
-	index:number;
+	cut_index:number;
 	image:Buffer;
 	is_rgba:boolean;
 	width:number;
 	height:number;
-	filename:string;
+	file_name:string;
 }
 
 export interface ReceiveImage{
@@ -15,10 +15,10 @@ export interface ReceiveImage{
 
 export interface SendJson{
 	req_id:number;
-	index:number;
+	cut_index:number;
 	type:string;
 	data:string;
-	filename:string;
+	file_name:string;
 }
 
 export interface ReceiveJson{
@@ -38,7 +38,7 @@ export interface ReplyRequestMakeCut{
 
 export interface RequestStart{
 	req_id:number;
-	index:number;
+	cut_index:number;
 	image:Buffer;
 }
 
@@ -50,7 +50,7 @@ export interface ReplyRequestStart{
 export interface RequestMaskUpdate{
 	req_id:number;
 	mask_rles:Buffer[];
-	index:number;
+	cut_index:number;
 	image:Buffer;
 	cut_ranges:string;
 }

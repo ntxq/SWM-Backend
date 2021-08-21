@@ -16,40 +16,43 @@ var packageDefinition = protoLoader.loadSync(
 });
   
 class GRPCSocket{
-  segmentation_client_url: string;
-  recognition_client_url: string;
-  server_url: string;
+  clientUrlForSegmentation: string;
+  clientUrlForRecognition: string;
+  serverUrl: string;
   server: grpc.Server;
   segmentation: SegmentationInterface;
   OCR: OCRInterface;
   proto: GrpcObject;
 
-  constructor(server_url:string,segmentation_client_url:string,recognition_client_url:string) {
-    this.segmentation_client_url = segmentation_client_url
-    this.recognition_client_url = recognition_client_url
-    this.server_url = server_url
+  constructor(serverUrl:string,clientUrlForSegmentation:string,clientUrlForRecognition:string) {
+    this.clientUrlForSegmentation = clientUrlForSegmentation
+    this.clientUrlForRecognition = clientUrlForRecognition
+    this.serverUrl = serverUrl
     this.proto = grpc.loadPackageDefinition(packageDefinition).ai_server as GrpcObject;
 
-    this.segmentation = new SegmentationInterface(this.segmentation_client_url,this.proto)
-    this.OCR = new OCRInterface(this.recognition_client_url,this.proto)
+    this.segmentation = new SegmentationInterface(this.clientUrlForSegmentation,this.proto)
+    this.OCR = new OCRInterface(this.clientUrlForRecognition,this.proto)
     this.server = this.openServer()
   }
 
   openServer(){
-    var server = new grpc.Server({'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
+    const server = new grpc.Server(
+			{'grpc.max_send_message_length': 1024*1024*1024,
+			'grpc.max_receive_message_length': 1024*1024*1024}
+		);
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor
     server.addService(Segmentation.service, {
-      ImageTransfer: this.segmentation.ImageTransfer,
-      JsonTransfer: this.segmentation.JsonTransfer
+      ImageTransfer: this.segmentation.imageTransfer,
+      JsonTransfer: this.segmentation.jsonTransfer
     });
 
     const OCR = this.proto.OCR as ServiceClientConstructor
     server.addService(OCR.service, {
-      JsonTransfer: this.OCR.JsonTransfer
+      JsonTransfer: this.OCR.jsonTransfer
     });
 
-    server.bindAsync(this.server_url, grpc.ServerCredentials.createInsecure(), (error,port) => {
+    server.bindAsync(this.serverUrl, grpc.ServerCredentials.createInsecure(), (error,port) => {
       if(error){
         console.error(error);
         return;
@@ -61,4 +64,5 @@ class GRPCSocket{
   }
 }
       
-export const grpcSocket = new GRPCSocket("0.0.0.0:4000","host.docker.internal:4001","host.docker.internal:5001")
+// export const grpcSocket = new GRPCSocket("0.0.0.0:4000","host.docker.internal:4001","host.docker.internal:5001")
+export const grpcSocket = new GRPCSocket("0.0.0.0:4000","localhost:4001","localhost:5001")

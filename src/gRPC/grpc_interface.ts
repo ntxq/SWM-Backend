@@ -13,17 +13,17 @@ import path = require("path");
 import { handleGrpcError, s3 } from "src/modules/utils";
 
 export class SegmentationInterface {
-  client_url: string;
+  clientUrl: string;
   proto: GrpcObject;
   client: ServiceClient;
 
-  constructor(client_url: string, proto: GrpcObject) {
-    this.client_url = client_url;
+  constructor(clientUrl: string, proto: GrpcObject) {
+    this.clientUrl = clientUrl;
     this.proto = proto;
 
     const segmentation = this.proto.Segmentation as ServiceClientConstructor;
     this.client = new segmentation(
-      this.client_url,
+      this.clientUrl,
       grpc.credentials.createInsecure(),
       {
         "grpc.max_send_message_length": 1024 * 1024 * 1024,
@@ -32,10 +32,10 @@ export class SegmentationInterface {
     );
   }
 
-  async MakeCutsFromWholeImage(req_id: number, type: string, path: string) {
+  async makeCutsFromWholeImage(requestID: number, type: string, path: string) {
 		const data = await s3.download(path) as Buffer;
 		const request: MESSAGE.RequestMakeCut = {
-			req_id: req_id,
+			req_id: requestID,
 			type: type,
 			image: data,
 		};
@@ -54,7 +54,7 @@ export class SegmentationInterface {
 		})
   }
 
-  async Start(req_id:number,index:number=0):Promise<MESSAGE.ReplyRequestStart>{
+  async start(requestID:number,cutIndex:number=0):Promise<MESSAGE.ReplyRequestStart>{
 		return new Promise<MESSAGE.ReplyRequestStart>(async (resolve,reject)=>{
 			try{
       const cb = function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
@@ -66,13 +66,15 @@ export class SegmentationInterface {
 				resolve(response)
       }
 			//todo 최준영
-      if(index == 0){
-				const cut_count = await queryManager.get_cut_count(req_id)
+      if(cutIndex == 0){
+				const cut_count = await queryManager.getCutCount(requestID)
 				for(var i =1; i <= cut_count; i++){
 					try{
-						var cut_path = await queryManager.get_path(req_id,"cut",i)
+						var cut_path = await queryManager.getPath(requestID,"cut",i)
 						const data = await s3.download(cut_path) as Buffer;
-						const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
+						const request:MESSAGE.RequestStart = {
+							req_id:requestID, image:data,cut_index:i
+						}
 						this.client.StartCut(request, cb);
 					}
 					catch(err){
@@ -86,9 +88,9 @@ export class SegmentationInterface {
 				}
       }
       else{
-				const path = await queryManager.get_path(req_id,"cut",index)
+				const path = await queryManager.getPath(requestID,"cut",cutIndex)
 				const data = await s3.download(path) as Buffer;
-				const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
+				const request:MESSAGE.RequestStart = {req_id:requestID, image:data,cut_index:cutIndex}
         this.client.StartCut(request, cb);
       }
 			}
@@ -98,31 +100,28 @@ export class SegmentationInterface {
     })
   }
 
-  ImageTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
+  imageTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>) {
-		const request:MESSAGE.SendImage = call.request 
 
-		var image = new Jimp(request.width, request.height);
-		image.rgba(request.is_rgba);
-		image.bitmap.data = request.image;
-		const filepath = path.join(IMAGE_DIR,request.filename)
-		s3.upload(filepath,request.image)
+		const request:MESSAGE.SendImage = call.request 
+		const filePath = path.join(IMAGE_DIR,request.file_name)
+		s3.upload(filePath,request.image)
 		const response: MESSAGE.ReceiveImage = { success:true }
 		callback(null,response);
 		return response
   }
 
-  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
+  jsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
 		const request:MESSAGE.SendJson = call.request 
-		const filepath = path.join(JSON_DIR,request.filename)
-		s3.upload(filepath,Buffer.from(JSON.stringify(JSON.parse(request.data))))
+		const filePath = path.join(JSON_DIR,request.file_name)
+		s3.upload(filePath,Buffer.from(JSON.stringify(JSON.parse(request.data))))
 		switch(request.type){
 			case "cut":
-				queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
+				queryManager.setCutRanges(request.req_id,JSON.parse(request.data))
 				break;
 			case "mask":
-				queryManager.update_cut(request.req_id, request.type,request.index,filepath)
+				queryManager.updateCut(request.req_id, request.type,request.cut_index,filePath)
 				break;
 		}
 		const response: MESSAGE.ReceiveJson = { success:true }
@@ -130,22 +129,22 @@ export class SegmentationInterface {
 		return response
   }
 
-  async UpdateMask(req_id:number,index:number,data:Array<Array<number>>){
+  async updateMask(requestID:number,cutIndex:number,data:Array<Array<number>>){
     const masks:Array<Buffer> = []
     data.forEach((mask)=>{
       masks.push(Buffer.from(mask))
     })
 
-    const cut_ranges = await queryManager.get_cut_range(req_id)
+    const cutRanges = await queryManager.getCutRange(requestID)
     const request:MESSAGE.RequestMaskUpdate = {
-      req_id:req_id, 
+      req_id:requestID, 
       mask_rles:masks, 
-      index:index,
-      image:await s3.download(await queryManager.get_path(req_id,"cut",index)) as Buffer,
-      cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
+      cut_index:cutIndex,
+      image:await s3.download(await queryManager.getPath(requestID,"cut",cutIndex)) as Buffer,
+      cut_ranges:JSON.stringify(Object.fromEntries(cutRanges))
     }
 		return new Promise(async (resolve,reject)=>{
-			await queryManager.update_progress(req_id,index,'cut')
+			await queryManager.updateProgress(requestID,cutIndex,'cut')
 			this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
 				if(err){
 					reject(handleGrpcError(err))
@@ -159,30 +158,30 @@ export class SegmentationInterface {
 }
 
 export class OCRInterface {
-  client_url: string;
+  clientUrl: string;
   proto: GrpcObject;
   client: ServiceClient;
 
-  constructor(client_url: string, proto: GrpcObject) {
-    this.client_url = client_url;
+  constructor(clientUrl: string, proto: GrpcObject) {
+    this.clientUrl = clientUrl;
     this.proto = proto;
 
     const OCR = this.proto.OCR as ServiceClientConstructor;
-    this.client = new OCR(this.client_url, grpc.credentials.createInsecure(), {
+    this.client = new OCR(this.clientUrl, grpc.credentials.createInsecure(), {
       "grpc.max_send_message_length": 1024 * 1024 * 1024,
       "grpc.max_receive_message_length": 1024 * 1024 * 1024,
     });
   }
 
-  async Start(req_id: number, index: number) {
-    const file_path = await queryManager.get_path(req_id, "cut", index);
+  async start(requestID: number, cutIndex: number) {
+    const filePath = await queryManager.getPath(requestID, "cut", cutIndex);
     return new Promise<MESSAGE.ReplyRequestStart>(async (resolve, reject) => {
-      if(!file_path){
+      if(!filePath){
         return reject(new createError.InternalServerError);
       }
-			const data = await s3.download(file_path) as Buffer;
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}
-      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
+			const data = await s3.download(filePath) as Buffer;
+      const request:MESSAGE.RequestStart = {req_id:requestID, image:data, cut_index:cutIndex}
+      this.client.start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
 					reject(handleGrpcError(err))
 					return;
@@ -193,17 +192,16 @@ export class OCRInterface {
     })
   }
 
-  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
+  jsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
 		const request:MESSAGE.SendJson = call.request 
 
-		s3.upload(path.join(JSON_DIR,request.filename),
+		s3.upload(path.join(JSON_DIR,request.file_name),
 			Buffer.from(JSON.stringify(JSON.parse(request.data), null, 4)))
 
 		switch(request.type){
 			case "bbox":
-				queryManager.set_bboxes(request.req_id,request.index,JSON.parse(request.data)).then(()=>{
-				})
+				queryManager.setBboxes(request.req_id,request.cut_index,JSON.parse(request.data))
 				break;
 		}
 		const response: MESSAGE.ReceiveJson = { success:true }
