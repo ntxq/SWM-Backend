@@ -8,7 +8,7 @@ import fs from "fs";
 import path from "path";
 import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
-import { update_bbox } from "src/modules/utils";
+import { s3, update_bbox } from "src/modules/utils";
 import { progressManager } from "src/modules/progressManager";
 import createError from "http-errors"
 
@@ -36,11 +36,11 @@ export class mysqlConnectionManager {
 			const procedure:Procedure = {
 				query:'sp_add_request',
 				parameters:[project_id,file.originalname],
-				callback:(rows:any,err:any)=>{
+				callback:async (rows:any,err:any)=>{
 					const req_id = rows['id']
 					const old_path = file.path
 					const new_path = `${IMAGE_DIR}/cut/${req_id}_0${path.extname(file.originalname)}`
-					fs.renameSync(old_path, new_path)
+					await s3.upload(new_path,file.buffer)
 					path_id_map.set(req_id,[new_path,file.originalname])
 				},
 				select_unique:true

@@ -77,7 +77,7 @@ class mysqlConnection{
 			const question_marks_arr = Array(procedure.parameters.length).fill('?');
 			const question_marks = question_marks_arr.join(',')
 			const sql = `CALL ${procedure.query}(${question_marks});`
-			conn.query(sql,procedure.parameters,function(err, rows, fields){
+			conn.query(sql,procedure.parameters,async function(err, rows, fields){
 				if(err){
 					console.error(err.message)
 					if(err.sqlState?.startsWith("SP")){
@@ -103,7 +103,7 @@ class mysqlConnection{
 				}
 
 				if(procedure.callback){
-					procedure.callback(rows,null)
+					await procedure.callback(rows,null)
 				}
 				resolve(rows)
 			})

@@ -34,8 +34,7 @@ export class SegmentationInterface {
   }
 
   async MakeCutsFromWholeImage(req_id: number, type: string, path: string) {
-		// const data = await s3.download(path) as Buffer;
-		const data = fs.readFileSync(path)
+		const data = await s3.download(path) as Buffer;
 		const request: MESSAGE.RequestMakeCut = {
 			req_id: req_id,
 			type: type,
@@ -73,7 +72,7 @@ export class SegmentationInterface {
 				for(var i =1; i <= cut_count; i++){
 					try{
 						var cut_path = await queryManager.get_path(req_id,"cut",i)
-						const data = fs.readFileSync(cut_path)
+						const data = await s3.download(cut_path) as Buffer;
 						const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:i}
 						this.client.StartCut(request, cb);
 					}
@@ -88,8 +87,9 @@ export class SegmentationInterface {
 				}
       }
       else{
-				const data = fs.readFileSync(await queryManager.get_path(req_id,"cut",index))
-      	const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
+				const path = await queryManager.get_path(req_id,"cut",index)
+				const data = await s3.download(path) as Buffer;
+				const request:MESSAGE.RequestStart = {req_id:req_id, image:data,index:index}
         this.client.StartCut(request, cb);
       }
 			}
@@ -108,10 +108,6 @@ export class SegmentationInterface {
 		image.bitmap.data = request.image;
 		const filepath = path.join(IMAGE_DIR,request.filename)
 		s3.upload(filepath,request.image)
-		image.writeAsync(filepath).then((value)=>{
-			queryManager.update_cut(request.req_id, request.type,request.index,filepath)
-			
-		})
 		const response: MESSAGE.ReceiveImage = { success:true }
 		callback(null,response);
 		return response
@@ -121,7 +117,6 @@ export class SegmentationInterface {
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
 		const request:MESSAGE.SendJson = call.request 
 		const filepath = path.join(JSON_DIR,request.filename)
-		fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
 		s3.upload(filepath,Buffer.from(JSON.stringify(JSON.parse(request.data))))
 		switch(request.type){
 			case "cut":
@@ -147,7 +142,7 @@ export class SegmentationInterface {
       req_id:req_id, 
       mask_rles:masks, 
       index:index,
-      image:fs.readFileSync(await queryManager.get_path(req_id,"cut",index)),
+      image:await s3.download(await queryManager.get_path(req_id,"cut",index)) as Buffer,
       cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
     }
 		return new Promise(async (resolve,reject)=>{
@@ -182,11 +177,11 @@ export class OCRInterface {
 
   async Start(req_id: number, index: number) {
     const file_path = await queryManager.get_path(req_id, "cut", index);
-    return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
+    return new Promise<MESSAGE.ReplyRequestStart>(async (resolve, reject) => {
       if(!file_path){
         return reject(new createError.InternalServerError);
       }
-      const data = fs.readFileSync(file_path);
+			const data = await s3.download(file_path) as Buffer;
       const request:MESSAGE.RequestStart = {req_id:req_id, image:data, index:index}
       this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
 				if(err){
@@ -203,7 +198,6 @@ export class OCRInterface {
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>) {
 		const request:MESSAGE.SendJson = call.request 
 
-		fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
 		s3.upload(path.join(JSON_DIR,request.filename),
 			Buffer.from(JSON.stringify(JSON.parse(request.data), null, 4)))
 

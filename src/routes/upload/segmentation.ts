@@ -60,7 +60,7 @@ router.post("/source", multer_image.array("source"), asyncRouterWrap(async (req:
 	})
 }));
 
-router.post("/blank", multer_image.array("blank"), (req:Request,res:Response,next:NextFunction) => {
+router.post("/blank", multer_image.array("blank"), async (req:Request,res:Response,next:NextFunction) => {
 	try{
 		validateParameters(req)
 	}catch(err){
@@ -84,7 +84,7 @@ router.post("/blank", multer_image.array("blank"), (req:Request,res:Response,nex
 		const blank_file = files[i];
 		const old_path = blank_file.path
 		const new_path = `${IMAGE_DIR}/inpaint/${req_id}_0${path.extname(blank_file.originalname)}`
-		fs.renameSync(old_path, new_path)
+		await s3.upload(new_path,blank_file.buffer)
 		promise_all.push(queryManager.update_user_upload_inpaint(req_id,"inpaint",0,new_path))
 		promise_all.push(
 			grpcSocket.segmentation.MakeCutsFromWholeImage(req_id,"inpaint",new_path)
@@ -177,7 +177,6 @@ router.post("/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFu
 	}
 	const mask_path = await queryManager.get_path(req_id,"mask",cut_id)
 	try{
-		fs.writeFileSync(mask_path,JSON.stringify(mask))
 		s3.upload(mask_path,Buffer.from(JSON.stringify(mask)))
 	}catch(error){
 		next(new createError.InternalServerError)
@@ -255,9 +254,6 @@ router.post(
     await queryManager.update_progress(req_id, cut_id, "mask");
 
     const mask_path = await queryManager.get_path(req_id, "mask", cut_id);
-    fs.writeFile(mask_path, JSON.stringify(mask), (err) => {
-      console.log(err);
-    });
 		s3.upload(mask_path, Buffer.from(JSON.stringify(mask)))
 
     const rle: Array<Array<number>> = [];

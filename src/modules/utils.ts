@@ -103,12 +103,16 @@ class S3{
 			Key:filename,
 			Body:buffer,
 		}
-		this.s3.upload(param, function(err, data){
-			if(err){
-				throw new createError.InternalServerError
-			}
-			return data
+		return new Promise<void>((resolve,reject)=>{
+			this.s3.upload(param, function(err, data){
+				if(err){
+					reject(new createError.InternalServerError)
+				}
+				console.log('complete upload')
+				resolve()
+			})
 		})
+		
 	}
 
 	async streamToString (stream: Readable): Promise<string> {

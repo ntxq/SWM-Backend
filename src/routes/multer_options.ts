@@ -3,14 +3,7 @@ import { IMAGE_DIR } from 'src/modules/const';
 import { isImageFile } from 'src/modules/utils';
 import { Request, Response, NextFunction } from 'express-serve-static-core'
 
-var storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, IMAGE_DIR);
-	},
-	filename: function (req, file, cb) {
-		cb(null, Date.now() + file.originalname);
-	}
-})
+var storage = multer.memoryStorage()
 
 var fileFilter = function(req:Request, file:Express.Multer.File, cb:FileFilterCallback){
 	if(!isImageFile(file)){
