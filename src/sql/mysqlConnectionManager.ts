@@ -4,7 +4,6 @@ import {
   Procedure,
 } from "src/sql/sql_connection";
 import { IMAGE_DIR } from "src/modules/const";
-import fs from "fs";
 import path from "path";
 import { BBox } from "src/routes/upload/ocr";
 import { TranslateBBox } from "src/routes/upload/ocr";
@@ -38,8 +37,8 @@ export class mysqlConnectionManager {
 				parameters:[project_id,file.originalname],
 				callback:async (rows:any,err:any)=>{
 					const req_id = rows['id']
-					const old_path = file.path
-					const new_path = `${IMAGE_DIR}/cut/${req_id}_0${path.extname(file.originalname)}`
+					const new_path = path.join(IMAGE_DIR,"cut",
+						`${req_id}_0${path.extname(file.originalname)}`);
 					await s3.upload(new_path,file.buffer)
 					path_id_map.set(req_id,[new_path,file.originalname])
 				},

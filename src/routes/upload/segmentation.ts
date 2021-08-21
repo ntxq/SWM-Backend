@@ -82,8 +82,8 @@ router.post("/blank", multer_image.array("blank"), async (req:Request,res:Respon
 	for(var i =0;i<map_ids.length;i++){
 		const req_id = map_ids[i]
 		const blank_file = files[i];
-		const old_path = blank_file.path
-		const new_path = `${IMAGE_DIR}/inpaint/${req_id}_0${path.extname(blank_file.originalname)}`
+		const new_path = path.join(IMAGE_DIR,"inpaint",
+			`${req_id}_0${path.extname(blank_file.originalname)}`);
 		await s3.upload(new_path,blank_file.buffer)
 		promise_all.push(queryManager.update_user_upload_inpaint(req_id,"inpaint",0,new_path))
 		promise_all.push(
