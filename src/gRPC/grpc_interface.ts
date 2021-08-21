@@ -8,7 +8,6 @@ import { IMAGE_DIR, JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import createError from "http-errors";
-import Jimp = require("jimp");
 import path = require("path");
 import { handleGrpcError, s3 } from "src/modules/utils";
 
@@ -70,20 +69,18 @@ export class SegmentationInterface {
 				const cut_count = await queryManager.getCutCount(requestID)
 				for(var i =1; i <= cut_count; i++){
 					try{
-						var cut_path = await queryManager.getPath(requestID,"cut",i)
-						const data = await s3.download(cut_path) as Buffer;
-						const request:MESSAGE.RequestStart = {
-							req_id:requestID, image:data,cut_index:i
+						var cutPath = await queryManager.getPath(requestID,"cut",i)
+						if(cutPath){
+							const data = await s3.download(cutPath) as Buffer;
+							const request:MESSAGE.RequestStart = {
+								req_id:requestID, image:data,cut_index:i
+							}
+							this.client.StartCut(request, cb);
 						}
-						this.client.StartCut(request, cb);
+						await new Promise(resolve => setTimeout(resolve, 1000));
 					}
 					catch(err){
-						if(err instanceof createError.HttpError){
-							await new Promise(resolve => setTimeout(resolve, 1000));
-						}
-						else{
-							throw err;
-						}
+						throw err;
 					}
 				}
       }
@@ -104,8 +101,7 @@ export class SegmentationInterface {
 		callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>) {
 
 		const request:MESSAGE.SendImage = call.request 
-		const filePath = path.join(IMAGE_DIR,request.file_name)
-		s3.upload(filePath,request.image)
+		queryManager.updateCut(request.req_id, request.type,request.cut_index,request.file_name)
 		const response: MESSAGE.ReceiveImage = { success:true }
 		callback(null,response);
 		return response

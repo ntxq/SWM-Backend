@@ -106,12 +106,14 @@ router.get("/cut", asyncRouterWrap(async (req:Request,res:Response,next:NextFunc
 	}
 	const requestID = parseInt(req.query["req_id"] as string)
 	const cutIndex = parseInt(req.query["cut_id"] as string)
-	const cut = await queryManager.getPath(requestID,"cut",cutIndex)
-	if(!fs.existsSync(cut)){
+	const cutPath = await queryManager.getPath(requestID,"cut",cutIndex)
+	if(!cutPath){
 		next(new createError.InternalServerError)
 		return;
 	}
-	res.sendFile(cut)
+	const cut = await s3.download(cutPath)
+	res.type("png")
+	res.end(cut)
 }));
 
 router.get("/result", (req:Request,res:Response, next:NextFunction) => {
@@ -136,12 +138,14 @@ router.get("/result/inpaint", asyncRouterWrap(async (req:Request,res:Response,ne
 	}
 	const requestID = parseInt(req.query["req_id"] as string)
 	const cutIndex = parseInt(req.query["cut_id"] as string)
-	const inpaint = await queryManager.getPath(requestID,"inpaint",cutIndex)
-	if(!fs.existsSync(inpaint)){
+	const inpaintPath = await queryManager.getPath(requestID,"inpaint",cutIndex)
+	if(!inpaintPath){
 		next(createError.NotFound)
 		return;
 	}
-	res.sendFile(inpaint)
+	const inpaint = await s3.download(inpaintPath)
+	res.type("png")
+	res.end(inpaint)
 }));
 
 router.get("/result/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFunction) => {
@@ -154,7 +158,7 @@ router.get("/result/mask", asyncRouterWrap(async (req:Request,res:Response,next:
 	const requestID = parseInt(req.query["req_id"] as string)
 	const cutIndex = parseInt(req.query["cut_id"] as string)
 	const mask = await queryManager.getPath(requestID,"mask",cutIndex)
-	if(!fs.existsSync(mask)){
+	if(!mask){
 		next(createError.NotFound)
 		return;
 	}
@@ -193,77 +197,5 @@ router.post("/mask", asyncRouterWrap(async (req:Request,res:Response,next:NextFu
 		next(err)
 	})
 }));
-
-router.get(
-  "/result/inpaint",
-  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
-		try{
-			validateParameters(req)
-		}catch(err){
-			next(err)
-			return
-		}
-    const requestID = parseInt(req.query["req_id"] as string)
-		const cutIndex = parseInt(req.query["cut_id"] as string)
-    const inpaint = await queryManager.getPath(requestID, "inpaint", cutIndex);
-    if (!fs.existsSync(inpaint)) {
-      next(createError(404));
-      return;
-    }
-    res.sendFile(inpaint);
-  }
-));
-
-router.get(
-  "/result/mask",
-  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
-		try{
-			validateParameters(req)
-		}catch(err){
-			next(err)
-			return
-		}
-    const requestID = parseInt(req.query["req_id"] as string)
-		const cutIndex = parseInt(req.query["cut_id"] as string)
-    const mask = await queryManager.getPath(requestID, "mask", cutIndex);
-    if (!fs.existsSync(mask)) {
-      next(createError(404));
-      return;
-    }
-    res.send({ mask: require(mask) });
-  }
-));
-
-router.post(
-  "/mask",
-  asyncRouterWrap(async (req: Request, res: Response, next: NextFunction) => {
-		try{
-			validateParameters(req)
-		}catch(err){
-			next(err)
-			return
-		}
-    const requestID = parseInt(req.query["req_id"] as string)
-		const cutIndex = parseInt(req.query["cut_id"] as string)
-    const mask = JSON.parse(req.body["mask"])["result"];
-    if (mask == undefined) {
-      next(createError(400));
-      return;
-    }
-
-    await queryManager.updateProgress(requestID, cutIndex, "mask");
-
-    const mask_path = await queryManager.getPath(requestID, "mask", cutIndex);
-		s3.upload(mask_path, Buffer.from(JSON.stringify(mask)))
-
-    const rle: Array<Array<number>> = [];
-    for (var i = 0; i < mask.length; i++) {
-      rle.push(mask[i]["value"]["rle"]);
-    }
-    grpcSocket.segmentation.updateMask(requestID, cutIndex, rle).then(() => {
-      res.send({ success: true });
-    });
-  }
-));
 
 export default router;

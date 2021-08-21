@@ -61,7 +61,7 @@ export class mysqlConnectionManager {
 
 	async getCutCount(requestID:number):Promise<number>{
 		const procedure:Procedure = {
-			query:'sp_getCutCount',
+			query:'sp_get_cut_count',
 			parameters:[requestID],
 			selectUnique:true
 		}
@@ -162,9 +162,9 @@ export class mysqlConnectionManager {
 			parameters:[requestID,cutIndex],
 			selectUnique:true
 		};
-		const row = await mysqlConnection.callProcedure(procedure);
-
+		
     try {
+			const row = await mysqlConnection.callProcedure(procedure);
       switch (type) {
         case "cut":
           return row["cut_path"];
