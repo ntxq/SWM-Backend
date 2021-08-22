@@ -1,38 +1,42 @@
-import createError from "http-errors"
-import express from 'express';
+import createError from "http-errors";
+import express from "express";
 
-import ocrRouter from 'src/routes/upload/ocr'
-import segmentationRouter from 'src/routes/upload/segmentation'
+import ocrRouter from "src/routes/upload/ocr";
+import segmentationRouter from "src/routes/upload/segmentation";
 
-import { Request, Response, NextFunction } from 'express-serve-static-core'
+import { Request, Response } from "express-serve-static-core";
 
-var router = express.Router();
+const router = express.Router();
 
-router.use('/OCR', ocrRouter);
-router.use('/segmentation', segmentationRouter);
+router.use("/OCR", ocrRouter);
+router.use("/segmentation", segmentationRouter);
 
 // catch 404 and forward to error handler
-router.use(function(req, res, next) {
+router.use(function (request, response, next) {
   next(createError.NotFound);
 });
 
 // error handler
-router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
+router.use(function (
+  error: createError.HttpError,
+  request: Request,
+  response: Response
+) {
   // set locals, only providing error in development
-  if(res.statusCode === 415){
-    return res.status(res.statusCode).send('error');
+  if (response.statusCode === 415) {
+    return response.status(response.statusCode).send("error");
   }
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  response.locals.message = error.message;
+  response.locals.error = request.app.get("env") === "development" ? error : {};
 
   // render the error page
-  res.status(err.statusCode || err.status || 500);
-  res.send('error');
+  response.status(error.statusCode || error.status || 500);
+  response.send("error");
 });
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-    res.send('index');
+router.get("/", function (request, response) {
+  response.send("index");
 });
 
-module.exports = router;
+export default router;
