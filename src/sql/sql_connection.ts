@@ -1,13 +1,13 @@
+//todo
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import createError from "http-errors";
 import mysql, { Connection } from "mysql";
 import { DBConnection } from "src/sql/secret";
 
-type QueryParameter = string | number | JSON;
+type QueryReturnType = SelectUniqueResult | Array<SelectUniqueResult> | [];
+type QueryParameter = string | number | JSON | boolean | null;
 type QueryUniqueSelectRow = Array<Array<unknown>>;
 export type SelectUniqueResult = { [key: string]: string | number };
-export type SelectMultipleResult = Array<
-  SelectUniqueResult | SelectMultipleResult
->;
 
 export interface Procedure {
   query: string;
@@ -50,13 +50,15 @@ export class MysqlConnection {
     return connection;
   }
 
-  async callProcedure(procedure: Procedure): Promise<unknown> {
+  async callProcedure(procedure: Procedure): Promise<QueryReturnType> {
     const rows = await this.callMultipleProcedure([procedure]);
     return rows[0];
   }
 
-  callMultipleProcedure(procedures: Array<Procedure>): Promise<unknown[]> {
-    return new Promise<Array<unknown>>((resolve, reject) => {
+  callMultipleProcedure(
+    procedures: Array<Procedure>
+  ): Promise<QueryReturnType[]> {
+    return new Promise<QueryReturnType[]>((resolve, reject) => {
       this.connection.getConnection((error, conn) => {
         if (error) {
           console.error(error);
@@ -91,7 +93,7 @@ export class MysqlConnection {
   private execAsyncQuery(
     conn: Connection,
     procedure: Procedure
-  ): Promise<unknown> {
+  ): Promise<QueryReturnType> {
     return new Promise((resolve, rejects) => {
       const questionMarksArray = "?"
         .repeat(procedure.parameters.length)
@@ -110,21 +112,14 @@ export class MysqlConnection {
           return;
         }
 
-        //Array라는 건 마지막이 OkPacket이라는 뜻
-        if (Array.isArray(rows)) {
-          rows.pop();
-        }
-        //단순 update문으로 OkPacket만 오는 경우는 parsing하지않는다
-        if (procedure.selectUnique) {
-          const result = rows as QueryUniqueSelectRow;
-          if (result[0] && result[0][0] === undefined) {
-            resolve([]);
-            return;
-          }
-          resolve(JSON.parse(JSON.stringify(result[0][0])));
+        //Array가 아니면 OkPacket만 온 것
+        if (!Array.isArray(rows)) {
+          resolve([]);
+          return;
         }
 
-        resolve(rows);
+        const result = rows as QueryUniqueSelectRow;
+        resolve(JSON.parse(JSON.stringify(result[0][0])));
       });
     });
   }

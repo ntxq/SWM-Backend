@@ -5,7 +5,7 @@
  */
 import app from "src/app";
 import debug from "debug";
-import http = require("http");
+import * as http from "node:http";
 import { AddressInfo } from "node:net";
 import createError from "http-errors";
 /**

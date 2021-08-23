@@ -1,3 +1,5 @@
+//todo
+/* eslint-disable @typescript-eslint/unbound-method */
 import grpc = require("@grpc/grpc-js");
 import protoLoader = require("@grpc/proto-loader");
 import { SegmentationInterface, OCRInterface } from "src/gRPC/grpc_interface";
@@ -5,7 +7,13 @@ import { GrpcObject } from "@grpc/grpc-js";
 import { ServiceClientConstructor } from "@grpc/grpc-js/build/src/make-client";
 import path = require("path");
 
-const PROTO_PATH = path.join(path.resolve(), "protos", "ai_server.proto");
+const PROTO_PATH = path.join(
+  path.resolve(),
+  "src",
+  "gRPC",
+  "protos",
+  "ai_server.proto"
+);
 
 const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
   keepCase: true,
@@ -51,8 +59,8 @@ class GRPCSocket {
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor;
     server.addService(Segmentation.service, {
-      ImageTransfer: this.segmentation.imageTransfer.bind(this),
-      JsonTransfer: this.segmentation.jsonTransfer.bind(this),
+      ImageTransfer: this.segmentation.imageTransfer,
+      JsonTransfer: this.segmentation.jsonTransfer,
     });
 
     const OCR = this.proto.OCR as ServiceClientConstructor;

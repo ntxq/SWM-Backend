@@ -114,8 +114,9 @@ class S3 {
       Body: buffer,
     };
     return new Promise<void>((resolve, reject) => {
-      this.s3.upload(parameter, function (error) {
+      this.s3.upload(parameter, function (error, data) {
         if (error) {
+          console.error(data, error);
           reject(new createError.InternalServerError());
         }
         console.log("complete upload");

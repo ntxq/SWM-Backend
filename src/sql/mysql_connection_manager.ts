@@ -1,8 +1,14 @@
+//todo
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable unicorn/no-null */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   MysqlConnection,
   mysqlConnection,
   Procedure,
-  SelectMultipleResult,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
 import { IMAGE_DIR } from "src/modules/const";
@@ -46,7 +52,7 @@ export class mysqlConnectionManager {
     }
     const rows = (await mysqlConnection.callMultipleProcedure(
       procedures
-    )) as SelectMultipleResult;
+    )) as Array<SelectUniqueResult>;
 
     for (const [index, row] of rows.entries()) {
       const requestID = row["id"] as number;
@@ -140,14 +146,13 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex, ...path, isUserUploadInpaint],
       selectUnique: true,
     };
-    const rows = await mysqlConnection.callProcedure(procedure);
+    await mysqlConnection.callProcedure(procedure);
     progressManager.updateProgress(requestID, cutIndex, type);
     if (cutIndex !== 0) {
       progressManager.updatePart(requestID, 0, type);
     } else if (cutIndex === 0) {
       progressManager.restoreTotalPart(requestID, 0, type);
     }
-    return rows;
   }
 
   async setCutRanges(requestID: number, json: JSON): Promise<Array<unknown>> {
@@ -177,7 +182,7 @@ export class mysqlConnectionManager {
       parameters: [requestID],
       selectUnique: false,
     };
-    const rows = await mysqlConnection.callProcedure(procedure);
+    const rows = (await mysqlConnection.callProcedure(procedure)) as Array<any>;
     for (const row of rows) {
       ranges.set(`${row["cut_idx"]}`, [row["cut_start"], row["cut_end"]]);
     }
@@ -200,22 +205,20 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
 
-    try {
-      const row = await mysqlConnection.callProcedure(procedure);
-      switch (type) {
-        case "cut":
-          return row["cut_path"];
-        case "inpaint":
-          return row["inpaint_path"];
-        case "mask":
-          return row["mask_path"];
-        case "mask_image":
-          return row["mask_image_path"];
-        default:
-          return "";
-      }
-    } catch {
-      return "";
+    const row = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    switch (type) {
+      case "cut":
+        return row["cut_path"] as string;
+      case "inpaint":
+        return row["inpaint_path"] as string;
+      case "mask":
+        return row["mask_path"] as string;
+      case "mask_image":
+        return row["mask_image_path"] as string;
+      default:
+        return "";
     }
   }
 
@@ -246,15 +249,17 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
     return mysqlConnection.callProcedure(procedure).then((rows) => {
-      rows = JSON.parse(rows["bboxes"]);
-      for (const row of rows) {
+      const bboxes = JSON.parse(
+        (rows as SelectUniqueResult)["bboxes"] as string
+      );
+      for (const row_bbox of bboxes) {
         const bbox: BBox = {
-          bbox_id: row["bbox_id"],
-          originalX: row["originalX"],
-          originalY: row["originalY"],
-          originalWidth: row["originalWidth"],
-          originalHeight: row["originalHeight"],
-          originalText: row["originalText"],
+          bbox_id: row_bbox["bbox_id"],
+          originalX: row_bbox["originalX"],
+          originalY: row_bbox["originalY"],
+          originalWidth: row_bbox["originalWidth"],
+          originalHeight: row_bbox["originalHeight"],
+          originalText: row_bbox["originalText"],
         };
         result.push(bbox);
       }
@@ -267,9 +272,13 @@ export class mysqlConnectionManager {
     cutIndex: number,
     updatedBboxes: TranslateBBox[]
   ): Promise<unknown> {
-    this.getBboxes(requestID, cutIndex).then((bboxes) => {
-      updatedBboxes = updateBbox(bboxes, updatedBboxes);
-    });
+    this.getBboxes(requestID, cutIndex)
+      .then((bboxes) => {
+        updatedBboxes = updateBbox(bboxes, updatedBboxes);
+      })
+      .catch((error) => {
+        throw error;
+      });
     const procedure: Procedure = {
       query: "sp_set_bbox_2",
       parameters: [requestID, cutIndex, JSON.stringify(updatedBboxes)],

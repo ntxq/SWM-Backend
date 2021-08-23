@@ -62,7 +62,7 @@ router.post(
                   if (reply) {
                     const pathes = ID2PathMap.get(reply.req_id);
                     if (pathes) {
-                      const [_, originalPath] = pathes;
+                      const [, originalPath] = pathes;
                       path2IDMap.set(originalPath, {
                         req_id: reply.req_id,
                         cut_count: reply.cut_count,
