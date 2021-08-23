@@ -115,9 +115,16 @@ export class MysqlConnection {
           resolve([]);
           return;
         }
-
         const result = rows as QueryUniqueSelectRow;
-        resolve(JSON.parse(JSON.stringify(result[0][0])));
+        if (result[0] === undefined || result[0][0] === undefined) {
+          resolve([]);
+          return;
+        }
+        if (procedure.selectUnique) {
+          resolve(JSON.parse(JSON.stringify(result[0][0])));
+        } else {
+          resolve(JSON.parse(JSON.stringify(result[0])));
+        }
       });
     });
   }
