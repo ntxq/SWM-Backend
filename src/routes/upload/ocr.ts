@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express-serve-static-core";
 import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import createHttpError from "http-errors";
-import { validateParameters } from "src/modules/utils";
+import { asyncRouterWrap, validateParameters } from "src/modules/utils";
 
 const router = express.Router();
 
@@ -52,17 +52,19 @@ router.get(
 
 router.get(
   "/result",
-  (request: Request, response: Response, next: NextFunction) => {
-    try {
-      validateParameters(request);
-    } catch (error) {
-      next(error);
+  asyncRouterWrap(
+    async (request: Request, response: Response, next: NextFunction) => {
+      try {
+        validateParameters(request);
+      } catch (error) {
+        next(error);
+      }
+      const requestID = Number.parseInt(request.query["req_id"] as string);
+      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+      const progress = await queryManager.checkProgress(requestID, cutIndex);
+      response.send({ progress: Math.max(0, progress - 100) });
     }
-    const requestID = Number.parseInt(request.query["req_id"] as string);
-    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-    const progress = queryManager.checkProgress(requestID, cutIndex);
-    response.send({ progress: Math.max(0, progress - 100) });
-  }
+  )
 );
 
 router.get(

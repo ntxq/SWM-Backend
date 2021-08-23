@@ -82,7 +82,7 @@ export class mysqlConnectionManager {
     return rows["cut_count"] as number;
   }
 
-  checkProgress(requestID: number, cutIndex: number): number {
+  checkProgress(requestID: number, cutIndex: number): Promise<number> {
     return progressManager.getProgress(requestID, cutIndex);
   }
 
@@ -97,7 +97,7 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
     const rows = await mysqlConnection.callProcedure(procedure);
-    progressManager.updateProgress(requestID, cutIndex, status);
+    await progressManager.updateProgress(requestID, cutIndex, status);
     return rows;
   }
 
@@ -118,13 +118,8 @@ export class mysqlConnectionManager {
     isUserUploadInpaint = false
   ): Promise<void> {
     //cut,mask,inpaint
-    const default_value = Object.create(null) as null;
-    const path: Array<string | null> = [
-      default_value,
-      default_value,
-      default_value,
-      default_value,
-    ];
+    // eslint-disable-next-line unicorn/no-null
+    const path: Array<string | null> = [null, null, null, null];
     switch (type) {
       case "cut":
         path[0] = filePath;
@@ -146,11 +141,11 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
     await mysqlConnection.callProcedure(procedure);
-    progressManager.updateProgress(requestID, cutIndex, type);
+    await progressManager.updateProgress(requestID, cutIndex, type);
     if (cutIndex !== 0) {
-      progressManager.updatePart(requestID, 0, type);
+      await progressManager.updatePart(requestID, 0, type);
     } else if (cutIndex === 0) {
-      progressManager.restoreTotalPart(requestID, 0, type);
+      await progressManager.restoreTotalPart(requestID, 0, type);
     }
   }
 
@@ -167,7 +162,7 @@ export class mysqlConnectionManager {
       procedures.push(procedure);
     }
     const rows = await mysqlConnection.callMultipleProcedure(procedures);
-    progressManager.updateTotalPart(
+    await progressManager.updateTotalPart(
       requestID,
       0,
       "cut",
@@ -193,7 +188,6 @@ export class mysqlConnectionManager {
       cut_start: number;
       cut_end: number;
     }
-
     for (const row of rows as Array<CutRange>) {
       ranges.set(`${row["cut_idx"]}`, [row["cut_start"], row["cut_end"]]);
     }
@@ -215,7 +209,6 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex],
       selectUnique: true,
     };
-
     const row = (await mysqlConnection.callProcedure(
       procedure
     )) as SelectUniqueResult;
@@ -245,9 +238,9 @@ export class mysqlConnectionManager {
     };
     const rows = await mysqlConnection.callProcedure(procedure);
     //todo 최준영 detect-bbox-translate-complete 단계 구분 필요
-    progressManager.updateProgress(requestID, index, "complete");
+    await progressManager.updateProgress(requestID, index, "complete");
     if (index !== 0) {
-      progressManager.updatePart(requestID, 0, "complete");
+      await progressManager.updatePart(requestID, 0, "complete");
     }
     return rows;
   }

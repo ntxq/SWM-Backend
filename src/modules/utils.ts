@@ -36,14 +36,16 @@ export function handleGrpcError(error: Error): createError.HttpError {
   return new createError.ServiceUnavailable();
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const asyncRouterWrap = (asyncFuntion: Function) => {
+type RouterFunction = (
+  request: Request,
+  response: Response,
+  next: NextFunction
+) => Promise<void>;
+export const asyncRouterWrap = (asyncFuntion: RouterFunction) => {
   return (request: Request, response: Response, next: NextFunction): void => {
-    try {
-      asyncFuntion(request, response, next);
-    } catch (error) {
+    asyncFuntion(request, response, next).catch((error) => {
       next(error);
-    }
+    });
   };
 };
 

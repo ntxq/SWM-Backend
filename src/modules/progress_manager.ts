@@ -57,25 +57,23 @@ class Progress {
     this.totalParts = 1;
     this.previousTotalParts = 0;
     this.progressedParts = 0;
-    this.initStatus()
-      .then((status) => {
-        this.status = status;
-      })
-      .catch((error) => {
-        throw error;
-      });
     this.lastUpdateTime = Date.now();
   }
 
-  async initStatus(): Promise<string> {
+  async initStatus(): Promise<void> {
     const procedure: Procedure = {
       query: "sp_check_progress_3",
       parameters: [this.requestID, this.cutIndex],
       selectUnique: true,
     };
-    return mysqlConnection.callProcedure(procedure).then((rows) => {
-      return (rows as SelectUniqueResult)["complete"] as string;
-    });
+    return mysqlConnection
+      .callProcedure(procedure)
+      .then((rows) => {
+        return (rows as SelectUniqueResult)["complete"] as string;
+      })
+      .then((status) => {
+        this.updateStatus(status);
+      });
   }
 
   updateStatus(status: string) {
@@ -171,7 +169,10 @@ export class ProgressManager {
     return this.instance || (this.instance = new this());
   }
 
-  getProgressClass(requestID: number, cutIndex: number): Progress {
+  async getProgressClass(
+    requestID: number,
+    cutIndex: number
+  ): Promise<Progress> {
     if (this.progress_map.has(requestID) === false) {
       this.progress_map.set(requestID, new Map<number, Progress>());
     }
@@ -181,43 +182,62 @@ export class ProgressManager {
     >;
 
     if (progress_request.has(cutIndex) === false) {
-      progress_request.set(cutIndex, new Progress(requestID, cutIndex));
+      const progress = new Progress(requestID, cutIndex);
+      await progress.initStatus();
+      progress_request.set(cutIndex, progress);
     }
     const progress_cut = progress_request.get(cutIndex) as Progress;
     return progress_cut;
   }
 
-  getProgress(requestID: number, cutIndex: number): number {
-    let progress = this.getProgressClass(requestID, cutIndex).getProgress();
+  async getProgress(requestID: number, cutIndex: number): Promise<number> {
+    const progressCls = await this.getProgressClass(requestID, cutIndex);
+    let progress = progressCls.getProgress();
     //0~200사이 범위로 제한
     progress = Math.max(0, Math.min(200, progress));
     return progress;
   }
 
-  updateProgress(requestID: number, cutIndex: number, status: string): void {
-    this.getProgressClass(requestID, cutIndex).updateStatus(status);
+  async updateProgress(
+    requestID: number,
+    cutIndex: number,
+    status: string
+  ): Promise<void> {
+    const progressCls = await this.getProgressClass(requestID, cutIndex);
+    progressCls.updateStatus(status);
   }
 
-  updatePart(requestID: number, cutIndex: number, status: string): void {
+  async updatePart(
+    requestID: number,
+    cutIndex: number,
+    status: string
+  ): Promise<void> {
     if (this.progress_map.get(requestID)?.has(cutIndex)) {
-      this.getProgressClass(requestID, cutIndex).updatePart(status);
+      const progressCls = await this.getProgressClass(requestID, cutIndex);
+      progressCls.updatePart(status);
     }
   }
 
-  updateTotalPart(
+  async updateTotalPart(
     requestID: number,
     cutIndex: number,
     status: string,
     count: number
-  ): void {
+  ): Promise<void> {
     if (this.progress_map.get(requestID)?.has(cutIndex)) {
-      this.getProgressClass(requestID, cutIndex).updateTotalPart(status, count);
+      const progressCls = await this.getProgressClass(requestID, cutIndex);
+      progressCls.updateTotalPart(status, count);
     }
   }
 
-  restoreTotalPart(requestID: number, cutIndex: number, status: string): void {
+  async restoreTotalPart(
+    requestID: number,
+    cutIndex: number,
+    status: string
+  ): Promise<void> {
     if (this.progress_map.get(requestID)?.has(cutIndex)) {
-      this.getProgressClass(requestID, cutIndex).restoreTotalPart(status);
+      const progressCls = await this.getProgressClass(requestID, cutIndex);
+      progressCls.restoreTotalPart(status);
     }
   }
 }

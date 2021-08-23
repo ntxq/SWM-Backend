@@ -182,18 +182,20 @@ router.get(
 
 router.get(
   "/result",
-  (request: Request, response: Response, next: NextFunction) => {
-    try {
-      validateParameters(request);
-    } catch (error) {
-      next(error);
-      return;
+  asyncRouterWrap(
+    async (request: Request, response: Response, next: NextFunction) => {
+      try {
+        validateParameters(request);
+      } catch (error) {
+        next(error);
+        return;
+      }
+      const requestID = Number.parseInt(request.query["req_id"] as string);
+      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+      const progress = await queryManager.checkProgress(requestID, cutIndex);
+      response.send({ progress: Math.min(progress, 100) });
     }
-    const requestID = Number.parseInt(request.query["req_id"] as string);
-    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-    const progress = queryManager.checkProgress(requestID, cutIndex);
-    response.send({ progress: Math.min(progress, 100) });
-  }
+  )
 );
 
 router.get(
@@ -241,8 +243,8 @@ router.get(
         next(createError.NotFound);
         return;
       }
-      const mask = s3.download(maskPath);
-      response.send({ mask: mask });
+      const mask = await s3.download(maskPath);
+      response.send({ mask: JSON.parse(mask.toString()) as JSON });
     }
   )
 );
@@ -260,20 +262,17 @@ interface RLE {
 }
 interface PostMaskBody {
   mask: string;
+  req_id: string;
+  cut_id: string;
 }
 router.post(
   "/mask",
   asyncRouterWrap(
     async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
+      validateParameters(request);
       const body = request.body as PostMaskBody;
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+      const requestID = Number.parseInt(body["req_id"]);
+      const cutIndex = Number.parseInt(body["cut_id"]);
       const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)[
         "result"
       ];
