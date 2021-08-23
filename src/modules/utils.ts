@@ -118,7 +118,6 @@ class S3 {
     return new Promise<void>((resolve, reject) => {
       this.s3.upload(parameter, function (error, data) {
         if (error) {
-          console.error(data, error);
           reject(new createError.InternalServerError());
         }
         console.log("complete upload");
@@ -144,7 +143,7 @@ class S3 {
     return new Promise<Buffer | string>((resolve, reject) => {
       this.s3.getObject(parameter, (error, data) => {
         if (error || data.Body === undefined) {
-          reject(error);
+          reject(new createError.InternalServerError());
           return;
         }
         if (data.Body instanceof Readable) {

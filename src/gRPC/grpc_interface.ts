@@ -63,6 +63,9 @@ export class SegmentationInterface {
       for (let failCount = 0; failCount < 20; failCount++) {
         try {
           const path = await queryManager.getPath(requestID, "cut", cutIndex);
+          if (path === null) {
+            throw new createError.InternalServerError();
+          }
           const data = (await s3.download(path)) as Buffer;
           const request: MESSAGE.RequestStart = {
             req_id: requestID,

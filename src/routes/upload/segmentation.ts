@@ -120,6 +120,7 @@ router.post(
           return;
         },
         (error) => {
+          console.error(error);
           throw error;
         }
       );
@@ -281,11 +282,11 @@ router.post(
         return;
       }
       const mask_path = await queryManager.getPath(requestID, "mask", cutIndex);
-      try {
-        await s3.upload(mask_path, Buffer.from(JSON.stringify(mask)));
-      } catch {
-        next(new createError.InternalServerError());
-      }
+      // todo 최준영
+      // rle를 하나의 array로 만든 다음에 그걸 json으로 저장하도록 고쳐야한다.
+      // s3.upload(mask_path, Buffer.from(JSON.stringify(mask))).catch((error) => {
+      //   next(error);
+      // });
 
       const rle: Array<Array<number>> = [];
       for (const element of mask) {
