@@ -1,10 +1,3 @@
-//todo
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable unicorn/no-null */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   MysqlConnection,
   mysqlConnection,
@@ -125,7 +118,13 @@ export class mysqlConnectionManager {
     isUserUploadInpaint = false
   ): Promise<void> {
     //cut,mask,inpaint
-    const path: Array<string | null> = [null, null, null, null];
+    const default_value = Object.create(null) as null;
+    const path: Array<string | null> = [
+      default_value,
+      default_value,
+      default_value,
+      default_value,
+    ];
     switch (type) {
       case "cut":
         path[0] = filePath;
@@ -157,7 +156,9 @@ export class mysqlConnectionManager {
 
   async setCutRanges(requestID: number, json: JSON): Promise<Array<unknown>> {
     const procedures = new Array<Procedure>();
-    for (const [index, range] of Object.entries(json)) {
+    type CutRangeArray = Array<[string, Array<number>]>;
+
+    for (const [index, range] of Object.entries(json) as CutRangeArray) {
       const procedure: Procedure = {
         query: "sp_set_cut_ranges",
         parameters: [requestID, Number.parseInt(index), range[0], range[1]],
@@ -182,8 +183,18 @@ export class mysqlConnectionManager {
       parameters: [requestID],
       selectUnique: false,
     };
-    const rows = (await mysqlConnection.callProcedure(procedure)) as Array<any>;
-    for (const row of rows) {
+
+    const rows = (await mysqlConnection.callProcedure(
+      procedure
+    )) as Array<SelectUniqueResult>;
+
+    interface CutRange extends SelectUniqueResult {
+      cut_idx: string;
+      cut_start: number;
+      cut_end: number;
+    }
+
+    for (const row of rows as Array<CutRange>) {
       ranges.set(`${row["cut_idx"]}`, [row["cut_start"], row["cut_end"]]);
     }
     return ranges;
@@ -248,10 +259,11 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex],
       selectUnique: true,
     };
+
     return mysqlConnection.callProcedure(procedure).then((rows) => {
       const bboxes = JSON.parse(
         (rows as SelectUniqueResult)["bboxes"] as string
-      );
+      ) as Array<BBox>;
       for (const row_bbox of bboxes) {
         const bbox: BBox = {
           bbox_id: row_bbox["bbox_id"],

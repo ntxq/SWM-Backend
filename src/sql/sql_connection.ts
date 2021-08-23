@@ -1,5 +1,3 @@
-//todo
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import createError from "http-errors";
 import mysql, { Connection } from "mysql";
 import { DBConnection } from "src/sql/secret";
