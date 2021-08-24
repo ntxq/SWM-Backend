@@ -6,7 +6,7 @@ import app from "src/app";
 import { expect } from "chai";
 import rle from "test/resource/rle.json";
 
-describe.only("/upload/segmentation two request", function () {
+describe("/upload/segmentation two request", function () {
   this.timeout(10 * 1000);
   const request_ids: Array<number> = [];
   const cut_counts: Array<number> = [];
@@ -75,7 +75,7 @@ describe.only("/upload/segmentation two request", function () {
     }
   });
 
-  describe.only("get result and update using previous data", function () {
+  describe("get result and update using previous data", function () {
     const request_id = 1307;
     const cut_count = 1;
     let mask: Array<number>;
