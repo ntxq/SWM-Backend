@@ -8,7 +8,7 @@ import grpc = require("@grpc/grpc-js");
 import { JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import createError from "http-errors";
+import createError, { HttpError } from "http-errors";
 import path = require("path");
 import { handleGrpcError, s3 } from "src/modules/utils";
 
@@ -60,32 +60,45 @@ export class SegmentationInterface {
 
   async start(requestID: number, cutIndex = 0): Promise<void> {
     if (cutIndex !== 0) {
-      const path = await queryManager.getPath(requestID, "cut", cutIndex);
-      const data = (await s3.download(path)) as Buffer;
-      const request: MESSAGE.RequestStart = {
-        req_id: requestID,
-        image: data,
-        cut_index: cutIndex,
-      };
-      return new Promise((resolve, reject) => {
-        const callback = function (
-          error: Error | null,
-          response: MESSAGE.ReplyRequestStart
-        ) {
-          if (error) {
-            reject(handleGrpcError(error));
-            return;
+      for (let failCount = 0; failCount < 20; failCount++) {
+        try {
+          const path = await queryManager.getPath(requestID, "cut", cutIndex);
+          if (path === null) {
+            throw new createError.InternalServerError();
           }
-          console.log("Greeting:", response.status_code);
-          resolve();
-        };
-        this.client.StartCut(request, callback);
-      });
+          const data = (await s3.download(path)) as Buffer;
+          const request: MESSAGE.RequestStart = {
+            req_id: requestID,
+            image: data,
+            cut_index: cutIndex,
+          };
+          return new Promise((resolve, reject) => {
+            const callback = function (
+              error: Error | null,
+              response: MESSAGE.ReplyRequestStart
+            ) {
+              if (error) {
+                reject(handleGrpcError(error));
+                return;
+              }
+              console.log("Greeting:", response.status_code);
+              resolve();
+            };
+            this.client.StartCut(request, callback);
+          });
+        } catch (error) {
+          if (error instanceof HttpError && error.statusCode == 500) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          } else {
+            throw error;
+          }
+        }
+      }
     } else {
       const cut_count = await queryManager.getCutCount(requestID);
       await Promise.all(
         Array.from({ length: cut_count }, (_, index) =>
-          this.start(requestID, index)
+          this.start(requestID, index + 1)
         )
       );
     }

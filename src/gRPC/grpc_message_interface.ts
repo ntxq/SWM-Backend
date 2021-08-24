@@ -2,10 +2,6 @@ export interface SendImage {
   req_id: number;
   type: string;
   cut_index: number;
-  image: Buffer;
-  is_rgba: boolean;
-  width: number;
-  height: number;
   file_name: string;
 }
 

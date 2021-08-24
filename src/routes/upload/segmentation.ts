@@ -62,7 +62,7 @@ router.post(
                   if (reply) {
                     const pathes = ID2PathMap.get(reply.req_id);
                     if (pathes) {
-                      const [_, originalPath] = pathes;
+                      const [, originalPath] = pathes;
                       path2IDMap.set(originalPath, {
                         req_id: reply.req_id,
                         cut_count: reply.cut_count,
@@ -120,6 +120,7 @@ router.post(
           return;
         },
         (error) => {
+          console.error(error);
           throw error;
         }
       );
@@ -182,18 +183,20 @@ router.get(
 
 router.get(
   "/result",
-  (request: Request, response: Response, next: NextFunction) => {
-    try {
-      validateParameters(request);
-    } catch (error) {
-      next(error);
-      return;
+  asyncRouterWrap(
+    async (request: Request, response: Response, next: NextFunction) => {
+      try {
+        validateParameters(request);
+      } catch (error) {
+        next(error);
+        return;
+      }
+      const requestID = Number.parseInt(request.query["req_id"] as string);
+      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+      const progress = await queryManager.checkProgress(requestID, cutIndex);
+      response.send({ progress: Math.min(progress, 100) });
     }
-    const requestID = Number.parseInt(request.query["req_id"] as string);
-    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-    const progress = queryManager.checkProgress(requestID, cutIndex);
-    response.send({ progress: Math.min(progress, 100) });
-  }
+  )
 );
 
 router.get(
@@ -241,8 +244,8 @@ router.get(
         next(createError.NotFound);
         return;
       }
-      const mask = s3.download(maskPath);
-      response.send({ mask: mask });
+      const mask = await s3.download(maskPath);
+      response.send({ mask: JSON.parse(mask.toString()) as JSON });
     }
   )
 );
@@ -260,48 +263,35 @@ interface RLE {
 }
 interface PostMaskBody {
   mask: string;
+  req_id: string;
+  cut_id: string;
 }
 router.post(
   "/mask",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
-      const body = request.body as PostMaskBody;
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-      const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)[
-        "result"
-      ];
-      if (mask == undefined) {
-        next(createError.NotFound);
-        return;
-      }
-      const mask_path = await queryManager.getPath(requestID, "mask", cutIndex);
-      try {
-        await s3.upload(mask_path, Buffer.from(JSON.stringify(mask)));
-      } catch {
-        next(new createError.InternalServerError());
-      }
-
-      const rle: Array<Array<number>> = [];
-      for (const element of mask) {
-        rle.push(element["value"]["rle"]);
-      }
-      grpcSocket.segmentation
-        .updateMask(requestID, cutIndex, rle)
-        .then(() => {
-          response.send({ success: true });
-        })
-        .catch((error) => {
-          next(error);
-        });
+  (request: Request, response: Response, next: NextFunction) => {
+    validateParameters(request);
+    const body = request.body as PostMaskBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    const cutIndex = Number.parseInt(body["cut_id"]);
+    const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)["result"];
+    if (mask == undefined) {
+      next(createError.NotFound);
+      return;
     }
-  )
+
+    const rle: Array<Array<number>> = [];
+    for (const element of mask) {
+      rle.push(element["value"]["rle"]);
+    }
+    grpcSocket.segmentation
+      .updateMask(requestID, cutIndex, rle)
+      .then(() => {
+        response.send({ success: true });
+      })
+      .catch((error) => {
+        next(error);
+      });
+  }
 );
 
 export default router;

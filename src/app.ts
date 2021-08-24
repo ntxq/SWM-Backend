@@ -18,13 +18,13 @@ app.use(cors());
 
 app.use(
   "/static",
-  express.static(path.join(path.resolve(), "../frontend/build/static"))
+  express.static(path.join(path.resolve(), "frontend/build/static"))
 );
 
 app.use("/upload", uploadRouter);
 app.get("*", (request: Request, response: Response) =>
   response.sendFile("index.html", {
-    root: path.join(path.resolve(), "../frontend/build/"),
+    root: path.join(path.resolve(), "frontend/build/"),
   })
 );
 

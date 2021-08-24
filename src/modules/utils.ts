@@ -36,14 +36,16 @@ export function handleGrpcError(error: Error): createError.HttpError {
   return new createError.ServiceUnavailable();
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const asyncRouterWrap = (asyncFuntion: Function) => {
+type RouterFunction = (
+  request: Request,
+  response: Response,
+  next: NextFunction
+) => Promise<void>;
+export const asyncRouterWrap = (asyncFuntion: RouterFunction) => {
   return (request: Request, response: Response, next: NextFunction): void => {
-    try {
-      asyncFuntion(request, response, next);
-    } catch (error) {
+    asyncFuntion(request, response, next).catch((error) => {
       next(error);
-    }
+    });
   };
 };
 
@@ -114,7 +116,7 @@ class S3 {
       Body: buffer,
     };
     return new Promise<void>((resolve, reject) => {
-      this.s3.upload(parameter, function (error) {
+      this.s3.upload(parameter, function (error, data) {
         if (error) {
           reject(new createError.InternalServerError());
         }
@@ -141,7 +143,7 @@ class S3 {
     return new Promise<Buffer | string>((resolve, reject) => {
       this.s3.getObject(parameter, (error, data) => {
         if (error || data.Body === undefined) {
-          reject(error);
+          reject(new createError.InternalServerError());
           return;
         }
         if (data.Body instanceof Readable) {

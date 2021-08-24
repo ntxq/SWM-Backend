@@ -2,7 +2,6 @@ import {
   MysqlConnection,
   mysqlConnection,
   Procedure,
-  SelectMultipleResult,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
 import { IMAGE_DIR } from "src/modules/const";
@@ -46,7 +45,7 @@ export class mysqlConnectionManager {
     }
     const rows = (await mysqlConnection.callMultipleProcedure(
       procedures
-    )) as SelectMultipleResult;
+    )) as Array<SelectUniqueResult>;
 
     for (const [index, row] of rows.entries()) {
       const requestID = row["id"] as number;
@@ -83,7 +82,7 @@ export class mysqlConnectionManager {
     return rows["cut_count"] as number;
   }
 
-  checkProgress(requestID: number, cutIndex: number): number {
+  checkProgress(requestID: number, cutIndex: number): Promise<number> {
     return progressManager.getProgress(requestID, cutIndex);
   }
 
@@ -98,7 +97,7 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
     const rows = await mysqlConnection.callProcedure(procedure);
-    progressManager.updateProgress(requestID, cutIndex, status);
+    await progressManager.updateProgress(requestID, cutIndex, status);
     return rows;
   }
 
@@ -119,6 +118,7 @@ export class mysqlConnectionManager {
     isUserUploadInpaint = false
   ): Promise<void> {
     //cut,mask,inpaint
+    // eslint-disable-next-line unicorn/no-null
     const path: Array<string | null> = [null, null, null, null];
     switch (type) {
       case "cut":
@@ -140,19 +140,20 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex, ...path, isUserUploadInpaint],
       selectUnique: true,
     };
-    const rows = await mysqlConnection.callProcedure(procedure);
-    progressManager.updateProgress(requestID, cutIndex, type);
+    await mysqlConnection.callProcedure(procedure);
+    await progressManager.updateProgress(requestID, cutIndex, type);
     if (cutIndex !== 0) {
-      progressManager.updatePart(requestID, 0, type);
+      await progressManager.updatePart(requestID, 0, type);
     } else if (cutIndex === 0) {
-      progressManager.restoreTotalPart(requestID, 0, type);
+      await progressManager.restoreTotalPart(requestID, 0, type);
     }
-    return rows;
   }
 
   async setCutRanges(requestID: number, json: JSON): Promise<Array<unknown>> {
     const procedures = new Array<Procedure>();
-    for (const [index, range] of Object.entries(json)) {
+    type CutRangeArray = Array<[string, Array<number>]>;
+
+    for (const [index, range] of Object.entries(json) as CutRangeArray) {
       const procedure: Procedure = {
         query: "sp_set_cut_ranges",
         parameters: [requestID, Number.parseInt(index), range[0], range[1]],
@@ -161,7 +162,7 @@ export class mysqlConnectionManager {
       procedures.push(procedure);
     }
     const rows = await mysqlConnection.callMultipleProcedure(procedures);
-    progressManager.updateTotalPart(
+    await progressManager.updateTotalPart(
       requestID,
       0,
       "cut",
@@ -177,8 +178,17 @@ export class mysqlConnectionManager {
       parameters: [requestID],
       selectUnique: false,
     };
-    const rows = await mysqlConnection.callProcedure(procedure);
-    for (const row of rows) {
+
+    const rows = (await mysqlConnection.callProcedure(
+      procedure
+    )) as Array<SelectUniqueResult>;
+
+    interface CutRange extends SelectUniqueResult {
+      cut_idx: string;
+      cut_start: number;
+      cut_end: number;
+    }
+    for (const row of rows as Array<CutRange>) {
       ranges.set(`${row["cut_idx"]}`, [row["cut_start"], row["cut_end"]]);
     }
     return ranges;
@@ -199,23 +209,20 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex],
       selectUnique: true,
     };
-
-    try {
-      const row = await mysqlConnection.callProcedure(procedure);
-      switch (type) {
-        case "cut":
-          return row["cut_path"];
-        case "inpaint":
-          return row["inpaint_path"];
-        case "mask":
-          return row["mask_path"];
-        case "mask_image":
-          return row["mask_image_path"];
-        default:
-          return "";
-      }
-    } catch {
-      return "";
+    const row = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    switch (type) {
+      case "cut":
+        return row["cut_path"] as string;
+      case "inpaint":
+        return row["inpaint_path"] as string;
+      case "mask":
+        return row["mask_path"] as string;
+      case "mask_image":
+        return row["mask_image_path"] as string;
+      default:
+        return "";
     }
   }
 
@@ -231,9 +238,9 @@ export class mysqlConnectionManager {
     };
     const rows = await mysqlConnection.callProcedure(procedure);
     //todo 최준영 detect-bbox-translate-complete 단계 구분 필요
-    progressManager.updateProgress(requestID, index, "complete");
+    await progressManager.updateProgress(requestID, index, "complete");
     if (index !== 0) {
-      progressManager.updatePart(requestID, 0, "complete");
+      await progressManager.updatePart(requestID, 0, "complete");
     }
     return rows;
   }
@@ -245,16 +252,19 @@ export class mysqlConnectionManager {
       parameters: [requestID, cutIndex],
       selectUnique: true,
     };
+
     return mysqlConnection.callProcedure(procedure).then((rows) => {
-      rows = JSON.parse(rows["bboxes"]);
-      for (const row of rows) {
+      const bboxes = JSON.parse(
+        (rows as SelectUniqueResult)["bboxes"] as string
+      ) as Array<BBox>;
+      for (const row_bbox of bboxes) {
         const bbox: BBox = {
-          bbox_id: row["bbox_id"],
-          originalX: row["originalX"],
-          originalY: row["originalY"],
-          originalWidth: row["originalWidth"],
-          originalHeight: row["originalHeight"],
-          originalText: row["originalText"],
+          bbox_id: row_bbox["bbox_id"],
+          originalX: row_bbox["originalX"],
+          originalY: row_bbox["originalY"],
+          originalWidth: row_bbox["originalWidth"],
+          originalHeight: row_bbox["originalHeight"],
+          originalText: row_bbox["originalText"],
         };
         result.push(bbox);
       }
@@ -267,9 +277,13 @@ export class mysqlConnectionManager {
     cutIndex: number,
     updatedBboxes: TranslateBBox[]
   ): Promise<unknown> {
-    this.getBboxes(requestID, cutIndex).then((bboxes) => {
-      updatedBboxes = updateBbox(bboxes, updatedBboxes);
-    });
+    this.getBboxes(requestID, cutIndex)
+      .then((bboxes) => {
+        updatedBboxes = updateBbox(bboxes, updatedBboxes);
+      })
+      .catch((error) => {
+        throw error;
+      });
     const procedure: Procedure = {
       query: "sp_set_bbox_2",
       parameters: [requestID, cutIndex, JSON.stringify(updatedBboxes)],

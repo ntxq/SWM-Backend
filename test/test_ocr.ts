@@ -1,122 +1,77 @@
-import supertest = require('supertest');
-import app from 'src/app'
-import { expect } from "chai"
-import fs from 'fs';
-import path from 'path';
-import { IMAGE_DIR, JSON_DIR } from 'src/modules/const';
-import { clearTestImage, clearTestJSON } from './utils';
-import { TranslateBBox } from 'src/routes/upload/ocr';
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable no-prototype-builtins */
+import supertest from "supertest";
+import app from "src/app";
+import { expect } from "chai";
 
-describe('process OCR', function () {
-	this.timeout(2 * 60 * 1000);
-	var req_id = 0
-	var cut_id = 0
-	var bboxList: TranslateBBox[] = []
-	before(async function () {
-		const res = await supertest(app).post('/upload/segmentation/source')
-			.attach('source', 'test/resource/test_img.png')
-			.field({ title: "OCR test" })
-			.expect(200)
-		expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
-		const res_test_img = res.body.req_ids["test_img.png"]
-		req_id = res_test_img["req_id"]
-		cut_id = res_test_img["cut_count"]
-		expect(req_id).to.be.a('number')
-		expect(cut_id).to.be.a('number')
+describe("/upload/OCR one request", function () {
+  const request_id = 1307;
+  const cut_id = 1;
+  // before("get inpainted request_id", async function () {
+  // });
+  it("/select 200", async function () {
+    const response = await supertest(app)
+      .get("/upload/OCR/select")
+      .query({ req_id: request_id, cut_id: cut_id })
+      .expect(200);
+    expect(response.body).to.hasOwnProperty("success");
+    expect(response.body.success).to.be.equal(true);
+  });
 
-		while (true) {
-			await new Promise(resolve => setTimeout(resolve, 2000));
-			const res_cut = await supertest(app).get('/upload/segmentation/cut')
-				.query({ req_id: req_id, cut_id: cut_id })
-			if (res_cut.statusCode == 200) {
-				break
-			}
-		}
-	});
-	it('OCR start', function (done) {
-		supertest(app).get('/upload/OCR/select')
-			.query({ req_id: req_id, cut_id: cut_id })
-			.expect(200)
-			.end(function (err: Error, res: supertest.Response) {
-				if (err) return;
-				expect(res.body.success).to.equal(true)
-				done();
-			});
-	});
+  it("/result 200", async function () {
+    const response = await supertest(app)
+      .get("/upload/OCR/result")
+      .query({ req_id: request_id, cut_id: cut_id });
+    expect(response.body).to.hasOwnProperty("progress");
+    expect(response.body.progress).to.be.a("number");
+  });
 
-	it('OCR complete', async function () {
-		while (true) {
-			await new Promise(resolve => setTimeout(resolve, 2000));
-			const res = await supertest(app).get('/upload/OCR/result').query({ req_id: req_id, cut_id: cut_id }).expect(200)
-			expect(res.body.progress).to.be.a("number")
-			if (res.body.progress == 100) {
-				break
-			}
-		}
-	});
+  describe("update OCR using previous data", function () {
+    const request_id = 1439;
+    const cut_id = 1;
+    let bboxList: Array<unknown>;
+    // before("get completed data", async function () {
 
-	it('OCR get bboxes', function (done) {
-		supertest(app).get('/upload/OCR/result/bbox')
-			.query({ req_id: req_id, cut_id: cut_id })
-			.expect(200)
-			.end((err, res) => {
-				expect(res.body.bboxList).to.be.an('array')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('bbox_id')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('originalX')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('originalY')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('originalWidth')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('originalHeight')
-				expect(res.body.bboxList[0]).to.haveOwnProperty('originalText')
-				bboxList = res.body.bboxList
-				done()
-			})
-	});
+    // });
+    it("/result complete", async function () {
+      const response = await supertest(app)
+        .get("/upload/OCR/result")
+        .query({ req_id: request_id, cut_id: cut_id });
+      expect(response.body).to.hasOwnProperty("progress");
+      expect(response.body.progress).to.be.equal(100);
+    });
 
-	it('OCR text edit', function (done) {
-		for (var bbox of bboxList) {
-			bbox.translatedWidth = bbox.originalWidth
-			bbox.translatedHeight = bbox.originalHeight
-			bbox.translatedX = bbox.originalX
-			bbox.translatedY = bbox.originalY
-			bbox.translatedText = bbox.originalText
-			bbox.fontColor = "#FFFFFF"
-			bbox.fontFamily = "HY"
-			bbox.fontSize = 14
-			bbox.fontWeight = 'bold'
-			bbox.fontStyle = "light"
-		}
-		supertest(app).post('/upload/OCR/edit')
-			.send({
-				req_id: req_id,
-				cut_id: cut_id,
-				bboxList: JSON.stringify(bboxList)
-			})
-			.expect(200)
-			.end(function (err: Error, res: supertest.Response) {
-				if (err) {
-					console.error(err)
-					done(err);
-					return;
-				}
-				expect(res.body.success).to.equal(true)
-				done();
-			});
-	});
+    it("/result/bbox 200", async function () {
+      const response = await supertest(app)
+        .get("/upload/OCR/result/bbox")
+        .query({ req_id: request_id, cut_id: cut_id });
+      expect(response.body).to.hasOwnProperty("bboxList");
+      expect(response.body.bboxList).to.be.instanceof(Array);
+      bboxList = response.body.bboxList;
+      for (const bbox of response.body.bboxList) {
+        expect(bbox.bbox_id).to.be.a("number");
+        expect(bbox.originalX).to.be.a("number");
+        expect(bbox.originalY).to.be.a("number");
+        expect(bbox.originalWidth).to.be.a("number");
+        expect(bbox.originalHeight).to.be.a("number");
+        expect(bbox.originalText).to.be.a("string");
+        // todo 번역 붙이기
+        // expect(bbox.translatedText).to.be.a("string");
+      }
+    });
 
-	it('OCR complete edit', async function () {
-		while (true) {
-			await new Promise(resolve => setTimeout(resolve, 2000));
-			const res = await supertest(app).get('/upload/OCR/result').query({ req_id: req_id, cut_id: cut_id }).expect(200)
-			expect(res.body.progress).to.be.a("number")
-			if (res.body.progress == 100) {
-				break
-			}
-		}
-	});
-
-	after(function (done) {
-		clearTestImage();
-		clearTestJSON();
-		done();
-	})
+    it("/edit 200", async function () {
+      const response = await supertest(app)
+        .post("/upload/OCR/edit")
+        .send({
+          req_id: request_id,
+          cut_id: cut_id,
+          bboxList: JSON.stringify(bboxList),
+        })
+        .expect(200);
+      expect(response.body).to.hasOwnProperty("success");
+      expect(response.body.success).to.be.equal(true);
+    });
+  });
 });
