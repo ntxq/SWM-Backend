@@ -268,40 +268,30 @@ interface PostMaskBody {
 }
 router.post(
   "/mask",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      validateParameters(request);
-      const body = request.body as PostMaskBody;
-      const requestID = Number.parseInt(body["req_id"]);
-      const cutIndex = Number.parseInt(body["cut_id"]);
-      const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)[
-        "result"
-      ];
-      if (mask == undefined) {
-        next(createError.NotFound);
-        return;
-      }
-      const mask_path = await queryManager.getPath(requestID, "mask", cutIndex);
-      // todo 최준영
-      // rle를 하나의 array로 만든 다음에 그걸 json으로 저장하도록 고쳐야한다.
-      // s3.upload(mask_path, Buffer.from(JSON.stringify(mask))).catch((error) => {
-      //   next(error);
-      // });
-
-      const rle: Array<Array<number>> = [];
-      for (const element of mask) {
-        rle.push(element["value"]["rle"]);
-      }
-      grpcSocket.segmentation
-        .updateMask(requestID, cutIndex, rle)
-        .then(() => {
-          response.send({ success: true });
-        })
-        .catch((error) => {
-          next(error);
-        });
+  (request: Request, response: Response, next: NextFunction) => {
+    validateParameters(request);
+    const body = request.body as PostMaskBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    const cutIndex = Number.parseInt(body["cut_id"]);
+    const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)["result"];
+    if (mask == undefined) {
+      next(createError.NotFound);
+      return;
     }
-  )
+
+    const rle: Array<Array<number>> = [];
+    for (const element of mask) {
+      rle.push(element["value"]["rle"]);
+    }
+    grpcSocket.segmentation
+      .updateMask(requestID, cutIndex, rle)
+      .then(() => {
+        response.send({ success: true });
+      })
+      .catch((error) => {
+        next(error);
+      });
+  }
 );
 
 export default router;
