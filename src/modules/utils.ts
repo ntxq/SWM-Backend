@@ -1,5 +1,4 @@
 import path from "node:path";
-import { TranslateBBox, BBox } from "src/routes/upload/ocr";
 import createError from "http-errors";
 import AWS from "aws-sdk";
 import { Request, Response, NextFunction } from "express-serve-static-core";
@@ -22,13 +21,6 @@ export function isImageFile(file: Express.Multer.File): boolean {
   const mimetype = filetypes.test(file.mimetype);
 
   return mimetype && extname;
-}
-
-export function updateBbox(
-  oldBbox: BBox[] | TranslateBBox[],
-  newBbox: BBox[] | TranslateBBox[]
-): TranslateBBox[] {
-  return newBbox as TranslateBBox[];
 }
 
 export function handleGrpcError(error: Error): createError.HttpError {

@@ -8,7 +8,7 @@ import { IMAGE_DIR } from "src/modules/const";
 import path from "node:path";
 import { BBox, TranslateBBox } from "src/routes/upload/ocr";
 
-import { s3, updateBbox } from "src/modules/utils";
+import { s3 } from "src/modules/utils";
 import { progressManager } from "src/modules/progress_manager";
 
 export class mysqlConnectionManager {
@@ -142,11 +142,9 @@ export class mysqlConnectionManager {
     };
     await mysqlConnection.callProcedure(procedure);
     await progressManager.updateProgress(requestID, cutIndex, type);
-    if (cutIndex !== 0) {
-      await progressManager.updatePart(requestID, 0, type);
-    } else if (cutIndex === 0) {
-      await progressManager.restoreTotalPart(requestID, 0, type);
-    }
+    await (cutIndex !== 0
+      ? progressManager.updatePart(requestID, 0, type)
+      : progressManager.restoreTotalPart(requestID, 0, type));
   }
 
   async setCutRanges(requestID: number, json: JSON): Promise<Array<unknown>> {
@@ -272,18 +270,11 @@ export class mysqlConnectionManager {
     });
   }
 
-  setBboxesWithTranslate(
+  async setBboxesWithTranslate(
     requestID: number,
     cutIndex: number,
     updatedBboxes: TranslateBBox[]
   ): Promise<unknown> {
-    this.getBboxes(requestID, cutIndex)
-      .then((bboxes) => {
-        updatedBboxes = updateBbox(bboxes, updatedBboxes);
-      })
-      .catch((error) => {
-        throw error;
-      });
     const procedure: Procedure = {
       query: "sp_set_bbox_2",
       parameters: [requestID, cutIndex, JSON.stringify(updatedBboxes)],
