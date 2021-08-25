@@ -27,7 +27,7 @@ export class MysqlConnection {
 
   connect(): mysql.Pool {
     const connection = mysql.createPool({
-      connectionLimit: 10,
+      connectionLimit: 100,
       host: DBConnection.host,
       user: DBConnection.user,
       password: DBConnection.password,
@@ -53,37 +53,44 @@ export class MysqlConnection {
     return rows[0];
   }
 
-  callMultipleProcedure(
+  async callMultipleProcedure(
     procedures: Array<Procedure>
   ): Promise<QueryReturnType[]> {
+    const connection = await this.getConnection();
     return new Promise<QueryReturnType[]>((resolve, reject) => {
+      connection.beginTransaction(() => {
+        Promise.all(
+          [...procedures].map((procedure) =>
+            this.execAsyncQuery(connection, procedure)
+          )
+        )
+          .then((rows) => {
+            connection.commit();
+            connection.release();
+            resolve(rows);
+          })
+          .catch((error) => {
+            connection.commit();
+            connection.release();
+            if (error instanceof createError.HttpError) {
+              reject(error);
+            } else {
+              reject(new createError.InternalServerError());
+            }
+          });
+      });
+    });
+  }
+
+  private getConnection() {
+    return new Promise<mysql.PoolConnection>((resolve, reject) => {
       this.connection.getConnection((error, conn) => {
         if (error) {
           console.error(error);
           reject(new createError.InternalServerError());
           return;
         }
-        conn.beginTransaction(() => {
-          Promise.all(
-            [...procedures].map((procedure) =>
-              this.execAsyncQuery(conn, procedure)
-            )
-          )
-            .then((rows) => {
-              conn.commit();
-              conn.release();
-              resolve(rows);
-            })
-            .catch((error) => {
-              conn.commit();
-              conn.release();
-              if (error instanceof createError.HttpError) {
-                reject(error);
-              } else {
-                reject(new createError.InternalServerError());
-              }
-            });
-        });
+        resolve(conn);
       });
     });
   }
@@ -103,7 +110,7 @@ export class MysqlConnection {
         if (error) {
           console.error(error.message);
           if (error.sqlState?.startsWith("SP")) {
-            rejects(createError(error.sqlState.slice(2)));
+            rejects(new createError[error.sqlState.slice(2)]());
           } else {
             rejects(new createError.InternalServerError());
           }
@@ -127,10 +134,6 @@ export class MysqlConnection {
         }
       });
     });
-  }
-
-  destroyConnection(): void {
-    this.connection.end();
   }
 }
 
