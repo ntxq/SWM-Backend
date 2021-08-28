@@ -26,7 +26,7 @@ export interface ReceiveJson {
 export interface RequestMakeCut {
   req_id: number;
   type: string;
-  image: Buffer;
+  image_path: string;
 }
 
 export interface ReplyRequestMakeCut {
@@ -37,7 +37,7 @@ export interface ReplyRequestMakeCut {
 export interface RequestStart {
   req_id: number;
   cut_index: number;
-  image: Buffer;
+  image_path: string;
 }
 
 export interface ReplyRequestStart {
@@ -49,7 +49,7 @@ export interface RequestMaskUpdate {
   req_id: number;
   mask_rles: Buffer[];
   cut_index: number;
-  image: Buffer;
+  image_path: string;
   cut_ranges: string;
 }
 

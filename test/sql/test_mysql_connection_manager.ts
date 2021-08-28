@@ -7,7 +7,7 @@ import { expect } from "chai";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { mysqlConnection } from "src/sql/sql_connection";
 import sinon from "ts-sinon";
-import { s3 } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 
 describe("mysql connection test", function () {
   before((done) => {

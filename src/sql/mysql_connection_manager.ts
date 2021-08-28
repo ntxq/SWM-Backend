@@ -8,7 +8,7 @@ import { IMAGE_DIR } from "src/modules/const";
 import path from "node:path";
 import { BBox, TranslateBBox } from "src/routes/upload/ocr";
 
-import { s3 } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 import { progressManager, ProgressType } from "src/modules/progress_manager";
 
 export class mysqlConnectionManager {

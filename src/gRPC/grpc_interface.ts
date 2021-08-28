@@ -10,7 +10,8 @@ import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import createError, { HttpError } from "http-errors";
 import path = require("path");
-import { handleGrpcError, s3 } from "src/modules/utils";
+import { handleGrpcError } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 
 export class SegmentationInterface {
   clientUrl: string;
@@ -35,13 +36,12 @@ export class SegmentationInterface {
   async makeCutsFromWholeImage(
     requestID: number,
     type: string,
-    path: string
+    imagePath: string
   ): Promise<MESSAGE.ReplyRequestMakeCut> {
-    const data = (await s3.download(path)) as Buffer;
     const request: MESSAGE.RequestMakeCut = {
       req_id: requestID,
       type: type,
-      image: data,
+      image_path: imagePath,
     };
     return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve, reject) => {
       const callback = function (
@@ -62,15 +62,18 @@ export class SegmentationInterface {
     if (cutIndex !== 0) {
       for (let failCount = 0; failCount < 20; failCount++) {
         try {
-          const path = await queryManager.getPath(requestID, "cut", cutIndex);
-          if (path === null) {
+          const imagePath = await queryManager.getPath(
+            requestID,
+            "cut",
+            cutIndex
+          );
+          if (imagePath === null) {
             throw new createError.InternalServerError();
           }
-          const data = (await s3.download(path)) as Buffer;
           const request: MESSAGE.RequestStart = {
             req_id: requestID,
-            image: data,
             cut_index: cutIndex,
+            image_path: imagePath,
           };
           return new Promise((resolve, reject) => {
             const callback = function (
@@ -166,9 +169,7 @@ export class SegmentationInterface {
       req_id: requestID,
       mask_rles: masks,
       cut_index: cutIndex,
-      image: (await s3.download(
-        await queryManager.getPath(requestID, "cut", cutIndex)
-      )) as Buffer,
+      image_path: await queryManager.getPath(requestID, "cut", cutIndex),
       cut_ranges: JSON.stringify(Object.fromEntries(cutRanges)),
     };
     await queryManager.updateProgress(requestID, cutIndex, "cut");
@@ -208,17 +209,16 @@ export class OCRInterface {
     requestID: number,
     cutIndex: number
   ): Promise<MESSAGE.ReplyRequestStart> {
-    const filePath = await queryManager.getPath(requestID, "cut", cutIndex);
-    if (!filePath) {
+    const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
+    if (!imagePath) {
       throw new createError.InternalServerError();
     }
-    const data = (await s3.download(filePath)) as Buffer;
 
     return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {
         req_id: requestID,
-        image: data,
         cut_index: cutIndex,
+        image_path: imagePath,
       };
       this.client.start(
         request,

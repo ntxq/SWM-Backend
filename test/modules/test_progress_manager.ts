@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { expect } from "chai";
 import { progressManager } from "src/modules/progress_manager";
-import { s3 } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 import { mysqlConnection } from "src/sql/sql_connection";
 import sinon from "ts-sinon";
 
