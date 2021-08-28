@@ -1,6 +1,8 @@
+import { ProgressType } from "src/modules/progress_manager";
+
 export interface SendImage {
   req_id: number;
-  type: string;
+  type: ProgressType;
   cut_index: number;
   file_name: string;
 }

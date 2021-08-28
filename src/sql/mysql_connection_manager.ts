@@ -9,7 +9,7 @@ import path from "node:path";
 import { BBox, TranslateBBox } from "src/routes/upload/ocr";
 
 import { s3 } from "src/modules/utils";
-import { progressManager } from "src/modules/progress_manager";
+import { progressManager, ProgressType } from "src/modules/progress_manager";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -89,7 +89,7 @@ export class mysqlConnectionManager {
   async updateProgress(
     requestID: number,
     cutIndex: number,
-    status: string
+    status: ProgressType
   ): Promise<unknown> {
     const procedure: Procedure = {
       query: "sp_update_progress_2",
@@ -103,7 +103,7 @@ export class mysqlConnectionManager {
 
   updateUserUploadInpaint(
     requestID: number,
-    type: string,
+    type: ProgressType,
     cutIndex: number,
     filePath: string
   ): Promise<void> {
@@ -112,7 +112,7 @@ export class mysqlConnectionManager {
 
   async updateCut(
     requestID: number,
-    type: string,
+    type: ProgressType,
     cutIndex: number,
     filePath: string,
     isUserUploadInpaint = false
@@ -127,9 +127,6 @@ export class mysqlConnectionManager {
       case "mask":
         path[1] = filePath;
         break;
-      case "mask_image":
-        path[2] = filePath;
-        break;
       case "inpaint":
         path[3] = filePath;
         break;
@@ -142,9 +139,6 @@ export class mysqlConnectionManager {
     };
     await mysqlConnection.callProcedure(procedure);
     await progressManager.updateProgress(requestID, cutIndex, type);
-    await (cutIndex !== 0
-      ? progressManager.updatePart(requestID, 0, type)
-      : progressManager.restoreTotalPart(requestID, 0, type));
   }
 
   async setCutRanges(requestID: number, json: JSON): Promise<Array<unknown>> {
@@ -160,12 +154,6 @@ export class mysqlConnectionManager {
       procedures.push(procedure);
     }
     const rows = await mysqlConnection.callMultipleProcedure(procedures);
-    await progressManager.updateTotalPart(
-      requestID,
-      0,
-      "cut",
-      Object.entries(json).length
-    );
     return rows;
   }
 
@@ -237,9 +225,6 @@ export class mysqlConnectionManager {
     const rows = await mysqlConnection.callProcedure(procedure);
     //todo 최준영 detect-bbox-translate-complete 단계 구분 필요
     await progressManager.updateProgress(requestID, index, "complete");
-    if (index !== 0) {
-      await progressManager.updatePart(requestID, 0, "complete");
-    }
     return rows;
   }
 
