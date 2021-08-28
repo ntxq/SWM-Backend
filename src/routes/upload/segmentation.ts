@@ -26,12 +26,7 @@ router.post(
   multer_image.array("source"),
   asyncRouterWrap(
     async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
+      validateParameters(request);
       const body = request.body as PostSourceBody;
       //todo 최준영 제대로 된 user id 로 변환
       const userID = 123_123_123;
@@ -101,12 +96,7 @@ router.post(
   "/blank",
   multer_image.array("blank"),
   async (request: Request, response: Response, next: NextFunction) => {
-    try {
-      validateParameters(request);
-    } catch (error) {
-      next(error);
-      return;
-    }
+    validateParameters(request);
     const body = request.body as PostBlankBody;
     const noneBlankList = JSON.parse(body.empty_id) as number[];
     const blankList = JSON.parse(body.map_ids) as number[];
@@ -161,12 +151,7 @@ router.get(
   "/cut",
   asyncRouterWrap(
     async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
+      validateParameters(request);
       const requestID = Number.parseInt(request.query["req_id"] as string);
       const cutIndex = Number.parseInt(request.query["cut_id"] as string);
       const cutPath = await queryManager.getPath(requestID, "cut", cutIndex);
@@ -183,32 +168,20 @@ router.get(
 
 router.get(
   "/result",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-      const progress = await queryManager.checkProgress(requestID, cutIndex);
-      response.send({ progress: Math.min(progress, 100) });
-    }
-  )
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const progress = await queryManager.checkProgress(requestID, cutIndex);
+    response.send({ progress: Math.min(progress, 100) });
+  })
 );
 
 router.get(
   "/result/inpaint",
   asyncRouterWrap(
     async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
+      validateParameters(request);
       const requestID = Number.parseInt(request.query["req_id"] as string);
       const cutIndex = Number.parseInt(request.query["cut_id"] as string);
       const inpaintPath = await queryManager.getPath(
@@ -231,12 +204,7 @@ router.get(
   "/result/mask",
   asyncRouterWrap(
     async (request: Request, response: Response, next: NextFunction) => {
-      try {
-        validateParameters(request);
-      } catch (error) {
-        next(error);
-        return;
-      }
+      validateParameters(request);
       const requestID = Number.parseInt(request.query["req_id"] as string);
       const cutIndex = Number.parseInt(request.query["cut_id"] as string);
       const maskPath = await queryManager.getPath(requestID, "mask", cutIndex);
