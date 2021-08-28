@@ -119,7 +119,6 @@ describe("mysql connection test", function () {
     await queryManager.updateCut(1, "cut", 1, "samplePath");
     await queryManager.updateCut(1, "inpaint", 1, "samplePath");
     await queryManager.updateCut(1, "mask", 1, "samplePath");
-    await queryManager.updateCut(1, "mask_image", 1, "samplePath");
     await queryManager.updateCut(1, "cut", 0, "samplePath");
   });
 
@@ -129,12 +128,6 @@ describe("mysql connection test", function () {
     await queryManager.updateUserUploadInpaint(1, "cut", 1, "samplePath");
     await queryManager.updateUserUploadInpaint(1, "inpaint", 1, "samplePath");
     await queryManager.updateUserUploadInpaint(1, "mask", 1, "samplePath");
-    await queryManager.updateUserUploadInpaint(
-      1,
-      "mask_image",
-      1,
-      "samplePath"
-    );
   });
 
   it("get/set CutRange", async function () {
