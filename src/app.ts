@@ -30,14 +30,16 @@ app.get("*", (request: Request, response: Response) =>
 
 // catch 404 and forward to error handler
 app.use(function (request: Request, response: Response, next: NextFunction) {
-  next(createError.NotFound);
+  next(new createError.NotFound());
 });
 
 // error handler
 app.use(function (
   error: createError.HttpError,
   request: Request,
-  response: Response
+  response: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  next: NextFunction
 ): void {
   console.log(error.message);
   // set locals, only providing error in development

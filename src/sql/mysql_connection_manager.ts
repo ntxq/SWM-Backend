@@ -10,6 +10,7 @@ import { BBox, TranslateBBox } from "src/routes/upload/ocr";
 
 import { s3 } from "src/modules/s3_wrapper";
 import { progressManager, ProgressType } from "src/modules/progress_manager";
+import createError from "http-errors";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -208,7 +209,7 @@ export class mysqlConnectionManager {
       case "mask_image":
         return row["mask_image_path"] as string;
       default:
-        return "";
+        throw new createError.InternalServerError();
     }
   }
 

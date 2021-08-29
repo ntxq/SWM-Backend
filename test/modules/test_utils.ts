@@ -4,7 +4,7 @@
 import { expect } from "chai";
 import { isImageFile } from "src/modules/utils";
 
-describe.only("utils test", function () {
+describe("utils test", function () {
   it("isImageFile", function (done) {
     const imageFile = {
       originalname: "imagesample.png",

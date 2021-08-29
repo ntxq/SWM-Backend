@@ -1,6 +1,7 @@
 import multer, { FileFilterCallback } from "multer";
 import { isImageFile } from "src/modules/utils";
 import { Request } from "express-serve-static-core";
+import createHttpError from "http-errors";
 
 const storage = multer.memoryStorage();
 
@@ -10,11 +11,8 @@ const fileFilter = function (
   callback: FileFilterCallback
 ) {
   if (!isImageFile(file)) {
-    if (request.res) {
-      request.res.statusCode = 415;
-    }
     // req.h = 'goes wrong on the mimetype';
-    callback(new Error("Error: Images Only!"));
+    callback(new createHttpError.UnsupportedMediaType());
   }
   // eslint-disable-next-line unicorn/no-null
   return callback(null, true);

@@ -8,7 +8,7 @@ import grpc = require("@grpc/grpc-js");
 import { JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import createError, { HttpError } from "http-errors";
+import { HttpError } from "http-errors";
 import path = require("path");
 import { handleGrpcError } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
@@ -67,9 +67,6 @@ export class SegmentationInterface {
             "cut",
             cutIndex
           );
-          if (imagePath === null) {
-            throw new createError.InternalServerError();
-          }
           const request: MESSAGE.RequestStart = {
             req_id: requestID,
             cut_index: cutIndex,
@@ -210,9 +207,6 @@ export class OCRInterface {
     cutIndex: number
   ): Promise<MESSAGE.ReplyRequestStart> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
-    if (!imagePath) {
-      throw new createError.InternalServerError();
-    }
 
     return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {

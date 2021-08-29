@@ -3,9 +3,8 @@ import { IMAGE_DIR } from "src/modules/const";
 import path from "node:path";
 import { grpcSocket } from "src/gRPC/grpc_socket";
 
-import { Request, Response, NextFunction } from "express-serve-static-core";
+import { Request, Response } from "express-serve-static-core";
 import { multer_image } from "src/routes/multer_options";
-import createError from "http-errors";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { asyncRouterWrap, validateParameters } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
@@ -124,21 +123,15 @@ router.post(
 
 router.get(
   "/cut",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      validateParameters(request);
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-      const cutPath = await queryManager.getPath(requestID, "cut", cutIndex);
-      if (!cutPath) {
-        next(new createError.InternalServerError());
-        return;
-      }
-      const cut = await s3.download(cutPath);
-      response.type("png");
-      response.end(cut);
-    }
-  )
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const cutPath = await queryManager.getPath(requestID, "cut", cutIndex);
+    const cut = await s3.download(cutPath);
+    response.type("png");
+    response.end(cut);
+  })
 );
 
 router.get(
@@ -154,43 +147,31 @@ router.get(
 
 router.get(
   "/result/inpaint",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      validateParameters(request);
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-      const inpaintPath = await queryManager.getPath(
-        requestID,
-        "inpaint",
-        cutIndex
-      );
-      if (!inpaintPath) {
-        next(createError.NotFound);
-        return;
-      }
-      const inpaint = await s3.download(inpaintPath);
-      response.type("png");
-      response.end(inpaint);
-    }
-  )
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const inpaintPath = await queryManager.getPath(
+      requestID,
+      "inpaint",
+      cutIndex
+    );
+    const inpaint = await s3.download(inpaintPath);
+    response.type("png");
+    response.end(inpaint);
+  })
 );
 
 router.get(
   "/result/mask",
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      validateParameters(request);
-      const requestID = Number.parseInt(request.query["req_id"] as string);
-      const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-      const maskPath = await queryManager.getPath(requestID, "mask", cutIndex);
-      if (!maskPath) {
-        next(createError.NotFound);
-        return;
-      }
-      const mask = await s3.download(maskPath);
-      response.send({ mask: JSON.parse(mask.toString()) as JSON });
-    }
-  )
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const maskPath = await queryManager.getPath(requestID, "mask", cutIndex);
+    const mask = await s3.download(maskPath);
+    response.send({ mask: JSON.parse(mask.toString()) as JSON });
+  })
 );
 
 interface RLEValue {
@@ -211,30 +192,20 @@ interface PostMaskBody {
 }
 router.post(
   "/mask",
-  (request: Request, response: Response, next: NextFunction) => {
+  asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
     const body = request.body as PostMaskBody;
     const requestID = Number.parseInt(body["req_id"]);
     const cutIndex = Number.parseInt(body["cut_id"]);
     const mask: Array<RLEResult> = (JSON.parse(body["mask"]) as RLE)["result"];
-    if (mask == undefined) {
-      next(createError.NotFound);
-      return;
-    }
 
     const rle: Array<Array<number>> = [];
     for (const element of mask) {
       rle.push(element["value"]["rle"]);
     }
-    grpcSocket.segmentation
-      .updateMask(requestID, cutIndex, rle)
-      .then(() => {
-        response.send({ success: true });
-      })
-      .catch((error) => {
-        next(error);
-      });
-  }
+    await grpcSocket.segmentation.updateMask(requestID, cutIndex, rle);
+    response.send({ success: true });
+  })
 );
 
 export default router;
