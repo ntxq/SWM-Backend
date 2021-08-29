@@ -2,7 +2,6 @@ import express from "express";
 import { IMAGE_DIR } from "src/modules/const";
 import path from "node:path";
 import { grpcSocket } from "src/gRPC/grpc_socket";
-import * as MESSAGE from "src/gRPC/grpc_message_interface";
 
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { multer_image } from "src/routes/multer_options";
@@ -25,67 +24,48 @@ interface PostSourceResponse {
 router.post(
   "/source",
   multer_image.array("source"),
-  asyncRouterWrap(
-    async (request: Request, response: Response, next: NextFunction) => {
-      validateParameters(request);
-      const body = request.body as PostSourceBody;
-      //todo 최준영 제대로 된 user id 로 변환
-      const userID = 123_123_123;
-      const projectID = await queryManager.addProject(userID, body["title"]);
-      const files = request.files as Express.Multer.File[];
-      queryManager
-        .addRequest(projectID, files)
-        .then(async (ID2PathMap: Map<number, [string, string]>) => {
-          const promiseArray = new Array<
-            Promise<void | MESSAGE.ReplyRequestMakeCut>
-          >();
-          for (const [requestID, pathes] of ID2PathMap) {
-            const [new_path] = pathes;
-            promiseArray.push(
-              queryManager.updateCut(requestID, "cut", 0, new_path),
-              grpcSocket.segmentation.makeCutsFromWholeImage(
-                requestID,
-                "cut",
-                new_path
-              )
-            );
-          }
-          const path2IDMap = await Promise.all(promiseArray).then(
-            async (replies: Array<void | MESSAGE.ReplyRequestMakeCut>) => {
-              const path2IDMap = new Map<string, PostSourceResponse>();
-              try {
-                for (const reply of replies) {
-                  if (reply) {
-                    const pathes = ID2PathMap.get(reply.req_id);
-                    if (pathes) {
-                      const [, originalPath] = pathes;
-                      path2IDMap.set(originalPath, {
-                        req_id: reply.req_id,
-                        cut_count: reply.cut_count,
-                      });
-                      await queryManager.setCutCount(
-                        reply.req_id,
-                        reply.cut_count
-                      );
-                    }
-                  }
-                }
-                return path2IDMap;
-              } catch {
-                throw new createError.InternalServerError();
-              }
-            }
-          );
-          return path2IDMap;
-        })
-        .then((path2IDMap) => {
-          response.send({ req_ids: Object.fromEntries(path2IDMap) });
-        })
-        .catch((error) => {
-          next(error);
-        });
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as PostSourceBody;
+    //todo 최준영 제대로 된 user id 로 변환
+    const userID = 123_123_123;
+
+    const projectID = await queryManager.addProject(userID, body["title"]);
+    const files = request.files as Express.Multer.File[];
+
+    const ID2PathMap = await queryManager.addRequest(projectID, files);
+
+    const upadteCuts = Promise.all(
+      [...ID2PathMap].map(([requestID, [new_path]]) => {
+        return queryManager.updateCut(requestID, "cut", 0, new_path);
+      })
+    );
+
+    const makeCuts = Promise.all(
+      [...ID2PathMap].map(([requestID, [new_path]]) => {
+        return grpcSocket.segmentation.makeCutsFromWholeImage(
+          requestID,
+          "cut",
+          new_path
+        );
+      })
+    );
+
+    const replies = (await Promise.all([upadteCuts, makeCuts]))[1];
+
+    const path2IDMap = new Map<string, PostSourceResponse>();
+    for (const reply of replies) {
+      const pathes = ID2PathMap.get(reply.req_id);
+      if (!pathes) continue;
+      const [, originalPath] = pathes;
+      path2IDMap.set(originalPath, {
+        req_id: reply.req_id,
+        cut_count: reply.cut_count,
+      });
+      await queryManager.setCutCount(reply.req_id, reply.cut_count);
     }
-  )
+    response.send({ req_ids: Object.fromEntries(path2IDMap) });
+  })
 );
 
 interface PostBlankBody {
@@ -96,7 +76,7 @@ interface PostBlankBody {
 router.post(
   "/blank",
   multer_image.array("blank"),
-  async (request: Request, response: Response, next: NextFunction) => {
+  async (request: Request, response: Response) => {
     validateParameters(request);
     const body = request.body as PostBlankBody;
     const noneBlankList = JSON.parse(body.empty_id) as number[];
@@ -105,46 +85,40 @@ router.post(
 
     //send start ai processing signal
     //todo 최준영 how to catch exception?
-    for (const requestID of noneBlankList) {
-      grpcSocket.segmentation.start(requestID).then(
-        () => {
-          return;
-        },
-        (error) => {
-          console.error(error);
-          throw error;
-        }
-      );
-    }
+    const startInpaintPromise = noneBlankList.map((requestID) =>
+      grpcSocket.segmentation.start(requestID)
+    );
 
-    //set query and response data
-    const promiseArray = new Array<
-      Promise<void | MESSAGE.ReplyRequestMakeCut>
-    >();
-    for (const [index, requestID] of blankList.entries()) {
-      const blankFile = files[index];
-      const newPath = path.join(
-        IMAGE_DIR,
+    const requestFileList: [number, string, Express.Multer.File][] =
+      blankList.map((requestID, index) => [
+        requestID,
+        path.join(IMAGE_DIR, "inpaint", `${requestID}_0.png`),
+        files[index],
+      ]);
+
+    const upadteCuts = requestFileList.map(([requestID, path]) => {
+      return queryManager.updateUserUploadInpaint(
+        requestID,
         "inpaint",
-        `${requestID}_0${path.extname(blankFile.originalname)}`
+        0,
+        path
       );
-      await s3.upload(newPath, blankFile.buffer);
-      promiseArray.push(
-        queryManager.updateUserUploadInpaint(requestID, "inpaint", 0, newPath),
-        grpcSocket.segmentation.makeCutsFromWholeImage(
-          requestID,
-          "inpaint",
-          newPath
-        )
+    });
+
+    const uploadCuts = requestFileList.map(([, path, file]) => {
+      return s3.upload(path, file.buffer);
+    });
+
+    const makeCuts = requestFileList.map(([requestID, path]) => {
+      return grpcSocket.segmentation.makeCutsFromWholeImage(
+        requestID,
+        "inpaint",
+        path
       );
-    }
-    Promise.all(promiseArray)
-      .then(() => {
-        response.send({ success: true });
-      })
-      .catch((error) => {
-        next(error);
-      });
+    });
+
+    await Promise.all([startInpaintPromise, upadteCuts, uploadCuts, makeCuts]);
+    response.send({ success: true });
   }
 );
 
