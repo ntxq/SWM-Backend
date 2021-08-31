@@ -6,9 +6,9 @@ import { s3 } from "src/modules/s3_wrapper";
 import request from "superagent";
 import fs from "node:fs";
 
-describe.only("s3 wrapper test", function () {
+describe("s3 wrapper test", function () {
   it("s3 image upload URL test", async function () {
-    const url = await s3.uploadURL("test_img.png");
+    const url = await s3.getUploadURL("test_img.png");
     const file = fs.readFileSync("test/resource/test_img.png");
     const response = await request
       .put(url)

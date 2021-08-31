@@ -73,7 +73,7 @@ class S3 {
     });
   }
 
-  async uploadURL(filename: string) {
+  async getUploadURL(filename: string) {
     const parameter = {
       Bucket: this.bucket,
       Key: filename,
@@ -82,7 +82,7 @@ class S3 {
     return this.s3.getSignedUrlPromise("putObject", parameter);
   }
 
-  async downloadURL(filename: string) {
+  async getDownloadURL(filename: string) {
     const parameter = {
       Bucket: this.bucket,
       Key: filename,

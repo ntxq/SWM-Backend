@@ -3,6 +3,7 @@ import createError from "http-errors";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import assert from "node:assert";
 import requests from "src/routes/requests.json";
+import { IMAGE_DIR, ProgressType } from "./const";
 
 type RequestParameters = {
   [index: string]: string;
@@ -37,6 +38,14 @@ export const asyncRouterWrap = (asyncFuntion: RouterFunction) => {
     });
   };
 };
+
+export function getImagePath(
+  requestID: number,
+  cutIndex: number,
+  type: ProgressType
+): string {
+  return path.join(IMAGE_DIR, type, `${requestID}_${cutIndex}.png`);
+}
 
 export function validateParameters(request: Request): void {
   try {

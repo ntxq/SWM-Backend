@@ -1,124 +1,118 @@
 import express from "express";
-import { IMAGE_DIR } from "src/modules/const";
-import path from "node:path";
 import { grpcSocket } from "src/gRPC/grpc_socket";
 
 import { Request, Response } from "express-serve-static-core";
-import { multer_image } from "src/routes/multer_options";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { asyncRouterWrap, validateParameters } from "src/modules/utils";
+import {
+  asyncRouterWrap,
+  getImagePath,
+  validateParameters,
+} from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
 
-interface PostSourceBody {
+interface PostProjectBody {
   title: string;
+  filenames: string[];
+}
+
+interface PostProjectResponseUnit {
+  req_id: number;
+  filename: string;
+  s3_url: string;
+}
+
+export interface PostProjectResponse {
+  request_array: Array<PostProjectResponseUnit>;
+}
+
+router.post(
+  "/project",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as PostProjectBody;
+    //todo 최준영 제대로 된 user id 로 변환
+    const userID = 123_123_123;
+    const projectID = await queryManager.addProject(userID, body.title);
+    const returnValue = await queryManager.addRequest(
+      projectID,
+      body.filenames
+    );
+
+    response.send(returnValue);
+  })
+);
+
+interface PostSourceBody {
+  req_id: number;
 }
 
 interface PostSourceResponse {
-  req_id: number;
   cut_count: number;
 }
 
 router.post(
   "/source",
-  multer_image.array("source"),
   asyncRouterWrap(async (request: Request, response: Response) => {
+    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostSourceBody;
-    //todo 최준영 제대로 된 user id 로 변환
-    const userID = 123_123_123;
+    const imagePath = getImagePath(body.req_id, 0, "cut");
 
-    const projectID = await queryManager.addProject(userID, body["title"]);
-    const files = request.files as Express.Multer.File[];
-
-    const ID2PathMap = await queryManager.addRequest(projectID, files);
-
-    const upadteCuts = Promise.all(
-      [...ID2PathMap].map(([requestID, [new_path]]) => {
-        return queryManager.updateCut(requestID, "cut", 0, new_path);
-      })
+    await queryManager.updateCut(body.req_id, "cut", 0, imagePath);
+    const reply = await grpcSocket.segmentation.makeCutsFromWholeImage(
+      body.req_id,
+      "cut",
+      imagePath
     );
-
-    const makeCuts = Promise.all(
-      [...ID2PathMap].map(([requestID, [new_path]]) => {
-        return grpcSocket.segmentation.makeCutsFromWholeImage(
-          requestID,
-          "cut",
-          new_path
-        );
-      })
-    );
-
-    const replies = (await Promise.all([upadteCuts, makeCuts]))[1];
-
-    const path2IDMap = new Map<string, PostSourceResponse>();
-    for (const reply of replies) {
-      const pathes = ID2PathMap.get(reply.req_id);
-      if (!pathes) continue;
-      const [, originalPath] = pathes;
-      path2IDMap.set(originalPath, {
-        req_id: reply.req_id,
-        cut_count: reply.cut_count,
-      });
-      await queryManager.setCutCount(reply.req_id, reply.cut_count);
-    }
-    response.send({ req_ids: Object.fromEntries(path2IDMap) });
+    await queryManager.setCutCount(reply.req_id, reply.cut_count);
+    const returnValue: PostSourceResponse = {
+      cut_count: reply.cut_count,
+    };
+    response.send(returnValue);
   })
 );
 
 interface PostBlankBody {
-  empty_id: string;
-  map_ids: string;
+  req_id: number;
 }
 
 router.post(
   "/blank",
-  multer_image.array("blank"),
-  async (request: Request, response: Response) => {
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostBlankBody;
-    const noneBlankList = JSON.parse(body.empty_id) as number[];
-    const blankList = JSON.parse(body.map_ids) as number[];
-    const files = request.files as Express.Multer.File[];
+    const imagePath = getImagePath(body.req_id, 0, "inpaint");
 
-    //send start ai processing signal
-    //todo 최준영 how to catch exception?
-    const startInpaintPromise = noneBlankList.map((requestID) =>
-      grpcSocket.segmentation.start(requestID)
-    );
+    await Promise.all([
+      queryManager.updateCut(body.req_id, "inpaint", 0, imagePath),
+      grpcSocket.segmentation.makeCutsFromWholeImage(
+        body.req_id,
+        "cut",
+        imagePath
+      ),
+    ]);
 
-    const requestFileList: [number, string, Express.Multer.File][] =
-      blankList.map((requestID, index) => [
-        requestID,
-        path.join(IMAGE_DIR, "inpaint", `${requestID}_0.png`),
-        files[index],
-      ]);
-
-    const upadteCuts = requestFileList.map(([requestID, path]) => {
-      return queryManager.updateUserUploadInpaint(
-        requestID,
-        "inpaint",
-        0,
-        path
-      );
-    });
-
-    const uploadCuts = requestFileList.map(([, path, file]) => {
-      return s3.upload(path, file.buffer);
-    });
-
-    const makeCuts = requestFileList.map(([requestID, path]) => {
-      return grpcSocket.segmentation.makeCutsFromWholeImage(
-        requestID,
-        "inpaint",
-        path
-      );
-    });
-
-    await Promise.all([startInpaintPromise, upadteCuts, uploadCuts, makeCuts]);
     response.send({ success: true });
-  }
+  })
+);
+
+interface PostStartBody {
+  req_id: number;
+}
+
+router.post(
+  "/start",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    //todo 최준영 req_id가 user의 것이 맞는지 확인
+    validateParameters(request);
+    const body = request.body as PostStartBody;
+    await grpcSocket.segmentation.start(body.req_id);
+
+    response.send({ success: true });
+  })
 );
 
 router.get(

@@ -7,11 +7,11 @@ import { expect } from "chai";
 import rle from "test/resource/rle.json";
 import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import path from "node:path";
-import { IMAGE_DIR } from "src/modules/const";
 import { grpcSocket } from "src/gRPC/grpc_socket";
 import { s3 } from "src/modules/s3_wrapper";
 import { mysqlConnection } from "src/sql/sql_connection";
+import { getImagePath } from "src/modules/utils";
+import { PostProjectResponse } from "src/routes/upload/segmentation";
 
 describe("/upload/segmentation two request", function () {
   afterEach((done) => {
@@ -20,15 +20,37 @@ describe("/upload/segmentation two request", function () {
   });
 
   const image_list = ["test_img.png", "test_img copy.png"];
-  describe("/source", function () {
+
+  describe("/project", function () {
     before(() => {
-      const ID2PathMap = new Map<number, [string, string]>();
+      const addRequestReturn: PostProjectResponse = { request_array: [] };
       image_list.map((image_name, index) => {
-        const new_path = path.join(IMAGE_DIR, "cut", `${index}_0.png`);
-        ID2PathMap.set(index, [new_path, image_name]);
+        addRequestReturn.request_array.push({
+          req_id: index,
+          filename: image_name,
+          s3_url: "sample url(invalid)",
+        });
       });
       sinon.stub(queryManager, "addProject").resolves(1);
-      sinon.stub(queryManager, "addRequest").resolves(ID2PathMap);
+      sinon.stub(queryManager, "addRequest").resolves(addRequestReturn);
+    });
+    it("200 request", async () => {
+      const response: supertest.Response = await supertest(app)
+        .post("/upload/segmentation/project")
+        .send({ title: "test project", filenames: JSON.stringify(image_list) })
+        .expect(200);
+      const body = response.body;
+      expect(body.request_array.length).to.be.equal(image_list.length);
+      for (const request of body.request_array) {
+        expect(request.req_id).to.be.a("number");
+        expect(request.s3_url).to.be.a("string");
+        expect(image_list).to.be.include(request.filename);
+      }
+    });
+  });
+
+  describe("/source", function () {
+    before(() => {
       sinon.stub(queryManager, "updateCut").resolves();
       const grpcStub = sinon.stub(
         grpcSocket.segmentation,
@@ -44,30 +66,16 @@ describe("/upload/segmentation two request", function () {
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
         .post("/upload/segmentation/source")
-        .attach("source", `test/resource/${image_list[0]}`)
-        .attach("source", `test/resource/${image_list[1]}`)
-        .field({ title: "test project" })
+        .send({ req_id: 1 })
         .expect(200);
       const body = response.body;
-      expect(body).to.hasOwnProperty("req_ids");
-      for (const image_name of image_list) {
-        expect(body.req_ids).to.hasOwnProperty(image_name);
-        const response_ids = body.req_ids[image_name];
-        expect(response_ids["req_id"]).to.be.a("number");
-        expect(response_ids["cut_count"]).to.be.a("number");
-      }
+      expect(body).to.hasOwnProperty("cut_count");
+      expect(body.cut_count).to.be.a("number");
     });
   });
 
   describe("/blank", function () {
-    const request_ids: Array<number> = [1, 2];
     before(() => {
-      sinon.stub(s3, "upload").resolves();
-      const ID2PathMap = new Map<number, [string, string]>();
-      image_list.map((image_name, index) => {
-        const new_path = path.join(IMAGE_DIR, "cut", `${index}_0.png`);
-        ID2PathMap.set(index, [new_path, image_name]);
-      });
       sinon.stub(queryManager, "updateCut").resolves();
       const grpcStub = sinon.stub(
         grpcSocket.segmentation,
@@ -83,9 +91,21 @@ describe("/upload/segmentation two request", function () {
     it("/blank 200", async function () {
       const response = await supertest(app)
         .post("/upload/segmentation/blank")
-        .field("map_ids", `[${request_ids[0]}]`)
-        .field("empty_id", `[${request_ids[1]}]`)
-        .attach("blank", `test/resource/${image_list[0]}`)
+        .send({ req_id: 1 })
+        .expect(200);
+      expect(response.body.success).to.be.a("boolean");
+    });
+  });
+
+  describe("/start", function () {
+    before(function (done) {
+      sinon.stub(grpcSocket.segmentation, "start").resolves();
+      done();
+    });
+    it("/start 200", async function () {
+      const response = await supertest(app)
+        .post("/upload/segmentation/start")
+        .send({ req_id: 1 })
         .expect(200);
       expect(response.body.success).to.be.a("boolean");
     });

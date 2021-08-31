@@ -5,9 +5,8 @@ import supertest from "supertest";
 import app from "src/app";
 import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import path from "node:path";
-import { IMAGE_DIR } from "src/modules/const";
 import { grpcSocket } from "src/gRPC/grpc_socket";
+import { PostProjectResponse } from "src/routes/upload/segmentation";
 
 describe("upload filter validation", function () {
   afterEach((done) => {
@@ -16,16 +15,18 @@ describe("upload filter validation", function () {
   });
 
   const image_list = ["test_img.png", "test_img copy.png"];
-  const txt_list = ["test_txt.txt"];
   describe("/source", function () {
     before(() => {
-      const ID2PathMap = new Map<number, [string, string]>();
+      const addRequestReturn: PostProjectResponse = { request_array: [] };
       image_list.map((image_name, index) => {
-        const new_path = path.join(IMAGE_DIR, "cut", `${index}_0.png`);
-        ID2PathMap.set(index, [new_path, image_name]);
+        addRequestReturn.request_array.push({
+          req_id: index,
+          filename: image_name,
+          s3_url: "sample url(invalid)",
+        });
       });
       sinon.stub(queryManager, "addProject").resolves(1);
-      sinon.stub(queryManager, "addRequest").resolves(ID2PathMap);
+      sinon.stub(queryManager, "addRequest").resolves(addRequestReturn);
       sinon.stub(queryManager, "updateCut").resolves();
       const grpcStub = sinon.stub(
         grpcSocket.segmentation,
@@ -38,20 +39,9 @@ describe("upload filter validation", function () {
         });
       });
     });
-    it("415 request", async () => {
-      await supertest(app)
-        .post("/upload/segmentation/source")
-        .attach("source", `test/resource/${image_list[0]}`)
-        .attach("source", `test/resource/${image_list[1]}`)
-        .attach("source", `test/resource/${txt_list[0]}`)
-        .field({ title: "test project" })
-        .expect(415);
-    });
     it("400 request", async () => {
       await supertest(app)
         .post("/upload/segmentation/source")
-        .attach("source", `test/resource/${image_list[0]}`)
-        .attach("source", `test/resource/${image_list[1]}`)
         .field({ title_x: "test project" })
         .expect(400);
     });
