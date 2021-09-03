@@ -7,8 +7,8 @@ import logger = require("morgan");
 import { Request, Response, NextFunction } from "express-serve-static-core";
 
 import uploadRouter from "src/routes/upload/upload";
-import kakaoRouter from "src/routes/kakao";
-import passport = require("passport");
+import oauthRouter, { initKakaoOauth } from "src/routes/oauth";
+import passport from "passport";
 
 const app = express();
 
@@ -23,8 +23,12 @@ app.use(
   express.static(path.join(path.resolve(), "frontend/build/static"))
 );
 
+app.use(passport.initialize());
+app.use(passport.session());
+initKakaoOauth();
+
 app.use("/upload", uploadRouter);
-app.use("/oauth", kakaoRouter);
+app.use("/oauth", oauthRouter);
 app.get("*", (request: Request, response: Response) =>
   response.sendFile("index.html", {
     root: path.join(path.resolve(), "frontend/build/"),
