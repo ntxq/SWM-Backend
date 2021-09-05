@@ -1,6 +1,6 @@
 import createError from "http-errors";
 import mysql, { Connection } from "mysql";
-import { DBConnection } from "src/sql/secret";
+import { DBConnection, DBLoginCneection } from "src/sql/secret";
 
 type QueryReturnType = SelectUniqueResult | Array<SelectUniqueResult> | [];
 type QueryParameter = string | number | JSON | boolean | null;
@@ -13,26 +13,29 @@ export interface Procedure {
   selectUnique: boolean;
 }
 
-export class MysqlConnection {
+interface ConnectionOption {
+  host: string;
+  user: string;
+  password: string;
+  port: number;
+  database: string;
+}
+
+export abstract class MysqlConnection {
   connection: mysql.Pool;
-  private static instance: MysqlConnection;
 
-  private constructor() {
-    this.connection = this.connect();
+  constructor(option: ConnectionOption) {
+    this.connection = this.connect(option);
   }
 
-  static getInstance(): MysqlConnection {
-    return this.instance || (this.instance = new this());
-  }
-
-  connect(): mysql.Pool {
+  connect(option: ConnectionOption): mysql.Pool {
     const connection = mysql.createPool({
       connectionLimit: 100,
-      host: DBConnection.host,
-      user: DBConnection.user,
-      password: DBConnection.password,
-      port: DBConnection.port,
-      database: `Omniscient Translator Database`,
+      host: option.host,
+      user: option.user,
+      password: option.password,
+      port: option.port,
+      database: option.database,
       multipleStatements: true,
       charset: "utf8_general_ci",
     });
@@ -40,7 +43,7 @@ export class MysqlConnection {
       const _error = error as mysql.MysqlError;
       console.log("db error", error);
       if (_error.code === "PROTOCOL_CONNECTION_LOST") {
-        return this.connect();
+        return this.connect(option);
       } else {
         throw _error;
       }
@@ -109,6 +112,7 @@ export class MysqlConnection {
       conn.query(query, procedure.parameters, function (error, rows) {
         if (error) {
           console.error(error.message);
+          console.error(query);
           if (error.sqlState?.startsWith("SP")) {
             rejects(new createError[error.sqlState.slice(2)]());
           } else {
@@ -137,4 +141,29 @@ export class MysqlConnection {
   }
 }
 
-export const mysqlConnection = MysqlConnection.getInstance();
+class ContentsConnection extends MysqlConnection {
+  private static instance: MysqlConnection;
+
+  private constructor() {
+    super(DBConnection);
+  }
+
+  static getInstance(): MysqlConnection {
+    return this.instance || (this.instance = new this());
+  }
+}
+
+class LoginConnection extends MysqlConnection {
+  private static instance: MysqlConnection;
+
+  private constructor() {
+    super(DBLoginCneection);
+  }
+
+  static getInstance(): MysqlConnection {
+    return this.instance || (this.instance = new this());
+  }
+}
+
+export const mysqlConnection = ContentsConnection.getInstance();
+export const mysqlLonginConnection = LoginConnection.getInstance();

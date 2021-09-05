@@ -1,6 +1,7 @@
 import {
   MysqlConnection,
   mysqlConnection,
+  mysqlLonginConnection,
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
@@ -94,7 +95,7 @@ export class mysqlConnectionManager {
   ): Promise<unknown> {
     const procedure: Procedure = {
       query: "sp_update_progress_2",
-      parameters: [requestID, cutIndex, status],
+      parameters: [requestID, cutIndex, status as string],
       selectUnique: true,
     };
     const rows = await mysqlConnection.callProcedure(procedure);
@@ -267,6 +268,52 @@ export class mysqlConnectionManager {
       selectUnique: true,
     };
     return mysqlConnection.callProcedure(procedure);
+  }
+
+  async addUser(userID: number): Promise<void> {
+    const procedure: Procedure = {
+      query: "sp_set_user",
+      parameters: [userID],
+      selectUnique: true,
+    };
+    await mysqlLonginConnection.callProcedure(procedure);
+  }
+
+  async setRepreshToken(userID: number, refreshToken: string): Promise<number> {
+    const procedure: Procedure = {
+      query: "sp_set_refresh_token",
+      parameters: [userID, refreshToken],
+      selectUnique: true,
+    };
+    const result = (await mysqlLonginConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    const index = result["token_index"] as number;
+    return index;
+  }
+
+  async existUser(userID: number): Promise<boolean> {
+    const procedure: Procedure = {
+      query: "sp_check_user_exist",
+      parameters: [userID],
+      selectUnique: true,
+    };
+    const result = (await mysqlLonginConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return Boolean(result["result"]);
+  }
+
+  async getRefreshToken(index: number): Promise<string> {
+    const procedure: Procedure = {
+      query: "sp_get_refresh_token",
+      parameters: [index],
+      selectUnique: true,
+    };
+    const result = (await mysqlLonginConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return result["token"] as string;
   }
 }
 export const queryManager = new mysqlConnectionManager();
