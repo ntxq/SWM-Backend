@@ -41,6 +41,9 @@ const progressSpeed: ProgressMap = {
 };
 
 function nextStateValue(status: ProgressType): number {
+  if (status == "complete") {
+    return progressed[status];
+  }
   const progressedKeys = Object.keys(progressed) as Array<ProgressType>;
   const key = progressedKeys[progressedKeys.indexOf(status) + 1];
   return progressed[key];
