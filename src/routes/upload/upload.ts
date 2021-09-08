@@ -101,63 +101,65 @@ function kakaoRefresh(key: string): Promise<RefreshBody> {
   });
 }
 
-router.use(
-  "*",
-  function (request: Request, response: Response, next: NextFunction) {
-    const token = (request.cookies as Cookie)["kakao_token"];
-    try {
-      const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
-      if (!accessTokens.has(jwtObject.jwtAccessToken)) {
-        next(new createHttpError.Unauthorized());
-        return;
-      }
-      next();
-    } catch (error) {
-      if (error instanceof TokenExpiredError) {
-        const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
+if (process.env.MODE !== "dev") {
+  router.use(
+    "*",
+    function (request: Request, response: Response, next: NextFunction) {
+      const token = (request.cookies as Cookie)["kakao_token"];
+      try {
+        const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
         if (!accessTokens.has(jwtObject.jwtAccessToken)) {
           next(new createHttpError.Unauthorized());
           return;
         }
-
-        const accessToken = accessTokens.get(
-          jwtObject.jwtAccessToken
-        ) as OauthToken;
-
-        kakaoVerify(accessToken.accessToken)
-          .then(async (isValid) => {
-            //get new access token
-            if (!isValid) {
-              const refreshToken = await queryManager.getRefreshToken(
-                jwtObject.index
-              );
-              const refreshResult = await kakaoRefresh(refreshToken);
-              accessTokens.delete(jwtObject.jwtAccessToken);
-              accessToken.accessToken = refreshResult.access_token;
-
-              //set new refresh token
-              if (refreshResult.refresh_token) {
-                accessToken.index = await queryManager.setRefreshToken(
-                  accessToken.userID,
-                  refreshResult.refresh_token
-                );
-              }
-            }
-            //set new access jwt token
-            setAccessTokenCookie(response, accessToken);
-            next();
-          })
-          .catch((error) => {
-            next(error);
+        next();
+      } catch (error) {
+        if (error instanceof TokenExpiredError) {
+          const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
+          if (!accessTokens.has(jwtObject.jwtAccessToken)) {
+            next(new createHttpError.Unauthorized());
             return;
-          });
-      } else {
-        console.error(error);
-        next(new createHttpError.Forbidden());
+          }
+
+          const accessToken = accessTokens.get(
+            jwtObject.jwtAccessToken
+          ) as OauthToken;
+
+          kakaoVerify(accessToken.accessToken)
+            .then(async (isValid) => {
+              //get new access token
+              if (!isValid) {
+                const refreshToken = await queryManager.getRefreshToken(
+                  jwtObject.index
+                );
+                const refreshResult = await kakaoRefresh(refreshToken);
+                accessTokens.delete(jwtObject.jwtAccessToken);
+                accessToken.accessToken = refreshResult.access_token;
+
+                //set new refresh token
+                if (refreshResult.refresh_token) {
+                  accessToken.index = await queryManager.setRefreshToken(
+                    accessToken.userID,
+                    refreshResult.refresh_token
+                  );
+                }
+              }
+              //set new access jwt token
+              setAccessTokenCookie(response, accessToken);
+              next();
+            })
+            .catch((error) => {
+              next(error);
+              return;
+            });
+        } else {
+          console.error(error);
+          next(new createHttpError.Forbidden());
+        }
       }
     }
-  }
-);
+  );
+}
 
 router.use("/OCR", ocrRouter);
 router.use("/segmentation", segmentationRouter);
