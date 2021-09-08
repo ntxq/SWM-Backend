@@ -60,8 +60,8 @@ interface RefreshBody {
   token_type: string;
   access_token: string;
   expires_in: number;
-  refresh_token: string;
-  refresh_token_expires_in: number;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
 }
 
 function kakaoRefresh(key: string): Promise<RefreshBody> {
@@ -134,13 +134,17 @@ router.use(
               const refreshResult = await kakaoRefresh(refreshToken);
               accessTokens.delete(jwtObject.jwtAccessToken);
               accessToken.accessToken = refreshResult.access_token;
+
+              //set new refresh token
+              if (refreshResult.refresh_token) {
+                accessToken.index = await queryManager.setRefreshToken(
+                  accessToken.userID,
+                  refreshResult.refresh_token
+                );
+              }
             }
-            const newJwtObject = {
-              accessToken: accessToken.accessToken,
-              index: jwtObject.index,
-            };
             //set new access jwt token
-            setAccessTokenCookie(response, newJwtObject);
+            setAccessTokenCookie(response, accessToken);
             next();
           })
           .catch((error) => {

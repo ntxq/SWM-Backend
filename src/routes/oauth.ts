@@ -17,6 +17,7 @@ export interface OauthJwtToken {
 export interface OauthToken {
   accessToken: string;
   index: number;
+  userID: number;
 }
 export const accessTokens: Map<string, OauthToken> = new Map<
   string,
@@ -40,10 +41,11 @@ export function initKakaoOauth(): void {
             if (isExist == false) {
               await queryManager.addUser(ID);
             }
-            const index = await queryManager.setRepreshToken(ID, refreshToken);
+            const index = await queryManager.setRefreshToken(ID, refreshToken);
             const jwt: OauthToken = {
               accessToken: accessToken,
               index: index,
+              userID: ID,
             };
             done(undefined, jwt);
           })

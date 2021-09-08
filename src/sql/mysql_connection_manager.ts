@@ -279,7 +279,7 @@ export class mysqlConnectionManager {
     await mysqlLonginConnection.callProcedure(procedure);
   }
 
-  async setRepreshToken(userID: number, refreshToken: string): Promise<number> {
+  async setRefreshToken(userID: number, refreshToken: string): Promise<number> {
     const procedure: Procedure = {
       query: "sp_set_refresh_token",
       parameters: [userID, refreshToken],
