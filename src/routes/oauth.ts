@@ -5,14 +5,23 @@ import { Request, Response, NextFunction } from "express-serve-static-core";
 import jsonwebtoken from "jsonwebtoken";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { jwtKey } from "src/sql/secret";
+import crypto from "node:crypto";
 
 const router = express.Router();
 
-export interface OauthJwt {
+export interface OauthJwtToken {
+  jwtAccessToken: string;
+  index: number;
+}
+
+export interface OauthToken {
   accessToken: string;
   index: number;
 }
-export const accessTokens: Map<string, Date> = new Map<string, Date>();
+export const accessTokens: Map<string, OauthToken> = new Map<
+  string,
+  OauthToken
+>();
 
 export function initKakaoOauth(): void {
   passport.use(
@@ -32,7 +41,7 @@ export function initKakaoOauth(): void {
               await queryManager.addUser(ID);
             }
             const index = await queryManager.setRepreshToken(ID, refreshToken);
-            const jwt: OauthJwt = {
+            const jwt: OauthToken = {
               accessToken: accessToken,
               index: index,
             };
@@ -67,12 +76,25 @@ type authCallback = (
   next: NextFunction
 ) => void;
 
+function generate_token() {
+  let id = crypto.randomBytes(20).toString("hex");
+  while (accessTokens.has(id)) {
+    id = crypto.randomBytes(20).toString("hex");
+  }
+  return id;
+}
+
 export function setAccessTokenCookie(
   response: Response,
-  jwtObject: OauthJwt
+  tokenObject: OauthToken
 ): string {
-  const token = jsonwebtoken.sign(jwtObject, jwtKey, { expiresIn: "30m" });
-  accessTokens.set(jwtObject.accessToken, new Date());
+  const jwtAccessToken = generate_token();
+  const jwtToken: OauthJwtToken = {
+    jwtAccessToken: jwtAccessToken,
+    index: tokenObject.index,
+  };
+  const token = jsonwebtoken.sign(jwtToken, jwtKey, { expiresIn: "30m" });
+  accessTokens.set(jwtAccessToken, tokenObject);
   response.cookie("kakao_token", token);
   return token;
 }
@@ -80,8 +102,8 @@ export function setAccessTokenCookie(
 router.get("/", (request, response, next) => {
   const authCallback: authCallback = passport.authenticate(
     "kakao",
-    (error, jwtObject: OauthJwt) => {
-      setAccessTokenCookie(response, jwtObject);
+    (error, tokenObject: OauthToken) => {
+      setAccessTokenCookie(response, tokenObject);
       response.redirect("/home");
     }
   ) as authCallback;

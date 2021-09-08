@@ -7,7 +7,12 @@ import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
 import { jwtKey } from "src/sql/secret";
 import https, { RequestOptions } from "node:https";
 import createHttpError from "http-errors";
-import { accessTokens, OauthJwt, setAccessTokenCookie } from "src/routes/oauth";
+import {
+  accessTokens,
+  OauthJwtToken,
+  OauthToken,
+  setAccessTokenCookie,
+} from "src/routes/oauth";
 import { queryManager } from "src/sql/mysql_connection_manager";
 // import http from "node:http";
 
@@ -101,16 +106,25 @@ router.use(
   function (request: Request, response: Response, next: NextFunction) {
     const token = (request.cookies as Cookie)["kakao_token"];
     try {
-      const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwt;
-      if (!accessTokens.has(jwtObject.accessToken)) {
+      const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
+      if (!accessTokens.has(jwtObject.jwtAccessToken)) {
         next(new createHttpError.Unauthorized());
+        return;
       }
-      console.log(jwtObject);
       next();
     } catch (error) {
       if (error instanceof TokenExpiredError) {
-        const jwtObject = jsonwebtoken.decode(token) as OauthJwt;
-        kakaoVerify(jwtObject.accessToken)
+        const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
+        if (!accessTokens.has(jwtObject.jwtAccessToken)) {
+          next(new createHttpError.Unauthorized());
+          return;
+        }
+
+        const accessToken = accessTokens.get(
+          jwtObject.jwtAccessToken
+        ) as OauthToken;
+
+        kakaoVerify(accessToken.accessToken)
           .then(async (isValid) => {
             //get new access token
             if (!isValid) {
@@ -118,11 +132,11 @@ router.use(
                 jwtObject.index
               );
               const refreshResult = await kakaoRefresh(refreshToken);
-              accessTokens.delete(jwtObject.accessToken);
-              jwtObject.accessToken = refreshResult.access_token;
+              accessTokens.delete(jwtObject.jwtAccessToken);
+              accessToken.accessToken = refreshResult.access_token;
             }
             const newJwtObject = {
-              accessToken: jwtObject.accessToken,
+              accessToken: accessToken.accessToken,
               index: jwtObject.index,
             };
             //set new access jwt token
