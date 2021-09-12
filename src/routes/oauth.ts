@@ -112,4 +112,14 @@ router.get("/", (request, response, next) => {
   authCallback(request, response, next);
 });
 
+router.get("/logout", (request, response) => {
+  response.cookie("kakao_token", "none", {
+    expires: new Date(Date.now() - 1),
+  });
+
+  response
+    .status(200)
+    .json({ success: true, message: "User logged out successfully" });
+});
+
 export default router;
