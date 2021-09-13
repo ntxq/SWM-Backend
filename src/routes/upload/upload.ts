@@ -4,16 +4,16 @@ import ocrRouter from "src/routes/upload/ocr";
 import segmentationRouter from "src/routes/upload/segmentation";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
-import { jwtKey } from "src/sql/secret";
-import https, { RequestOptions } from "node:https";
+import { jwtKey, MODE } from "src/sql/secret";
 import createHttpError from "http-errors";
-import {
-  accessTokens,
-  OauthJwtToken,
-  OauthToken,
-  setAccessTokenCookie,
-} from "src/routes/oauth";
+import { OauthJwtToken, OauthToken } from "src/routes/oauth";
 import { queryManager } from "src/sql/mysql_connection_manager";
+import {
+  kakaoRefresh,
+  kakaoVerify,
+  makeAccessTokenCookie,
+  accessTokens,
+} from "src/modules/oauth";
 // import http from "node:http";
 
 const router = express.Router();
@@ -23,85 +23,7 @@ interface Cookie {
   [key: string]: string;
 }
 
-function kakaoVerify(key: string): Promise<boolean> {
-  const options: RequestOptions = {
-    hostname: "kauth.kakao.com",
-    path: "/v1/user/access_token_info",
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      contentType: "application/x-www-form-urlencoded;charset=utf-8",
-    },
-  };
-
-  return new Promise<boolean>((resolve, reject) => {
-    const httpreq = https.request(options, function (response) {
-      response.setEncoding("utf8");
-      response.on("data", (data) => {
-        console.log(data);
-      });
-      response.on("end", function () {
-        if (response.statusCode == 401) {
-          resolve(false);
-        } else if (response.statusCode == 200) {
-          resolve(true);
-        } else if (response.statusCode == 302) {
-          resolve(true);
-        } else {
-          reject(new createHttpError.BadGateway());
-        }
-      });
-    });
-    httpreq.end();
-  });
-}
-
-interface RefreshBody {
-  token_type: string;
-  access_token: string;
-  expires_in: number;
-  refresh_token?: string;
-  refresh_token_expires_in?: number;
-}
-
-function kakaoRefresh(key: string): Promise<RefreshBody> {
-  const options: RequestOptions = {
-    hostname: "kauth.kakao.com",
-    path: "/oauth/token",
-    method: "POST",
-    headers: {
-      contentType: "application/x-www-form-urlencoded;charset=utf-8",
-    },
-  };
-  const post_data = {
-    grant_type: "refresh_token",
-    client_id: "",
-    refresh_token: key,
-  };
-
-  return new Promise<RefreshBody>((resolve, reject) => {
-    const httpreq = https.request(options, function (response) {
-      response.setEncoding("utf8");
-      let body = "";
-      response.on("data", function (chunk: string) {
-        body += chunk;
-      });
-
-      response.on("end", function () {
-        if (response.statusCode == 200) {
-          const result = JSON.parse(body) as RefreshBody;
-          resolve(result);
-        } else {
-          reject(new createHttpError.BadGateway());
-        }
-      });
-    });
-    httpreq.write(post_data);
-    httpreq.end();
-  });
-}
-
-if (process.env.MODE !== "dev") {
+if (MODE !== "dev") {
   router.use(
     "*",
     function (request: Request, response: Response, next: NextFunction) {
@@ -145,7 +67,8 @@ if (process.env.MODE !== "dev") {
                 }
               }
               //set new access jwt token
-              setAccessTokenCookie(response, accessToken);
+              const token = makeAccessTokenCookie(accessToken);
+              response.cookie("kakao_token", token);
               next();
             })
             .catch((error) => {
