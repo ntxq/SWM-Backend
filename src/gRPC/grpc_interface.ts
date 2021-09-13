@@ -155,7 +155,7 @@ export class SegmentationInterface {
     requestID: number,
     cutIndex: number,
     data: Array<Array<number>>
-  ): Promise<unknown> {
+  ): Promise<MESSAGE.ReplyMaskUpdate> {
     const masks: Array<Buffer> = [];
     for (const mask of data) {
       masks.push(Buffer.from(mask));

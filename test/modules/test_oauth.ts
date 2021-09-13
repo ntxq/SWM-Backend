@@ -12,7 +12,7 @@ import {
 } from "src/modules/oauth";
 import { OauthJwtToken } from "src/routes/oauth";
 
-describe.only("oauth", function () {
+describe("oauth", function () {
   const test_access_token = {
     accessToken: "string",
     index: 0,
