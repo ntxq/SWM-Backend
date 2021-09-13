@@ -2,10 +2,9 @@ import passport from "passport";
 import { Profile, Strategy } from "passport-kakao";
 import express from "express";
 import { Request, Response, NextFunction } from "express-serve-static-core";
-import jsonwebtoken from "jsonwebtoken";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { jwtKey } from "src/sql/secret";
-import crypto from "node:crypto";
+import { makeAccessTokenCookie } from "src/modules/oauth";
+import { KAKAO_ID } from "src/sql/secret";
 
 const router = express.Router();
 
@@ -19,18 +18,14 @@ export interface OauthToken {
   index: number;
   userID: number;
 }
-export const accessTokens: Map<string, OauthToken> = new Map<
-  string,
-  OauthToken
->();
 
 export function initKakaoOauth(): void {
   passport.use(
     "kakao",
     new Strategy(
       {
-        clientID: "4ee38a9230dc15bb654d1a79386e0e7c",
-        callbackURL: "http://localhost:3000/oauth", // 위에서 설정한 Redirect URI
+        clientID: KAKAO_ID,
+        callbackURL: "", // 위에서 설정한 Redirect URI
         clientSecret: "",
       },
       (accessToken, refreshToken, profile: Profile, done) => {
@@ -78,34 +73,12 @@ type authCallback = (
   next: NextFunction
 ) => void;
 
-function generate_token() {
-  let id = crypto.randomBytes(20).toString("hex");
-  while (accessTokens.has(id)) {
-    id = crypto.randomBytes(20).toString("hex");
-  }
-  return id;
-}
-
-export function setAccessTokenCookie(
-  response: Response,
-  tokenObject: OauthToken
-): string {
-  const jwtAccessToken = generate_token();
-  const jwtToken: OauthJwtToken = {
-    jwtAccessToken: jwtAccessToken,
-    index: tokenObject.index,
-  };
-  const token = jsonwebtoken.sign(jwtToken, jwtKey, { expiresIn: "30m" });
-  accessTokens.set(jwtAccessToken, tokenObject);
-  response.cookie("kakao_token", token);
-  return token;
-}
-
 router.get("/", (request, response, next) => {
   const authCallback: authCallback = passport.authenticate(
     "kakao",
     (error, tokenObject: OauthToken) => {
-      setAccessTokenCookie(response, tokenObject);
+      const token = makeAccessTokenCookie(tokenObject);
+      response.cookie("kakao_token", token);
       response.redirect("/home");
     }
   ) as authCallback;
