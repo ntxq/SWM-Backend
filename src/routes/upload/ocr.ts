@@ -1,13 +1,11 @@
 import express from "express";
 
-import { Request, Response, NextFunction } from "express-serve-static-core";
+import { Request, Response } from "express-serve-static-core";
 import { grpcSocket } from "src/gRPC/grpc_socket";
-import { queryManager } from "src/sql/mysqlConnectionManager";
-import * as MESSAGE from "src/gRPC/grpc_message_interface";
-import createHttpError from "http-errors";
-import { validateParameters } from "src/modules/utils";
+import { queryManager } from "src/sql/mysql_connection_manager";
+import { asyncRouterWrap, validateParameters } from "src/modules/utils";
 
-var router = express.Router();
+const router = express.Router();
 
 export interface BBox {
   bbox_id: number;
@@ -31,60 +29,55 @@ export interface TranslateBBox extends BBox {
   fontStyle: string;
 }
 
-router.get("/select", (req: Request, res: Response, next: NextFunction) => {
-	try{
-		validateParameters(req)
-	}catch(err){
-		next(err)
-	}
-  const req_id = parseInt(req.query["req_id"] as string);
-  const cut_id = parseInt(req.query["cut_id"] as string);
-  grpcSocket.OCR.Start(req_id, cut_id)
-    .then((response) => {
-      res.send({ success: true });
-    })
-    .catch((err: createHttpError.HttpError) => {
-      next(err);
-    });
-});
+router.get(
+  "/select",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    await grpcSocket.OCR.start(requestID, cutIndex);
+    response.send({ success: true });
+  })
+);
 
-router.get("/result", (req: Request, res: Response, next: NextFunction) => {
-	try{
-		validateParameters(req)
-	}catch(err){
-		next(err)
-	}
-  const req_id = parseInt(req.query["req_id"] as string);
-  const cut_id = parseInt(req.query["cut_id"] as string);
-  const progress = queryManager.check_progress(req_id, cut_id)
-	res.send({progress:Math.max(0,progress-100)})
-});
+router.get(
+  "/result",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const progress = await queryManager.checkProgress(requestID, cutIndex);
+    response.send({ progress: Math.max(0, progress - 100) });
+  })
+);
 
-router.get("/result/bbox", (req: Request, res: Response, next: NextFunction) => {
-	try{
-		validateParameters(req)
-	}catch(err){
-		next(err)
-	}
-  const req_id = parseInt(req.query["req_id"] as string);
-  const cut_id = parseInt(req.query["cut_id"] as string);
-  queryManager.get_bboxes(req_id, cut_id).then((bboxList: BBox[]) => {
-    res.send({ bboxList: bboxList });
-  });
-});
+router.get(
+  "/result/bbox",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const requestID = Number.parseInt(request.query["req_id"] as string);
+    const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+    const bboxList = await queryManager.getBboxes(requestID, cutIndex);
+    response.send({ bboxList: bboxList });
+  })
+);
 
-router.post("/edit", (req: Request, res: Response, next: NextFunction) => {
-	try{
-		validateParameters(req)
-	}catch(err){
-		next(err)
-	}
-  const req_id = parseInt(req.body["req_id"]);
-  const cut_id = parseInt(req.body["cut_id"] as string);
-  const bboxList: TranslateBBox[] = JSON.parse(req.body["bboxList"]);
-  queryManager.set_bboxes_with_translate(req_id, cut_id, bboxList).then(() => {
-    res.send({ success: true });
-  });
-});
+interface postEditBody {
+  req_id: string;
+  cut_id: string;
+  bboxList: string;
+}
+router.post(
+  "/edit",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as postEditBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    const cutIndex = Number.parseInt(body["cut_id"]);
+    const bboxList = JSON.parse(body["bboxList"]) as TranslateBBox[];
+    await queryManager.setBboxesWithTranslate(requestID, cutIndex, bboxList);
+    response.send({ success: true });
+  })
+);
 
 export default router;

@@ -1,81 +1,94 @@
-import path from "path";
-import { TranslateBBox, BBox } from 'src/routes/upload/ocr';
-import createError from "http-errors"
+import path from "node:path";
+import createError from "http-errors";
 import { Request, Response, NextFunction } from "express-serve-static-core";
-import assert from "assert";
-const requests =  require("src/routes/requests.json");
+import assert from "node:assert";
+import requests from "src/routes/requests.json";
+import { IMAGE_DIR, ProgressType } from "./const";
 
-type RequestParams = {
-  [index: string]: string
+type RequestParameters = {
+  [index: string]: string;
+};
+type Json = { [key: string]: Json | string | number };
+
+export function isImageFile(file: Express.Multer.File): boolean {
+  // Allowed ext
+  const filetypes = /jpeg|jpg|png/;
+  // Check ext
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  // Check mime
+  const mimetype = filetypes.test(file.mimetype);
+
+  return mimetype && extname;
 }
 
-export function isImageFile(file:Express.Multer.File):boolean{
-	// Allowed ext
-	const filetypes = /jpeg|jpg|png/;
-	// Check ext
-	const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-	// Check mime
-	const mimetype = filetypes.test(file.mimetype);
- 
-	if(mimetype && extname){
-		return true;
-	} else {
-		return false;
-	}
+export function handleGrpcError(error: Error): createError.HttpError {
+  console.log(error);
+  return new createError.ServiceUnavailable();
 }
 
-export function update_bbox(old_bbox:BBox[] | TranslateBBox[],new_bbox:BBox[] | TranslateBBox[]){
-	return new_bbox as TranslateBBox[];
+type RouterFunction = (
+  request: Request,
+  response: Response,
+  next: NextFunction
+) => Promise<void>;
+export const asyncRouterWrap = (asyncFuntion: RouterFunction) => {
+  return (request: Request, response: Response, next: NextFunction): void => {
+    asyncFuntion(request, response, next).catch((error) => {
+      next(error);
+    });
+  };
+};
+
+export function getImagePath(
+  requestID: number,
+  cutIndex: number,
+  type: ProgressType
+): string {
+  return path.join(IMAGE_DIR, type, `${requestID}_${cutIndex}.png`);
 }
 
-export function handleGrpcError(err:Error){
-	console.log(err)
-	return new createError.ServiceUnavailable
+export function validateParameters(request: Request): void {
+  try {
+    const url = request.baseUrl + request.path;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const urlList = (requests as Json)[request.method] as Json;
+    const requestChecker = urlList[url] as Json;
+
+    for (const type of Object.keys(requestChecker)) {
+      let requestParameters: RequestParameters = {};
+      switch (type) {
+        case "body":
+          requestParameters = JSON.parse(
+            JSON.stringify(request.body)
+          ) as RequestParameters;
+          break;
+        case "query":
+          requestParameters = JSON.parse(
+            JSON.stringify(request.query)
+          ) as RequestParameters;
+          break;
+        case "params":
+          requestParameters = JSON.parse(
+            JSON.stringify(request.params)
+          ) as RequestParameters;
+          break;
+      }
+      for (const [parameterName, parameterType] of Object.entries(
+        requestChecker[type]
+      )) {
+        if (parameterType == "number") {
+          assert(
+            !Number.isNaN(Number.parseInt(requestParameters[parameterName]))
+          );
+        } else if (parameterType == "object") {
+          assert(JSON.parse(requestParameters[parameterName]));
+        } else {
+          assert(typeof requestParameters[parameterName] == parameterType);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    throw new createError.BadRequest();
+  }
 }
-
-export const asyncRouterWrap = (asyncFn:Function) => {
-		return (async (req:Request, res:Response, next:NextFunction) => {
-			try {
-				return await asyncFn(req, res, next)
-			} catch (error) {
-				return next(error)
-			}
-		})  
-	}
-
-export function validateParameters(request:Request){
-	try{
-		const url = request.baseUrl + request.path
-		const req_param_parser = requests[request.method][url]
-		for(const type of Object.keys(req_param_parser)){
-			var req_params:RequestParams = {}
-			switch(type){
-				case "body":
-					req_params = JSON.parse(JSON.stringify(request.body))
-					break
-				case "query":
-					req_params = JSON.parse(JSON.stringify(request.query))
-					break
-				case "params":
-					req_params = JSON.parse(JSON.stringify(request.params))
-					break
-					
-			}
-			for(const [param_name,param_type] of Object.entries(req_param_parser[type])){
-				if(param_type == "number"){
-					assert(parseInt(req_params[param_name]) !== NaN)
-				}
-				else if(param_type == "object"){
-					assert(JSON.parse(req_params[param_name]))
-				}
-				else{
-					assert(typeof(req_params[param_name]) == param_type)
-				}
-			}
-		}
-	} catch(err){
-		console.error(err)
-		throw new createError.BadRequest
-	}
-}
-

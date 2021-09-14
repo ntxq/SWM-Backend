@@ -1,38 +1,90 @@
-import createError from "http-errors"
-import express from 'express';
+import express from "express";
 
-import ocrRouter from 'src/routes/upload/ocr'
-import segmentationRouter from 'src/routes/upload/segmentation'
+import ocrRouter from "src/routes/upload/ocr";
+import segmentationRouter from "src/routes/upload/segmentation";
+import { Request, Response, NextFunction } from "express-serve-static-core";
+import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
+import { jwtKey, MODE } from "src/sql/secret";
+import createHttpError from "http-errors";
+import { OauthJwtToken, OauthToken } from "src/routes/oauth";
+import { queryManager } from "src/sql/mysql_connection_manager";
+import {
+  kakaoRefresh,
+  kakaoVerify,
+  makeAccessTokenCookie,
+  accessTokens,
+} from "src/modules/oauth";
+// import http from "node:http";
 
-import { Request, Response, NextFunction } from 'express-serve-static-core'
+const router = express.Router();
 
-var router = express.Router();
+interface Cookie {
+  kakao_token: string;
+  [key: string]: string;
+}
 
-router.use('/OCR', ocrRouter);
-router.use('/segmentation', segmentationRouter);
+if (MODE !== "dev") {
+  router.use(
+    "*",
+    function (request: Request, response: Response, next: NextFunction) {
+      const token = (request.cookies as Cookie)["kakao_token"];
+      try {
+        const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
+        if (!accessTokens.has(jwtObject.jwtAccessToken)) {
+          next(new createHttpError.Unauthorized());
+          return;
+        }
+        next();
+      } catch (error) {
+        if (error instanceof TokenExpiredError) {
+          const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
+          if (!accessTokens.has(jwtObject.jwtAccessToken)) {
+            next(new createHttpError.Unauthorized());
+            return;
+          }
 
-// catch 404 and forward to error handler
-router.use(function(req, res, next) {
-  next(createError.NotFound);
-});
+          const accessToken = accessTokens.get(
+            jwtObject.jwtAccessToken
+          ) as OauthToken;
 
-// error handler
-router.use(function(err:createError.HttpError, req:Request, res:Response, next:NextFunction) {
-  // set locals, only providing error in development
-  if(res.statusCode === 415){
-    return res.status(res.statusCode).send('error');
-  }
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+          kakaoVerify(accessToken.accessToken)
+            .then(async (isValid) => {
+              //get new access token
+              if (!isValid) {
+                const refreshToken = await queryManager.getRefreshToken(
+                  jwtObject.index
+                );
+                const refreshResult = await kakaoRefresh(refreshToken);
+                accessTokens.delete(jwtObject.jwtAccessToken);
+                accessToken.accessToken = refreshResult.access_token;
 
-  // render the error page
-  res.status(err.statusCode || err.status || 500);
-  res.send('error');
-});
+                //set new refresh token
+                if (refreshResult.refresh_token) {
+                  accessToken.index = await queryManager.setRefreshToken(
+                    accessToken.userID,
+                    refreshResult.refresh_token
+                  );
+                }
+              }
+              //set new access jwt token
+              const token = makeAccessTokenCookie(accessToken);
+              response.cookie("kakao_token", token);
+              next();
+            })
+            .catch((error) => {
+              next(error);
+              return;
+            });
+        } else {
+          console.error(error);
+          next(new createHttpError.Forbidden());
+        }
+      }
+    }
+  );
+}
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-    res.send('index');
-});
+router.use("/OCR", ocrRouter);
+router.use("/segmentation", segmentationRouter);
 
-module.exports = router;
+export default router;

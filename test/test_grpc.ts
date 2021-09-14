@@ -1,57 +1,156 @@
-import { grpcSocket } from 'src/gRPC/grpc_socket';
-import { expect } from "chai"
-import { ReplyRequestStart } from 'src/gRPC/grpc_message_interface';
-import supertest from 'supertest';
-import app from 'src/app';
-import { JSON_DIR } from 'src/modules/const';
+import { grpcSocket } from "src/gRPC/grpc_socket";
+// import { expect } from "chai";
+import sinon from "ts-sinon";
+import { expect } from "chai";
+import { queryManager } from "src/sql/mysql_connection_manager";
+import { s3 } from "src/modules/s3_wrapper";
+import rle from "test/resource/rle.json";
+describe("GRPC connection", function () {
+  const request_id = 0;
+  afterEach((done) => {
+    sinon.restore();
+    done();
+  });
 
-describe('GRPC connection', function () {
-	this.timeout(300000);
-	var req_id = 0
-	before(function (done) {
-		supertest(app).post('/upload/segmentation/source')
-			.attach('source', 'test/resource/test_img.png')
-			.field({ title: "GRPC test" })
-			.expect(200)
-			.end(function (err: Error, res: supertest.Response) {
-				if (err) return done(err);
-				expect(res.body.req_ids).to.hasOwnProperty("test_img.png")
-				const res_body = res.body.req_ids["test_img.png"]
-				expect(res_body["req_id"]).to.be.a('number')
-				req_id = res_body["req_id"]
-				done()
-			});
-	});
-	it('Segmentation start', function (done) {
-		grpcSocket.segmentation.Start(req_id, 0).then(res=>{
-			expect(res.status_code).to.equal(200)
-			expect(res.req_id).to.equal(req_id)
-			done()
-		}).catch((err)=>{
-			done(err)
-		})
-	});
-	describe('Edit segmentation', function () {
-		before(async function () {
-			while (true) {
-				const res = await supertest(app).get('/upload/segmentation/result').query({ req_id: req_id, cut_id: 1 }).expect(200)
-				expect(res.body.progress).to.be.a("number")
-				if (res.body.progress == 100) {
-					break;
-				}
-				await new Promise(resolve => setTimeout(resolve, 2000));
-			}
-		});
-		it('Update mask', function (done) {
-			var masks = new Array<Array<number>>();
-			const rle = require(`${JSON_DIR}/mask/${req_id}_1.json`)
-			masks.push(rle)
+  describe("Segmentation", function () {
+    it("cut divide", async function () {
+      const responseValue = {
+        req_id: 0,
+        cut_count: 1,
+      };
+      sinon
+        .stub(grpcSocket.segmentation.client, "MakeCutsFromWholeImage")
+        .onFirstCall()
+        .callsArgWith(1, undefined, responseValue);
+      const response = await grpcSocket.segmentation.makeCutsFromWholeImage(
+        request_id,
+        "cut",
+        "test/path"
+      );
+      expect(response.req_id).to.be.equal(responseValue.req_id);
+      expect(response.cut_count).to.be.equal(responseValue.cut_count);
+    });
 
-			grpcSocket.segmentation.UpdateMask(req_id, 1, masks).then(()=>{
-				done()
-			}).catch((err)=>{
-				done(err)
-			})
-		});
-	})
+    it("start segmentation", async function () {
+      sinon.stub(queryManager, "getCutCount").resolves(3);
+      sinon.stub(queryManager, "getPath").resolves("test/path");
+      const responseValue = {
+        req_id: 0,
+        status_code: 200,
+      };
+      const stub = sinon.stub(grpcSocket.segmentation.client, "StartCut");
+      for (let index = 0; index < 10; index++) {
+        stub.onCall(index).callsArgWith(1, undefined, responseValue);
+      }
+      await grpcSocket.segmentation.start(request_id, 0);
+    });
+
+    it("get image", async function () {
+      sinon.stub(queryManager, "updateCut").resolves();
+      const call = {
+        request: {
+          req_id: 0,
+          type: "cut",
+          cut_index: 0,
+          file_name: "test/path",
+        },
+      };
+      const response = await grpcSocket.segmentation.imageTransfer(
+        call as any,
+        (error, response) => {
+          return;
+        }
+      );
+      expect(response.success).to.be.equal(true);
+    });
+
+    it("get json", async function () {
+      sinon.stub(queryManager, "setCutRanges").resolves();
+      sinon.stub(queryManager, "updateCut").resolves();
+      sinon.stub(s3, "upload").resolves();
+      const types = ["cut", "mask"];
+      for (const type of types) {
+        const call = {
+          request: {
+            req_id: 0,
+            cut_index: 0,
+            type: type,
+            data: JSON.stringify({ test: "value" }),
+            file_name: "string",
+          },
+        };
+        const response = await grpcSocket.segmentation.jsonTransfer(
+          call as any,
+          (error, response) => {
+            return;
+          }
+        );
+        expect(response.success).to.be.equal(true);
+      }
+    });
+
+    it("Update mask", async function () {
+      const responseValue = {
+        req_id: 0,
+        status_code: 200,
+      };
+      const cutRanges = new Map<string, [number, number]>();
+      cutRanges.set("1", [1, 100]);
+      cutRanges.set("2", [100, 200]);
+      sinon.stub(queryManager, "getCutRange").resolves(cutRanges);
+      sinon.stub(queryManager, "getPath").resolves("asdsad");
+      sinon.stub(queryManager, "updateProgress").resolves();
+      sinon
+        .stub(grpcSocket.segmentation.client, "UpdateMask")
+        .onFirstCall()
+        .callsArgWith(1, undefined, responseValue);
+      const masks = new Array<Array<number>>();
+      masks.push(rle.result[0].value.rle);
+
+      const response = await grpcSocket.segmentation.updateMask(0, 1, masks);
+      expect(response.req_id).to.be.equal(0);
+      expect(response.status_code).to.be.equal(200);
+    });
+  });
+
+  describe("OCR", function () {
+    it("start OCR", async function () {
+      sinon.stub(queryManager, "getPath").resolves("asdsad");
+      const responseValue = {
+        req_id: 0,
+        status_code: 200,
+      };
+      sinon
+        .stub(grpcSocket.OCR.client, "start")
+        .onFirstCall()
+        .callsArgWith(1, undefined, responseValue);
+      const response = await grpcSocket.OCR.start(1, 2);
+      expect(response.req_id).to.be.equal(responseValue.req_id);
+      expect(response.status_code).to.be.equal(responseValue.status_code);
+    });
+
+    it("get json", async function () {
+      sinon.stub(queryManager, "setBboxes").resolves();
+      sinon.stub(s3, "upload").resolves();
+      const types = ["bbox"];
+      for (const type of types) {
+        const call = {
+          request: {
+            req_id: 0,
+            cut_index: 0,
+            type: type,
+            data: JSON.stringify({ test: "value" }),
+            file_name: "string",
+          },
+        };
+        const response = await grpcSocket.OCR.jsonTransfer(
+          call as any,
+          (error, response) => {
+            return;
+          }
+        );
+        expect(response.success).to.be.equal(true);
+      }
+    });
+  });
 });

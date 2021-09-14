@@ -1,14 +1,24 @@
 {
 	"POST":{
+		"/upload/segmentation/project":{
+			"body":{
+				"title":"string",
+				"filenames":"object"
+			}
+		},
 		"/upload/segmentation/source":{
 			"body":{
-				"title":"string"
+				"req_id":"number"
 			}
 		},
 		"/upload/segmentation/blank":{
 			"body":{
-				"map_ids":"object",
-				"empty_id":"object"
+				"req_id":"number"
+			}
+		},
+		"/upload/segmentation/start":{
+			"body":{
+				"req_id":"number"
 			}
 		},
 		"/upload/segmentation/mask":{
