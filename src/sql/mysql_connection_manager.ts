@@ -5,13 +5,14 @@ import {
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
-import { IMAGE_DIR } from "src/modules/const";
-import path from "node:path";
 import { BBox, TranslateBBox } from "src/routes/upload/ocr";
 
 import { s3 } from "src/modules/s3_wrapper";
-import { progressManager, ProgressType } from "src/modules/progress_manager";
+import { progressManager } from "src/modules/progress_manager";
 import createError from "http-errors";
+import { getImagePath } from "src/modules/utils";
+import { ProgressType } from "src/modules/const";
+import { PostProjectResponse } from "src/routes/upload/segmentation";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -33,14 +34,13 @@ export class mysqlConnectionManager {
 
   async addRequest(
     projectID: number,
-    files: Express.Multer.File[]
-  ): Promise<Map<number, [string, string]>> {
-    const ID2PathMap = new Map<number, [string, string]>();
+    filenames: string[]
+  ): Promise<PostProjectResponse> {
     const procedures = new Array<Procedure>();
-    for (const file of files) {
+    for (const filename of filenames) {
       const procedure: Procedure = {
         query: "sp_add_request",
-        parameters: [projectID, file.originalname],
+        parameters: [projectID, filename],
         selectUnique: true,
       };
       procedures.push(procedure);
@@ -49,18 +49,18 @@ export class mysqlConnectionManager {
       procedures
     )) as Array<SelectUniqueResult>;
 
+    const returnValue = [];
     for (const [index, row] of rows.entries()) {
       const requestID = row["id"] as number;
-      const file = files[index];
-      const new_path = path.join(
-        IMAGE_DIR,
-        "cut",
-        `${requestID}_0${path.extname(file.originalname)}`
-      );
-      await s3.upload(new_path, file.buffer);
-      ID2PathMap.set(requestID, [new_path, file.originalname]);
+      const imagePath = getImagePath(requestID, 0, "cut");
+      const s3URL = await s3.getUploadURL(imagePath);
+      returnValue.push({
+        req_id: requestID,
+        filename: filenames[index],
+        s3_url: s3URL,
+      });
     }
-    return ID2PathMap;
+    return { request_array: returnValue };
   }
 
   async setCutCount(requestID: number, cutCount: number): Promise<void> {

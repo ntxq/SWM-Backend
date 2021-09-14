@@ -72,6 +72,24 @@ class S3 {
       });
     });
   }
+
+  async getUploadURL(filename: string) {
+    const parameter = {
+      Bucket: this.bucket,
+      Key: filename,
+      Expires: 30,
+    };
+    return this.s3.getSignedUrlPromise("putObject", parameter);
+  }
+
+  async getDownloadURL(filename: string) {
+    const parameter = {
+      Bucket: this.bucket,
+      Key: filename,
+      Expires: 30,
+    };
+    return this.s3.getSignedUrlPromise("getObject", parameter);
+  }
 }
 
 export const s3 = new S3();

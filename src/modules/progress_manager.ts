@@ -3,16 +3,7 @@ import {
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
-
-export type ProgressType =
-  | "start"
-  | "cut"
-  | "mask"
-  | "inpaint"
-  | "detect"
-  | "bbox"
-  | "translate"
-  | "complete";
+import { ProgressType } from "./const";
 
 type ProgressMap = {
   [key in ProgressType]: number;

@@ -42,19 +42,18 @@ describe("mysql connection test", function () {
     const rows = data.map((value) => {
       return { id: value.id };
     });
-    const multerFiles = data.map((value) => {
-      return { originalname: value.originalname, buffer: value.buffer };
-    }) as Express.Multer.File[];
+    const filenames = data.map((value) => {
+      return value.originalname;
+    });
 
     sinon.stub(mysqlConnection, "callMultipleProcedure").resolves(rows);
     queryManager
-      .addRequest(1, multerFiles)
-      .then((map) => {
-        for (const [index, row] of rows.entries()) {
-          const file = multerFiles[index];
-          expect(map.get(row.id)?.length).to.be.equal(2);
-          expect(map.get(row.id)?.[0]).to.be.a("string");
-          expect(map.get(row.id)?.[1]).to.be.equal(file.originalname);
+      .addRequest(1, filenames)
+      .then((response) => {
+        for (const item of response.request_array) {
+          expect(item.req_id).to.be.a("number");
+          expect(item.s3_url).to.be.a("string");
+          expect(filenames).to.be.include(item.filename);
         }
         done();
       })
