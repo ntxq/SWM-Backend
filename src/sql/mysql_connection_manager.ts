@@ -315,5 +315,17 @@ export class mysqlConnectionManager {
     )) as SelectUniqueResult;
     return result["token"] as string;
   }
+
+  async isValidRequest(userID: number, requestID: number): Promise<boolean> {
+    const procedure: Procedure = {
+      query: "sp_check_request_user",
+      parameters: [userID, requestID],
+      selectUnique: true,
+    };
+    const result = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return result["valid"] !== 0;
+  }
 }
 export const queryManager = new mysqlConnectionManager();

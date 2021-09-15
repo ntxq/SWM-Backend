@@ -240,4 +240,11 @@ describe("mysql connection test", function () {
       expect(bbox.originalText).to.be.equal(returnValue.originalText);
     }
   });
+
+  it("isValidRequest", async function () {
+    const returnValue = { valid: 1 };
+    sinon.stub(mysqlConnection, "callProcedure").resolves(returnValue);
+    const response = await queryManager.isValidRequest(123_123, 10_000);
+    expect(response).to.be.equal(true);
+  });
 });

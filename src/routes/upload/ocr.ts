@@ -3,7 +3,11 @@ import express from "express";
 import { Request, Response } from "express-serve-static-core";
 import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { asyncRouterWrap, validateParameters } from "src/modules/utils";
+import {
+  asyncRouterWrap,
+  validateParameters,
+  validateRequestID,
+} from "src/modules/utils";
 
 const router = express.Router();
 
@@ -35,6 +39,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     await grpcSocket.OCR.start(requestID, cutIndex);
     response.send({ success: true });
   })
@@ -46,6 +53,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const progress = await queryManager.checkProgress(requestID, cutIndex);
     response.send({ progress: Math.max(0, progress - 100) });
   })
@@ -57,6 +67,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const bboxList = await queryManager.getBboxes(requestID, cutIndex);
     response.send({ bboxList: bboxList });
   })
@@ -75,6 +88,9 @@ router.post(
     const requestID = Number.parseInt(body["req_id"]);
     const cutIndex = Number.parseInt(body["cut_id"]);
     const bboxList = JSON.parse(body["bboxList"]) as TranslateBBox[];
+
+    await validateRequestID(response.locals.userID, requestID);
+
     await queryManager.setBboxesWithTranslate(requestID, cutIndex, bboxList);
     response.send({ success: true });
   })
