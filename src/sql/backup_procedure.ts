@@ -16,10 +16,19 @@ async function backup() {
     procedure
   )) as Array<SelectUniqueResult>;
   for (const row of rows) {
-    console.log(row);
     const text = row["ROUTINE_DEFINITION"] as string;
     const title = row["SPECIFIC_NAME"] as string;
-    fs.writeFileSync(path.join(path.resolve(), "sp", `${title}.sql`), text);
+    const path_string = path.join(path.resolve(), "sp", `${title}.sql`);
+    if (fs.existsSync(path_string)) {
+      const read = fs.readFileSync(path_string);
+      if (text !== read.toString()) {
+        fs.writeFileSync(path_string, text);
+      } else {
+        console.log(path_string);
+      }
+    } else {
+      fs.writeFileSync(path_string, text);
+    }
   }
 }
 backup().then(
