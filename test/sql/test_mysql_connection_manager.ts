@@ -5,7 +5,7 @@
 // import app from "src/app";
 import { expect } from "chai";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { mysqlConnection } from "src/sql/sql_connection";
+import { mysqlConnection, mysqlLonginConnection } from "src/sql/sql_connection";
 import sinon from "ts-sinon";
 import { s3 } from "src/modules/s3_wrapper";
 
@@ -239,5 +239,36 @@ describe("mysql connection test", function () {
       expect(bbox.originalHeight).to.be.equal(returnValue.originalHeight);
       expect(bbox.originalText).to.be.equal(returnValue.originalText);
     }
+  });
+
+  it("getUser", async function () {
+    const ID = 1;
+    const returnValue = {
+      create_time: Date.now().toString(),
+      nickname: "test profile",
+      email: "null",
+    };
+    sinon.stub(mysqlLonginConnection, "callProcedure").resolves(returnValue);
+    const result = await queryManager.getUser(ID);
+
+    const time = result.create_time as string;
+    expect(Date.parse(time)).to.be.not.equal(Number.NaN);
+    expect(result.nickname).to.be.equal("test profile");
+    expect(result.email).to.be.equal("null");
+  });
+
+  it("addUser", async function () {
+    const ID = 1;
+    const returnValue = {
+      create_time: Date.now().toString(),
+    };
+    sinon.stub(mysqlLonginConnection, "callProcedure").resolves(returnValue);
+    const result = await queryManager.addUser(
+      ID,
+      "test_nick",
+      "test@email.com"
+    );
+    const time = result.create_time as string;
+    expect(Date.parse(time)).to.be.not.equal(Number.NaN);
   });
 });

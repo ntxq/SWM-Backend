@@ -3,10 +3,29 @@ import { Profile, Strategy } from "passport-kakao";
 import express from "express";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { makeAccessTokenCookie } from "src/modules/oauth";
+import {
+  addProfile,
+  makeAccessTokenCookie,
+  parseProfile,
+} from "src/modules/oauth";
 import { KAKAO_ID } from "src/sql/secret";
+import createHttpError from "http-errors";
 
 const router = express.Router();
+
+export interface KakaoProfile extends Profile {
+  account_email?: string;
+  username: string;
+  kakao_account: {
+    email?: string;
+  };
+}
+
+export interface ResponseProfile {
+  createTime: Date;
+  username: string;
+  email?: string;
+}
 
 export interface OauthJwtToken {
   jwtAccessToken: string;
@@ -29,20 +48,24 @@ export function initKakaoOauth(): void {
         clientSecret: "",
       },
       (accessToken, refreshToken, profile: Profile, done) => {
-        const ID = Number.parseInt(profile.id);
+        const kakao_profile = profile as KakaoProfile;
+        const ID = Number.parseInt(kakao_profile.id);
         queryManager
-          .existUser(ID)
-          .then(async (isExist) => {
-            if (isExist == false) {
-              await queryManager.addUser(ID);
-            }
+          .getUser(ID)
+          .then(async (userInfo) => {
+            //set user profile
+            const responseProfile = userInfo.create_time
+              ? parseProfile(userInfo)
+              : await addProfile(kakao_profile);
+            //refresh token
             const index = await queryManager.setRefreshToken(ID, refreshToken);
             const jwt: OauthToken = {
               accessToken: accessToken,
               index: index,
               userID: ID,
             };
-            done(undefined, jwt);
+            //response
+            done(undefined, jwt, responseProfile);
           })
           .catch((error) => {
             done(error);
@@ -74,15 +97,24 @@ type authCallback = (
 ) => void;
 
 router.get("/", (request, response, next) => {
-  const authCallback: authCallback = passport.authenticate(
-    "kakao",
-    (error, tokenObject: OauthToken) => {
-      const token = makeAccessTokenCookie(tokenObject);
-      response.cookie("kakao_token", token);
-      response.redirect("/home");
-    }
-  ) as authCallback;
-  authCallback(request, response, next);
+  try {
+    const authCallback: authCallback = passport.authenticate(
+      "kakao",
+      (error, tokenObject: OauthToken, profile: ResponseProfile) => {
+        if (error) {
+          next(new createHttpError.InternalServerError());
+          return;
+        }
+        const token = makeAccessTokenCookie(tokenObject);
+        response.cookie("profile", JSON.stringify(profile));
+        response.cookie("kakao_token", token);
+        response.redirect("/home");
+      }
+    ) as authCallback;
+    authCallback(request, response, next);
+  } catch {
+    next(new createHttpError.InternalServerError());
+  }
 });
 
 router.get("/logout", (request, response) => {

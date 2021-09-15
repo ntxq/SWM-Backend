@@ -270,13 +270,19 @@ export class mysqlConnectionManager {
     return mysqlConnection.callProcedure(procedure);
   }
 
-  async addUser(userID: number): Promise<void> {
+  async addUser(
+    userID: number,
+    nickname: string,
+    email?: string
+  ): Promise<SelectUniqueResult> {
     const procedure: Procedure = {
       query: "sp_set_user",
-      parameters: [userID],
+      parameters: [userID, nickname, email],
       selectUnique: true,
     };
-    await mysqlLonginConnection.callProcedure(procedure);
+    return mysqlLonginConnection.callProcedure(
+      procedure
+    ) as Promise<SelectUniqueResult>;
   }
 
   async setRefreshToken(userID: number, refreshToken: string): Promise<number> {
@@ -292,16 +298,16 @@ export class mysqlConnectionManager {
     return index;
   }
 
-  async existUser(userID: number): Promise<boolean> {
+  async getUser(userID: number): Promise<SelectUniqueResult> {
     const procedure: Procedure = {
-      query: "sp_check_user_exist",
+      query: "sp_get_user",
       parameters: [userID],
       selectUnique: true,
     };
     const result = (await mysqlLonginConnection.callProcedure(
       procedure
     )) as SelectUniqueResult;
-    return Boolean(result["result"]);
+    return result;
   }
 
   async getRefreshToken(index: number): Promise<string> {

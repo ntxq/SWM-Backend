@@ -3,9 +3,9 @@ import mysql, { Connection } from "mysql";
 import { DBConnection, DBLoginCneection } from "src/sql/secret";
 
 type QueryReturnType = SelectUniqueResult | Array<SelectUniqueResult> | [];
-type QueryParameter = string | number | JSON | boolean | null;
+type QueryParameter = string | number | JSON | boolean | null | undefined;
 type QueryUniqueSelectRow = Array<Array<unknown>>;
-export type SelectUniqueResult = { [key: string]: string | number };
+export type SelectUniqueResult = { [key: string]: string | number | null };
 
 export interface Procedure {
   query: string;
