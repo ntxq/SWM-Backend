@@ -58,7 +58,6 @@ router.post(
     validateParameters(request);
     const body = request.body as PostSourceBody;
     await validateRequestID(response.locals.userID, body.req_id);
-    console.log(response.locals.userID, body.req_id);
     const imagePath = getImagePath(body.req_id, 0, "cut");
 
     await queryManager.updateCut(body.req_id, "cut", 0, imagePath);
@@ -82,7 +81,6 @@ interface PostBlankBody {
 router.post(
   "/blank",
   asyncRouterWrap(async (request: Request, response: Response) => {
-    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostBlankBody;
     await validateRequestID(response.locals.userID, body.req_id);
