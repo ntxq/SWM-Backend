@@ -1,34 +1,34 @@
 {
 	"POST":{
-		"/upload/segmentation/project":{
+		"/api/segmentation/project":{
 			"body":{
 				"title":"string",
 				"filenames":"Array<string>"
 			}
 		},
-		"/upload/segmentation/source":{
+		"/api/segmentation/source":{
 			"body":{
 				"req_id":"number"
 			}
 		},
-		"/upload/segmentation/blank":{
+		"/api/segmentation/blank":{
 			"body":{
 				"req_id":"number"
 			}
 		},
-		"/upload/segmentation/start":{
+		"/api/segmentation/start":{
 			"body":{
 				"req_id":"number"
 			}
 		},
-		"/upload/segmentation/mask":{
+		"/api/segmentation/mask":{
 			"body":{
 				"req_id":"number",
 				"cut_id":"number",
 				"mask":"object"
 			}
 		},
-		"/upload/OCR/edit":{
+		"/api/OCR/edit":{
 			"body":{
 				"req_id":"number",
 				"cut_id":"number",
@@ -37,43 +37,43 @@
 		}
 	},
 	"GET":{
-		"/upload/segmentation/cut":{
+		"/api/segmentation/cut":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/result":{
+		"/api/segmentation/result":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/result/mask":{
+		"/api/segmentation/result/mask":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/segmentation/result/inpaint":{
+		"/api/segmentation/result/inpaint":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/OCR/select":{
+		"/api/OCR/select":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/OCR/result":{
+		"/api/OCR/result":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"
 			}
 		},
-		"/upload/OCR/result/bbox":{
+		"/api/OCR/result/bbox":{
 			"query":{
 				"req_id":"number",
 				"cut_id":"number"

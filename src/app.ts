@@ -6,7 +6,7 @@ import cors = require("cors");
 import logger = require("morgan");
 import { Request, Response, NextFunction } from "express-serve-static-core";
 
-import uploadRouter from "src/routes/upload/upload";
+import apiRouter from "src/routes/api";
 import oauthRouter, { initKakaoOauth } from "src/routes/oauth";
 import passport from "passport";
 
@@ -24,7 +24,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 initKakaoOauth();
 
-app.use("/upload", uploadRouter);
+app.use("/api", apiRouter);
 app.use("/oauth", oauthRouter);
 app.get("*", (request: Request, response: Response) =>
   response.sendFile("index.html", {

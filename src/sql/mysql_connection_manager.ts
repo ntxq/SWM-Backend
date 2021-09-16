@@ -5,14 +5,14 @@ import {
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
-import { BBox, TranslateBBox } from "src/routes/upload/ocr";
+import { BBox, TranslateBBox } from "src/routes/api/ocr";
 
 import { s3 } from "src/modules/s3_wrapper";
 import { progressManager } from "src/modules/progress_manager";
 import createError from "http-errors";
 import { getImagePath } from "src/modules/utils";
 import { ProgressType } from "src/modules/const";
-import { PostProjectResponse } from "src/routes/upload/segmentation";
+import { PostProjectResponse } from "src/routes/api/segmentation";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
