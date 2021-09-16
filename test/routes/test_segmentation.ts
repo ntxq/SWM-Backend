@@ -11,9 +11,9 @@ import { grpcSocket } from "src/gRPC/grpc_socket";
 import { s3 } from "src/modules/s3_wrapper";
 import { mysqlConnection } from "src/sql/sql_connection";
 import { getImagePath } from "src/modules/utils";
-import { PostProjectResponse } from "src/routes/upload/segmentation";
+import { PostProjectResponse } from "src/routes/api/segmentation";
 
-describe("/upload/segmentation two request", function () {
+describe("/api/segmentation two request", function () {
   afterEach((done) => {
     sinon.restore();
     done();
@@ -36,7 +36,7 @@ describe("/upload/segmentation two request", function () {
     });
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
-        .post("/upload/segmentation/project")
+        .post("/api/segmentation/project")
         .send({ title: "test project", filenames: JSON.stringify(image_list) })
         .expect(200);
       const body = response.body;
@@ -65,7 +65,7 @@ describe("/upload/segmentation two request", function () {
     });
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
-        .post("/upload/segmentation/source")
+        .post("/api/segmentation/source")
         .send({ req_id: 1 })
         .expect(200);
       const body = response.body;
@@ -90,7 +90,7 @@ describe("/upload/segmentation two request", function () {
     });
     it("/blank 200", async function () {
       const response = await supertest(app)
-        .post("/upload/segmentation/blank")
+        .post("/api/segmentation/blank")
         .send({ req_id: 1 })
         .expect(200);
       expect(response.body.success).to.be.a("boolean");
@@ -104,7 +104,7 @@ describe("/upload/segmentation two request", function () {
     });
     it("/start 200", async function () {
       const response = await supertest(app)
-        .post("/upload/segmentation/start")
+        .post("/api/segmentation/start")
         .send({ req_id: 1 })
         .expect(200);
       expect(response.body.success).to.be.a("boolean");
@@ -117,7 +117,7 @@ describe("/upload/segmentation two request", function () {
     const cut_id = 1;
     const request_id = 2;
     const response = await supertest(app)
-      .get("/upload/segmentation/cut")
+      .get("/api/segmentation/cut")
       .query({ req_id: request_id, cut_id: cut_id });
     expect(response.statusCode).is.equal(200);
     expect(response.body).to.hasOwnProperty("cut");
@@ -132,7 +132,7 @@ describe("/upload/segmentation two request", function () {
     const cut_id = 1;
     const request_id = 2;
     const response = await supertest(app)
-      .get("/upload/segmentation/result")
+      .get("/api/segmentation/result")
       .query({ req_id: request_id, cut_id: cut_id });
     expect(response.statusCode).is.equal(200);
     expect(response.body.progress).to.be.a("number");
@@ -146,7 +146,7 @@ describe("/upload/segmentation two request", function () {
     const cut_id = 1;
     const request_id = 2;
     const response = await supertest(app)
-      .get("/upload/segmentation/result/mask")
+      .get("/api/segmentation/result/mask")
       .query({ req_id: request_id, cut_id: cut_id });
     expect(response.statusCode).is.equal(200);
     expect(response.body.mask).to.be.instanceOf(Array);
@@ -158,7 +158,7 @@ describe("/upload/segmentation two request", function () {
     const cut_id = 1;
     const request_id = 2;
     const response = await supertest(app)
-      .get("/upload/segmentation/result/inpaint")
+      .get("/api/segmentation/result/inpaint")
       .query({ req_id: request_id, cut_id: cut_id });
     expect(response.statusCode).is.equal(200);
     expect(response.body).to.be.instanceOf(Buffer);
@@ -171,7 +171,7 @@ describe("/upload/segmentation two request", function () {
     const cut_id = 1;
 
     const response = await supertest(app)
-      .post("/upload/segmentation/mask")
+      .post("/api/segmentation/mask")
       .send({
         req_id: request_id,
         cut_id: cut_id,

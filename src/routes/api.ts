@@ -1,7 +1,7 @@
 import express from "express";
 
-import ocrRouter from "src/routes/upload/ocr";
-import segmentationRouter from "src/routes/upload/segmentation";
+import ocrRouter from "src/routes/api/ocr";
+import segmentationRouter from "src/routes/api/segmentation";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
 import { jwtKey, MODE } from "src/sql/secret";
