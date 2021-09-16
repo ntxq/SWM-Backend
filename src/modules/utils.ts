@@ -49,7 +49,10 @@ export function getImagePath(
 
 export function validateParameters(request: Request): void {
   try {
-    const url = request.baseUrl + request.path;
+    let url = request.baseUrl + request.path;
+    if (url.slice(-1) == "/") {
+      url = url.slice(0, -1);
+    }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const urlList = (requests as Json)[request.method] as Json;
     const requestChecker = urlList[url] as Json;
