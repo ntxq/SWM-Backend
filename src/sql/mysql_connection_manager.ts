@@ -52,12 +52,17 @@ export class mysqlConnectionManager {
     const returnValue = [];
     for (const [index, row] of rows.entries()) {
       const requestID = row["id"] as number;
+
       const imagePath = getImagePath(requestID, 0, "cut");
       const s3URL = await s3.getUploadURL(imagePath);
+
+      const inpaintImagePath = getImagePath(requestID, 0, "inpaint");
+      const s3BlankURL = await s3.getUploadURL(inpaintImagePath);
       returnValue.push({
         req_id: requestID,
         filename: filenames[index],
         s3_url: s3URL,
+        s3_blank_url: s3BlankURL,
       });
     }
     return { request_array: returnValue };
