@@ -21,6 +21,7 @@ interface PostProjectResponseUnit {
   req_id: number;
   filename: string;
   s3_url: string;
+  s3_blank_url: string;
 }
 
 export interface PostProjectResponse {
