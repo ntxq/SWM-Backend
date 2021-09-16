@@ -78,6 +78,11 @@
 				"req_id":"number",
 				"cut_id":"number"
 			}
+		},
+		"/api/download":{
+			"query":{
+				"req_id":"number"
+			}
 		}
 	},
 	"PUT":{},
