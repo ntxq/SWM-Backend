@@ -3,7 +3,7 @@
 		"/upload/segmentation/project":{
 			"body":{
 				"title":"string",
-				"filenames":"object"
+				"filenames":"Array<string>"
 			}
 		},
 		"/upload/segmentation/source":{

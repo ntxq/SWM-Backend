@@ -8,7 +8,7 @@ import { IMAGE_DIR, ProgressType } from "./const";
 type RequestParameters = {
   [index: string]: string;
 };
-type Json = { [key: string]: Json | string | number };
+type Json = { [key: string]: Json | string | number | Array<string> };
 
 export function isImageFile(file: Express.Multer.File): boolean {
   // Allowed ext
@@ -73,6 +73,7 @@ export function validateParameters(request: Request): void {
           ) as RequestParameters;
           break;
       }
+
       for (const [parameterName, parameterType] of Object.entries(
         requestChecker[type]
       )) {
@@ -82,6 +83,8 @@ export function validateParameters(request: Request): void {
           );
         } else if (parameterType == "object") {
           assert(JSON.parse(requestParameters[parameterName]));
+        } else if (parameterType === "Array<string>") {
+          assert(Array.isArray(requestParameters[parameterName]));
         } else {
           assert(typeof requestParameters[parameterName] == parameterType);
         }
