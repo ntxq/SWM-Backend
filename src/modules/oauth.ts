@@ -51,10 +51,10 @@ export async function addProfile(
   const result = await queryManager.addUser(
     Number.parseInt(profile.id),
     profile.username,
-    profile.kakao_account.email
+    profile._json.kakao_account.email
   );
   return {
-    email: profile.kakao_account.email,
+    email: profile._json.kakao_account.email,
     username: profile.username,
     createTime: new Date(result.create_time as string),
   };

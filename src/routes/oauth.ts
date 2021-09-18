@@ -16,8 +16,10 @@ const router = express.Router();
 export interface KakaoProfile extends Profile {
   account_email?: string;
   username: string;
-  kakao_account: {
-    email?: string;
+  _json: {
+    kakao_account: {
+      email?: string;
+    };
   };
 }
 

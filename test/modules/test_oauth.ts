@@ -74,7 +74,9 @@ describe("oauth", function () {
     const result = await addProfile({
       id: "1",
       username: "test nick",
-      kakao_account: { email: "test@email.com" },
+      _json: {
+        kakao_account: { email: "test@email.com" },
+      },
     } as any);
     expect(result.createTime).to.be.instanceof(Date);
     expect(result.username).to.be.equal("test nick");
