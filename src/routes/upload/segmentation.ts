@@ -91,7 +91,7 @@ router.post(
       queryManager.updateCut(body.req_id, "inpaint", 0, imagePath),
       grpcSocket.segmentation.makeCutsFromWholeImage(
         body.req_id,
-        "cut",
+        "inpaint",
         imagePath
       ),
     ]);
