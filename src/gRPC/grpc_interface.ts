@@ -137,7 +137,6 @@ export class SegmentationInterface {
     return response;
   }
 
-
   async updateMask(
     requestID: number,
     cutIndex: number,
@@ -148,7 +147,6 @@ export class SegmentationInterface {
       masks.push(Buffer.from(mask));
     }
 
-    const cutRanges = await queryManager.getCutRange(requestID);
     const request: MESSAGE.RequestMaskUpdate = {
       req_id: requestID,
       mask_rles: masks,
