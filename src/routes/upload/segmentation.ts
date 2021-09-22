@@ -62,7 +62,7 @@ router.post(
     const imagePath = getImagePath(body.req_id, 0, "cut");
 
     await queryManager.updateCut(body.req_id, "cut", 0, imagePath);
-    const reply = await grpcSocket.segmentation.makeCutsFromWholeImage(
+    const reply = await grpcSocket.segmentation.splitImage(
       body.req_id,
       "cut",
       imagePath
@@ -89,11 +89,7 @@ router.post(
 
     await Promise.all([
       queryManager.updateCut(body.req_id, "inpaint", 0, imagePath),
-      grpcSocket.segmentation.makeCutsFromWholeImage(
-        body.req_id,
-        "inpaint",
-        imagePath
-      ),
+      grpcSocket.segmentation.splitImage(body.req_id, "inpaint", imagePath),
     ]);
 
     response.send({ success: true });

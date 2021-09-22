@@ -10,7 +10,7 @@ import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { HttpError } from "http-errors";
 import path = require("path");
-import { handleGrpcError } from "src/modules/utils";
+import { getJsonPath, handleGrpcError } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 
 export class SegmentationInterface {
@@ -33,7 +33,7 @@ export class SegmentationInterface {
     );
   }
 
-  async makeCutsFromWholeImage(
+  async splitImage(
     requestID: number,
     type: string,
     imagePath: string
@@ -44,56 +44,44 @@ export class SegmentationInterface {
       image_path: imagePath,
     };
     return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve, reject) => {
-      const callback = function (
+      const callback = async function (
         error: Error | null,
         response: MESSAGE.ReplyRequestMakeCut
       ) {
         if (error) {
           reject(handleGrpcError(error));
         }
+        type Ranges = {
+          [key: string]: {
+            range: [number, number];
+            image_path: string;
+          };
+        };
+        const cut_ranges = JSON.parse(response.cut_ranges) as Ranges;
+        const ranges: Map<string, number[]> = new Map<string, number[]>();
+        for (const [key, value] of Object.entries(cut_ranges)) {
+          await queryManager.updateCut(
+            requestID,
+            "cut",
+            Number.parseInt(key),
+            value.image_path
+          );
+          ranges.set(key, value.range);
+        }
+        await queryManager.setCutRanges(
+          request.req_id,
+          JSON.parse(JSON.stringify(ranges))
+        );
         resolve(response);
       };
 
-      this.client.MakeCutsFromWholeImage(request, callback);
+      this.client.SplitImage(request, callback);
     });
   }
 
   async start(requestID: number, cutIndex = 0): Promise<void> {
     if (cutIndex !== 0) {
-      for (let failCount = 0; failCount < 20; failCount++) {
-        try {
-          const imagePath = await queryManager.getPath(
-            requestID,
-            "cut",
-            cutIndex
-          );
-          const request: MESSAGE.RequestStart = {
-            req_id: requestID,
-            cut_index: cutIndex,
-            image_path: imagePath,
-          };
-          return new Promise((resolve, reject) => {
-            const callback = function (
-              error: Error | null,
-              response: MESSAGE.ReplyRequestStart
-            ) {
-              if (error) {
-                reject(handleGrpcError(error));
-                return;
-              }
-              console.log("Greeting:", response.status_code);
-              resolve();
-            };
-            this.client.StartCut(request, callback);
-          });
-        } catch (error) {
-          if (error instanceof HttpError && error.statusCode == 500) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-          } else {
-            throw error;
-          }
-        }
-      }
+      await this.startCut(requestID, cutIndex);
     } else {
       const cut_count = await queryManager.getCutCount(requestID);
       await Promise.all(
@@ -104,52 +92,51 @@ export class SegmentationInterface {
     }
   }
 
-  async imageTransfer(
-    call: grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
-    callback: grpc.sendUnaryData<MESSAGE.ReceiveImage>
-  ): Promise<MESSAGE.ReceiveImage> {
-    const request: MESSAGE.SendImage = call.request;
+  async startCut(requestID: number, cutIndex: number): Promise<void> {
+    const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
+    const request: MESSAGE.RequestStart = {
+      req_id: requestID,
+      cut_index: cutIndex,
+      image_path: imagePath,
+    };
+    return new Promise((resolve, reject) => {
+      const callback = async function (
+        error: Error | null,
+        response: MESSAGE.ReplyRequestStart
+      ) {
+        if (error) {
+          reject(handleGrpcError(error));
+          return;
+        }
+        const filePath = getJsonPath(requestID, cutIndex, "mask");
+        await s3.upload(
+          filePath,
+          Buffer.from(JSON.stringify(JSON.parse(response.mask)))
+        );
+        resolve();
+      };
+      this.client.StartSegmentation(request, callback);
+    });
+  }
+  async inpaintComplete(
+    call: grpc.ServerUnaryCall<
+      MESSAGE.RequestInpaintComplete,
+      MESSAGE.ReplyInpaintComplete
+    >,
+    callback: grpc.sendUnaryData<MESSAGE.ReplyInpaintComplete>
+  ): Promise<MESSAGE.ReplyInpaintComplete> {
+    const request: MESSAGE.RequestInpaintComplete = call.request;
     await queryManager.updateCut(
       request.req_id,
-      request.type,
+      "inpaint",
       request.cut_index,
       request.file_name
     );
-    const response: MESSAGE.ReceiveImage = { success: true };
+    const response: MESSAGE.ReplyInpaintComplete = { req_id: request.req_id };
     callback(null, response);
     return response;
   }
 
-  async jsonTransfer(
-    call: grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
-    callback: grpc.sendUnaryData<MESSAGE.ReceiveJson>
-  ): Promise<MESSAGE.ReceiveJson> {
-    const request: MESSAGE.SendJson = call.request;
-    const filePath = path.join(JSON_DIR, request.file_name);
-    await s3.upload(
-      filePath,
-      Buffer.from(JSON.stringify(JSON.parse(request.data)))
-    );
-    switch (request.type) {
-      case "cut":
-        await queryManager.setCutRanges(
-          request.req_id,
-          JSON.parse(request.data)
-        );
-        break;
-      case "mask":
-        await queryManager.updateCut(
-          request.req_id,
-          request.type,
-          request.cut_index,
-          filePath
-        );
-        break;
-    }
-    const response: MESSAGE.ReceiveJson = { success: true };
-    callback(null, response);
-    return response;
-  }
 
   async updateMask(
     requestID: number,
@@ -167,7 +154,6 @@ export class SegmentationInterface {
       mask_rles: masks,
       cut_index: cutIndex,
       image_path: await queryManager.getPath(requestID, "cut", cutIndex),
-      cut_ranges: JSON.stringify(Object.fromEntries(cutRanges)),
     };
     await queryManager.updateProgress(requestID, cutIndex, "cut");
     return new Promise((resolve, reject) => {
@@ -221,7 +207,6 @@ export class OCRInterface {
             reject(handleGrpcError(error));
             return;
           }
-          console.log("Greeting_OCR:", response.status_code);
           return resolve(response);
         }
       );
