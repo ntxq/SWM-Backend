@@ -96,7 +96,7 @@ describe("/upload/segmentation two request", function () {
 
   describe("/start", function () {
     before(function (done) {
-      sinon.stub(grpcSocket.segmentation, "start").resolves();
+      sinon.stub(grpcSocket.segmentation, "startSegmentation").resolves();
       done();
     });
     it("/start 200", async function () {

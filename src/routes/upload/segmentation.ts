@@ -106,7 +106,7 @@ router.post(
     //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostStartBody;
-    await grpcSocket.segmentation.start(body.req_id);
+    await grpcSocket.segmentation.startSegmentation(body.req_id);
 
     response.send({ success: true });
   })

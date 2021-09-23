@@ -19,7 +19,7 @@ describe("/upload/OCR one request", function () {
   });
 
   it("/select 200", async function () {
-    sinon.stub(grpcSocket.OCR, "start").resolves();
+    sinon.stub(grpcSocket.OCR, "startOCR").resolves();
 
     const response = await supertest(app)
       .get("/upload/OCR/select")

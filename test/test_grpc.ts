@@ -55,7 +55,7 @@ describe("GRPC connection", function () {
       for (let index = 0; index < 10; index++) {
         stub.onCall(index).callsArgWith(1, undefined, responseValue);
       }
-      await grpcSocket.segmentation.start(request_id, 0);
+      await grpcSocket.segmentation.startSegmentation(request_id, 0);
     });
 
     it("get image", async function () {
@@ -105,13 +105,12 @@ describe("GRPC connection", function () {
       sinon.stub(queryManager, "getPath").resolves("asdsad");
       const responseValue = {
         req_id: 0,
-        status_code: 200,
       };
       sinon
-        .stub(grpcSocket.OCR.client, "start")
+        .stub(grpcSocket.OCR.client, "StartOCR")
         .onFirstCall()
         .callsArgWith(1, undefined, responseValue);
-      const response = await grpcSocket.OCR.start(1, 2);
+      const response = await grpcSocket.OCR.startOCR(1, 2);
       expect(response.req_id).to.be.equal(responseValue.req_id);
     });
 
@@ -129,7 +128,7 @@ describe("GRPC connection", function () {
             file_name: "string",
           },
         };
-        const response = await grpcSocket.OCR.jsonTransfer(
+        const response = await grpcSocket.OCR.sendBBoxes(
           call as any,
           (error, response) => {
             return;

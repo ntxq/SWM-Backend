@@ -41,9 +41,13 @@ export interface RequestStart {
   image_path: string;
 }
 
-export interface ReplyRequestStart {
+export interface ReplySegmentationStart {
   req_id: number;
   mask: string;
+}
+
+export interface ReplyOCRStart {
+  req_id: number;
 }
 
 export interface RequestMaskUpdate {

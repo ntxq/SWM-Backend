@@ -79,20 +79,23 @@ export class SegmentationInterface {
     });
   }
 
-  async start(requestID: number, cutIndex = 0): Promise<void> {
+  async startSegmentation(requestID: number, cutIndex = 0): Promise<void> {
     if (cutIndex !== 0) {
-      await this.startCut(requestID, cutIndex);
+      await this.startSegmentationCut(requestID, cutIndex);
     } else {
       const cut_count = await queryManager.getCutCount(requestID);
       await Promise.all(
         Array.from({ length: cut_count }, (_, index) =>
-          this.start(requestID, index + 1)
+          this.startSegmentation(requestID, index + 1)
         )
       );
     }
   }
 
-  async startCut(requestID: number, cutIndex: number): Promise<void> {
+  async startSegmentationCut(
+    requestID: number,
+    cutIndex: number
+  ): Promise<void> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
     const request: MESSAGE.RequestStart = {
       req_id: requestID,
@@ -102,7 +105,7 @@ export class SegmentationInterface {
     return new Promise((resolve, reject) => {
       const callback = async function (
         error: Error | null,
-        response: MESSAGE.ReplyRequestStart
+        response: MESSAGE.ReplySegmentationStart
       ) {
         if (error) {
           reject(handleGrpcError(error));
@@ -186,21 +189,21 @@ export class OCRInterface {
     });
   }
 
-  async start(
+  async startOCR(
     requestID: number,
     cutIndex: number
-  ): Promise<MESSAGE.ReplyRequestStart> {
+  ): Promise<MESSAGE.ReplyOCRStart> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
 
-    return new Promise<MESSAGE.ReplyRequestStart>((resolve, reject) => {
+    return new Promise<MESSAGE.ReplyOCRStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {
         req_id: requestID,
         cut_index: cutIndex,
         image_path: imagePath,
       };
-      this.client.start(
+      this.client.StartOCR(
         request,
-        function (error: Error | null, response: MESSAGE.ReplyRequestStart) {
+        function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
           if (error) {
             reject(handleGrpcError(error));
             return;
@@ -211,26 +214,16 @@ export class OCRInterface {
     });
   }
 
-  async jsonTransfer(
+  async sendBBoxes(
     call: grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
     callback: grpc.sendUnaryData<MESSAGE.ReceiveJson>
   ): Promise<MESSAGE.ReceiveJson> {
     const request: MESSAGE.SendJson = call.request;
-
-    await s3.upload(
-      path.join(JSON_DIR, request.file_name),
-      Buffer.from(JSON.stringify(JSON.parse(request.data), null, 4))
+    await queryManager.setBboxes(
+      request.req_id,
+      request.cut_index,
+      JSON.parse(request.data)
     );
-
-    switch (request.type) {
-      case "bbox":
-        await queryManager.setBboxes(
-          request.req_id,
-          request.cut_index,
-          JSON.parse(request.data)
-        );
-        break;
-    }
     const response: MESSAGE.ReceiveJson = { success: true };
     callback(null, response);
     return response;

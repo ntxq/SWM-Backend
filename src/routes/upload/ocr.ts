@@ -35,7 +35,7 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
-    await grpcSocket.OCR.start(requestID, cutIndex);
+    await grpcSocket.OCR.startOCR(requestID, cutIndex);
     response.send({ success: true });
   })
 );
