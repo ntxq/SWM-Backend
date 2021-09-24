@@ -23,6 +23,7 @@ describe("upload filter validation", function () {
           req_id: index,
           filename: image_name,
           s3_url: "sample url(invalid)",
+          s3_blank_url: "sample blank url(invalid)",
         });
       });
       sinon.stub(queryManager, "addProject").resolves(1);

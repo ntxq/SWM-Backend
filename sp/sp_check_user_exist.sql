@@ -1,0 +1,8 @@
+BEGIN
+	IF EXISTS (SELECT 1 FROM USERS WHERE USERS.id= p_id LIMIT 1)
+	THEN
+		SELECT true AS "result";
+    ELSE
+		SELECT false AS "result";
+    END IF;
+END

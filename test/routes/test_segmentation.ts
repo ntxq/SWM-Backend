@@ -14,6 +14,11 @@ import { getImagePath } from "src/modules/utils";
 import { PostProjectResponse } from "src/routes/upload/segmentation";
 
 describe("/upload/segmentation two request", function () {
+  beforeEach((done) => {
+    sinon.stub(queryManager, "isValidRequest").resolves(true);
+    done();
+  });
+
   afterEach((done) => {
     sinon.restore();
     done();
@@ -26,9 +31,10 @@ describe("/upload/segmentation two request", function () {
       const addRequestReturn: PostProjectResponse = { request_array: [] };
       image_list.map((image_name, index) => {
         addRequestReturn.request_array.push({
-          req_id: index,
+          req_id: index + 154,
           filename: image_name,
           s3_url: "sample url(invalid)",
+          s3_blank_url: "sample blank url(invalid)",
         });
       });
       sinon.stub(queryManager, "addProject").resolves(1);
@@ -37,7 +43,7 @@ describe("/upload/segmentation two request", function () {
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
         .post("/upload/segmentation/project")
-        .send({ title: "test project", filenames: JSON.stringify(image_list) })
+        .send({ title: "test project", filenames: image_list })
         .expect(200);
       const body = response.body;
       expect(body.request_array.length).to.be.equal(image_list.length);
@@ -58,7 +64,7 @@ describe("/upload/segmentation two request", function () {
       );
       image_list.map((image_name, index) => {
         return grpcStub.onCall(index).resolves({
-          req_id: index,
+          req_id: index + 154,
           cut_count: (index + 1) * 2,
         });
       });
@@ -66,7 +72,7 @@ describe("/upload/segmentation two request", function () {
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
         .post("/upload/segmentation/source")
-        .send({ req_id: 1 })
+        .send({ req_id: 154 })
         .expect(200);
       const body = response.body;
       expect(body).to.hasOwnProperty("cut_count");
@@ -83,7 +89,7 @@ describe("/upload/segmentation two request", function () {
       );
       image_list.map((image_name, index) => {
         return grpcStub.onCall(index).resolves({
-          req_id: index,
+          req_id: index + 154,
           cut_count: (index + 1) * 2,
         });
       });
@@ -91,7 +97,7 @@ describe("/upload/segmentation two request", function () {
     it("/blank 200", async function () {
       const response = await supertest(app)
         .post("/upload/segmentation/blank")
-        .send({ req_id: 1 })
+        .send({ req_id: 154 })
         .expect(200);
       expect(response.body.success).to.be.a("boolean");
     });
@@ -105,7 +111,7 @@ describe("/upload/segmentation two request", function () {
     it("/start 200", async function () {
       const response = await supertest(app)
         .post("/upload/segmentation/start")
-        .send({ req_id: 1 })
+        .send({ req_id: 154 })
         .expect(200);
       expect(response.body.success).to.be.a("boolean");
     });
@@ -115,7 +121,7 @@ describe("/upload/segmentation two request", function () {
     sinon.stub(queryManager, "getPath").resolves("sample");
     sinon.stub(s3, "download").resolves("sample");
     const cut_id = 1;
-    const request_id = 2;
+    const request_id = 154;
     const response = await supertest(app)
       .get("/upload/segmentation/cut")
       .query({ req_id: request_id, cut_id: cut_id });
@@ -130,7 +136,7 @@ describe("/upload/segmentation two request", function () {
     sinon.stub(mysqlConnection, "callProcedure").resolves({ complete: "mask" });
 
     const cut_id = 1;
-    const request_id = 2;
+    const request_id = 154;
     const response = await supertest(app)
       .get("/upload/segmentation/result")
       .query({ req_id: request_id, cut_id: cut_id });
@@ -144,7 +150,7 @@ describe("/upload/segmentation two request", function () {
       .stub(s3, "download")
       .resolves(JSON.stringify(rle.result[0].value.rle));
     const cut_id = 1;
-    const request_id = 2;
+    const request_id = 154;
     const response = await supertest(app)
       .get("/upload/segmentation/result/mask")
       .query({ req_id: request_id, cut_id: cut_id });
@@ -156,7 +162,7 @@ describe("/upload/segmentation two request", function () {
     sinon.stub(queryManager, "getPath").resolves("sample");
     sinon.stub(s3, "download").resolves("sample");
     const cut_id = 1;
-    const request_id = 2;
+    const request_id = 154;
     const response = await supertest(app)
       .get("/upload/segmentation/result/inpaint")
       .query({ req_id: request_id, cut_id: cut_id });
@@ -167,7 +173,7 @@ describe("/upload/segmentation two request", function () {
   it("/mask", async function () {
     sinon.stub(grpcSocket.segmentation, "updateMask").resolves();
 
-    const request_id = 2;
+    const request_id = 154;
     const cut_id = 1;
 
     const response = await supertest(app)

@@ -1,0 +1,3 @@
+BEGIN
+	SELECT token FROM TOKEN WHERE TOKEN.index = p_index;
+END

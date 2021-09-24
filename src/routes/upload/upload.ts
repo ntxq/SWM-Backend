@@ -23,66 +23,72 @@ interface Cookie {
   [key: string]: string;
 }
 
-if (MODE !== "dev") {
-  router.use(
-    "*",
-    function (request: Request, response: Response, next: NextFunction) {
-      const token = (request.cookies as Cookie)["kakao_token"];
-      try {
-        const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
+router.use(
+  "*",
+  function (request: Request, response: Response, next: NextFunction) {
+    if (MODE === "dev") {
+      //test account
+      response.locals.userID = 1_882_573_039;
+      next();
+      return;
+    }
+    const token = (request.cookies as Cookie)["kakao_token"];
+    try {
+      const jwtObject = jsonwebtoken.verify(token, jwtKey) as OauthJwtToken;
+      const accessToken = accessTokens.get(jwtObject.jwtAccessToken);
+      if (accessToken) {
+        response.locals.userID = accessToken.userID;
+        next();
+        return;
+      }
+      next(new createHttpError.Unauthorized());
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
         if (!accessTokens.has(jwtObject.jwtAccessToken)) {
           next(new createHttpError.Unauthorized());
           return;
         }
-        next();
-      } catch (error) {
-        if (error instanceof TokenExpiredError) {
-          const jwtObject = jsonwebtoken.decode(token) as OauthJwtToken;
-          if (!accessTokens.has(jwtObject.jwtAccessToken)) {
-            next(new createHttpError.Unauthorized());
-            return;
-          }
 
-          const accessToken = accessTokens.get(
-            jwtObject.jwtAccessToken
-          ) as OauthToken;
+        const accessToken = accessTokens.get(
+          jwtObject.jwtAccessToken
+        ) as OauthToken;
 
-          kakaoVerify(accessToken.accessToken)
-            .then(async (isValid) => {
-              //get new access token
-              if (!isValid) {
-                const refreshToken = await queryManager.getRefreshToken(
-                  jwtObject.index
+        kakaoVerify(accessToken.accessToken)
+          .then(async (isValid) => {
+            //get new access token
+            if (!isValid) {
+              const refreshToken = await queryManager.getRefreshToken(
+                jwtObject.index
+              );
+              const refreshResult = await kakaoRefresh(refreshToken);
+              accessTokens.delete(jwtObject.jwtAccessToken);
+              accessToken.accessToken = refreshResult.access_token;
+
+              //set new refresh token
+              if (refreshResult.refresh_token) {
+                accessToken.index = await queryManager.setRefreshToken(
+                  accessToken.userID,
+                  refreshResult.refresh_token
                 );
-                const refreshResult = await kakaoRefresh(refreshToken);
-                accessTokens.delete(jwtObject.jwtAccessToken);
-                accessToken.accessToken = refreshResult.access_token;
-
-                //set new refresh token
-                if (refreshResult.refresh_token) {
-                  accessToken.index = await queryManager.setRefreshToken(
-                    accessToken.userID,
-                    refreshResult.refresh_token
-                  );
-                }
               }
-              //set new access jwt token
-              const token = makeAccessTokenCookie(accessToken);
-              response.cookie("kakao_token", token);
-              next();
-            })
-            .catch((error) => {
-              next(error);
-              return;
-            });
-        } else {
-          console.error(error);
-          next(new createHttpError.Forbidden());
-        }
+            }
+            //set new access jwt token
+            const token = makeAccessTokenCookie(accessToken);
+            response.cookie("kakao_token", token);
+            next();
+          })
+          .catch((error) => {
+            next(error);
+            return;
+          });
+      } else {
+        console.error(error);
+        next(new createHttpError.Forbidden());
       }
     }
-  );
-}
+  }
+);
 
 router.use("/OCR", ocrRouter);
 router.use("/segmentation", segmentationRouter);
