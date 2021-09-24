@@ -108,7 +108,6 @@ router.get("/", (request, response, next) => {
           return;
         }
         const token = makeAccessTokenCookie(tokenObject);
-        response.cookie("profile", JSON.stringify(profile));
         response.cookie("kakao_token", token);
         response.redirect("/home");
       }
