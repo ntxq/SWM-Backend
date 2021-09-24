@@ -13,6 +13,12 @@ import { queryManager } from "src/sql/mysql_connection_manager";
 describe("/upload/OCR one request", function () {
   const request_id = 1307;
   const cut_id = 1;
+
+  beforeEach((done) => {
+    sinon.stub(queryManager, "isValidRequest").resolves(true);
+    done();
+  });
+
   afterEach((done) => {
     sinon.restore();
     done();

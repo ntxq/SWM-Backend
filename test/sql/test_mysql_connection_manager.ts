@@ -270,6 +270,7 @@ describe("mysql connection test", function () {
     );
     const time = result.create_time as string;
     expect(Date.parse(time)).to.be.not.equal(Number.NaN);
+  });
   it("isValidRequest", async function () {
     const returnValue = { valid: 1 };
     sinon.stub(mysqlConnection, "callProcedure").resolves(returnValue);

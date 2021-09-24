@@ -14,6 +14,11 @@ import { getImagePath } from "src/modules/utils";
 import { PostProjectResponse } from "src/routes/upload/segmentation";
 
 describe("/upload/segmentation two request", function () {
+  beforeEach((done) => {
+    sinon.stub(queryManager, "isValidRequest").resolves(true);
+    done();
+  });
+
   afterEach((done) => {
     sinon.restore();
     done();
@@ -29,6 +34,7 @@ describe("/upload/segmentation two request", function () {
           req_id: index + 154,
           filename: image_name,
           s3_url: "sample url(invalid)",
+          s3_blank_url: "sample blank url(invalid)",
         });
       });
       sinon.stub(queryManager, "addProject").resolves(1);
@@ -37,7 +43,7 @@ describe("/upload/segmentation two request", function () {
     it("200 request", async () => {
       const response: supertest.Response = await supertest(app)
         .post("/upload/segmentation/project")
-        .send({ title: "test project", filenames: JSON.stringify(image_list) })
+        .send({ title: "test project", filenames: image_list })
         .expect(200);
       const body = response.body;
       expect(body.request_array.length).to.be.equal(image_list.length);
