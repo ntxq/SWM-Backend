@@ -255,6 +255,7 @@ export class mysqlConnectionManager {
           originalWidth: row_bbox["originalWidth"],
           originalHeight: row_bbox["originalHeight"],
           originalText: row_bbox["originalText"],
+          translatedText: row_bbox["translatedText"],
         };
         result.push(bbox);
       }
