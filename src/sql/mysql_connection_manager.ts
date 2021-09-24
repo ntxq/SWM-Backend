@@ -13,6 +13,7 @@ import createError from "http-errors";
 import { getImagePath } from "src/modules/utils";
 import { ProgressType } from "src/modules/const";
 import { PostProjectResponse } from "src/routes/upload/segmentation";
+import { MODE } from "./secret";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -325,6 +326,24 @@ export class mysqlConnectionManager {
       procedure
     )) as SelectUniqueResult;
     return result["token"] as string;
+  }
+
+  async addDummyUser(
+    userID: number,
+    nickname: string,
+    email?: string
+  ): Promise<SelectUniqueResult> {
+    if (MODE !== "dev") {
+      throw new createError.Forbidden();
+    }
+    const procedure: Procedure = {
+      query: "sp_set_user",
+      parameters: [userID, nickname, email],
+      selectUnique: true,
+    };
+    return mysqlLonginConnection.callProcedure(
+      procedure
+    ) as Promise<SelectUniqueResult>;
   }
 }
 export const queryManager = new mysqlConnectionManager();
