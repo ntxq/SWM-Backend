@@ -7,6 +7,7 @@ import {
   asyncRouterWrap,
   getImagePath,
   validateParameters,
+  validateRequestID,
 } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 
@@ -33,8 +34,7 @@ router.post(
   asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
     const body = request.body as PostProjectBody;
-    //todo 최준영 제대로 된 user id 로 변환
-    const userID = 123_123_123;
+    const userID = response.locals.userID as number;
     const projectID = await queryManager.addProject(userID, body.title);
     const returnValue = await queryManager.addRequest(
       projectID,
@@ -56,9 +56,9 @@ interface PostSourceResponse {
 router.post(
   "/source",
   asyncRouterWrap(async (request: Request, response: Response) => {
-    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostSourceBody;
+    await validateRequestID(response.locals.userID, body.req_id);
     const imagePath = getImagePath(body.req_id, 0, "cut");
 
     await queryManager.updateCut(body.req_id, "cut", 0, imagePath);
@@ -82,9 +82,10 @@ interface PostBlankBody {
 router.post(
   "/blank",
   asyncRouterWrap(async (request: Request, response: Response) => {
-    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostBlankBody;
+    await validateRequestID(response.locals.userID, body.req_id);
+
     const imagePath = getImagePath(body.req_id, 0, "inpaint");
 
     await Promise.all([
@@ -107,9 +108,9 @@ interface PostStartBody {
 router.post(
   "/start",
   asyncRouterWrap(async (request: Request, response: Response) => {
-    //todo 최준영 req_id가 user의 것이 맞는지 확인
     validateParameters(request);
     const body = request.body as PostStartBody;
+    await validateRequestID(response.locals.userID, body.req_id);
     await grpcSocket.segmentation.start(body.req_id);
 
     response.send({ success: true });
@@ -122,6 +123,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const cutPath = await queryManager.getPath(requestID, "cut", cutIndex);
     const cut = await s3.download(cutPath);
     response.type("png");
@@ -135,6 +139,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const progress = await queryManager.checkProgress(requestID, cutIndex);
     response.send({ progress: Math.min(progress, 100) });
   })
@@ -146,6 +153,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const inpaintPath = await queryManager.getPath(
       requestID,
       "inpaint",
@@ -163,6 +173,9 @@ router.get(
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
+
+    await validateRequestID(response.locals.userID, requestID);
+
     const maskPath = await queryManager.getPath(requestID, "mask", cutIndex);
     const mask = await s3.download(maskPath);
     response.send({ mask: JSON.parse(mask.toString()) as JSON });
@@ -198,6 +211,9 @@ router.post(
     for (const element of mask) {
       rle.push(element["value"]["rle"]);
     }
+
+    await validateRequestID(response.locals.userID, requestID);
+
     await grpcSocket.segmentation.updateMask(requestID, cutIndex, rle);
     response.send({ success: true });
   })

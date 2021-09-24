@@ -1,9 +1,10 @@
 import path from "node:path";
-import createError from "http-errors";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import assert from "node:assert";
 import requests from "src/routes/requests.json";
 import { IMAGE_DIR, ProgressType } from "./const";
+import { queryManager } from "src/sql/mysql_connection_manager";
+import createHttpError from "http-errors";
 
 type RequestParameters = {
   [index: string]: string;
@@ -21,9 +22,9 @@ export function isImageFile(file: Express.Multer.File): boolean {
   return mimetype && extname;
 }
 
-export function handleGrpcError(error: Error): createError.HttpError {
+export function handleGrpcError(error: Error): createHttpError.HttpError {
   console.log(error);
-  return new createError.ServiceUnavailable();
+  return new createHttpError.ServiceUnavailable();
 }
 
 type RouterFunction = (
@@ -92,6 +93,16 @@ export function validateParameters(request: Request): void {
     }
   } catch (error) {
     console.error(error);
-    throw new createError.BadRequest();
+    throw new createHttpError.BadRequest();
+  }
+}
+
+export async function validateRequestID(
+  userID: number,
+  requestID: number
+): Promise<void> {
+  const isValid = await queryManager.isValidRequest(userID, requestID);
+  if (!isValid) {
+    throw new createHttpError.Forbidden();
   }
 }
