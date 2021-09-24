@@ -2,6 +2,7 @@ import express from "express";
 
 import ocrRouter from "src/routes/upload/ocr";
 import segmentationRouter from "src/routes/upload/segmentation";
+import profileRouter from "src/routes/api/profile";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
 import { jwtKey, MODE } from "src/sql/secret";
@@ -28,7 +29,7 @@ router.use(
   function (request: Request, response: Response, next: NextFunction) {
     if (MODE === "dev") {
       //test account
-      response.locals.userID = 1_882_573_039;
+      response.locals.userID = 1;
       next();
       return;
     }
@@ -92,5 +93,6 @@ router.use(
 
 router.use("/OCR", ocrRouter);
 router.use("/segmentation", segmentationRouter);
+router.use("/profile", profileRouter);
 
 export default router;

@@ -328,6 +328,39 @@ export class mysqlConnectionManager {
     return result["token"] as string;
   }
 
+  async editUserProfile(
+    userID: number,
+    profile: Map<string, string | undefined>
+  ): Promise<void> {
+    const procedure: Procedure = {
+      query: "sp_edit_user",
+      parameters: [userID, profile.get("username"), profile.get("email")],
+      selectUnique: true,
+    };
+    await mysqlLonginConnection.callProcedure(procedure);
+  }
+
+  async deleteUser(userID: number): Promise<void> {
+    const procedure: Procedure = {
+      query: "sp_delete_user",
+      parameters: [userID],
+      selectUnique: true,
+    };
+    await mysqlLonginConnection.callProcedure(procedure);
+  }
+
+  async isValidRequest(userID: number, requestID: number): Promise<boolean> {
+    const procedure: Procedure = {
+      query: "sp_check_request_user",
+      parameters: [userID, requestID],
+      selectUnique: true,
+    };
+    const result = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return result["valid"] !== 0;
+  }
+
   async addDummyUser(
     userID: number,
     nickname: string,
@@ -344,18 +377,6 @@ export class mysqlConnectionManager {
     return mysqlLonginConnection.callProcedure(
       procedure
     ) as Promise<SelectUniqueResult>;
-  }
-
-  async isValidRequest(userID: number, requestID: number): Promise<boolean> {
-    const procedure: Procedure = {
-      query: "sp_check_request_user",
-      parameters: [userID, requestID],
-      selectUnique: true,
-    };
-    const result = (await mysqlConnection.callProcedure(
-      procedure
-    )) as SelectUniqueResult;
-    return result["valid"] !== 0;
   }
 }
 export const queryManager = new mysqlConnectionManager();
