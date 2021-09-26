@@ -14,10 +14,8 @@ const progressed: ProgressMap = {
   cut: 5,
   mask: 30,
   inpaint: 100,
-  detect: 110,
   bbox: 130,
-  translate: 180,
-  complete: 200,
+  translate: 200,
 };
 
 const progressSpeed: ProgressMap = {
@@ -25,14 +23,12 @@ const progressSpeed: ProgressMap = {
   cut: 1,
   mask: 0.25,
   inpaint: 1,
-  detect: 0.5,
   bbox: 0.5,
-  translate: 0.5,
-  complete: 0,
+  translate: 0,
 };
 
 function nextStateValue(status: ProgressType): number {
-  if (status == "complete") {
+  if (status == "translate") {
     return progressed[status];
   }
   const progressedKeys = Object.keys(progressed) as Array<ProgressType>;

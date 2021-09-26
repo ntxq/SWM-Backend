@@ -116,6 +116,7 @@ export class SegmentationInterface {
           filePath,
           Buffer.from(JSON.stringify(JSON.parse(response.mask)))
         );
+        await queryManager.updateCut(requestID, "mask", cutIndex, filePath);
         resolve();
       };
       this.client.StartSegmentation(request, callback);
@@ -203,11 +204,12 @@ export class OCRInterface {
       };
       this.client.StartOCR(
         request,
-        function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
+        async function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
           if (error) {
             reject(handleGrpcError(error));
             return;
           }
+          await queryManager.updateProgress(requestID, cutIndex, "bbox");
           return resolve(response);
         }
       );
