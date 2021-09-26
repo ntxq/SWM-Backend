@@ -43,6 +43,7 @@ describe("GRPC connection", function () {
     it("start segmentation", async function () {
       sinon.stub(queryManager, "getCutCount").resolves(3);
       sinon.stub(queryManager, "getPath").resolves("test/path");
+      sinon.stub(queryManager, "updateCut").resolves();
       sinon.stub(s3, "upload").resolves();
       const responseValue = {
         req_id: 0,
@@ -103,6 +104,7 @@ describe("GRPC connection", function () {
   describe("OCR", function () {
     it("start OCR", async function () {
       sinon.stub(queryManager, "getPath").resolves("asdsad");
+      sinon.stub(queryManager, "updateCut").resolves();
       const responseValue = {
         req_id: 0,
       };
