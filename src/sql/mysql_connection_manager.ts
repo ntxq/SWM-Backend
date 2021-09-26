@@ -279,11 +279,12 @@ export class mysqlConnectionManager {
   async addUser(
     userID: number,
     nickname: string,
-    email?: string
+    email?: string,
+    pic_path?: string
   ): Promise<SelectUniqueResult> {
     const procedure: Procedure = {
       query: "sp_set_user",
-      parameters: [userID, nickname, email],
+      parameters: [userID, nickname, email, pic_path],
       selectUnique: true,
     };
     return mysqlLonginConnection.callProcedure(

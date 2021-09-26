@@ -1,13 +1,8 @@
 import express from "express";
 
 import { Request, Response } from "express-serve-static-core";
-import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import {
-  asyncRouterWrap,
-  validateParameters,
-  validateRequestID,
-} from "src/modules/utils";
+import { asyncRouterWrap } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 import createHttpError from "http-errors";
 
@@ -43,15 +38,11 @@ router.get(
     if (!userInfo.nickname) {
       throw new createHttpError.NotFound();
     }
-    const pic_url =
-      typeof userInfo.pic_path === "string"
-        ? s3.getDownloadURL(userInfo.pic_path)
-        : undefined;
     response.send({
       username: userInfo.nickname,
       create_time: userInfo.create_time,
       email: userInfo.email,
-      pic_url: pic_url,
+      pic_path: userInfo.pic_path,
     });
   })
 );

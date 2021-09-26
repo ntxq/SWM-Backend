@@ -25,7 +25,7 @@ describe.only("/upload/profile", function () {
     expect(body).to.hasOwnProperty("email");
     expect(body).to.hasOwnProperty("username");
     expect(body).to.hasOwnProperty("create_time");
-    expect(body).to.hasOwnProperty("pic_url");
+    expect(body).to.hasOwnProperty("pic_path");
   });
 
   it("edit profile", async () => {
@@ -61,6 +61,6 @@ describe.only("/upload/profile", function () {
     expect(body).to.hasOwnProperty("email");
     expect(body).to.hasOwnProperty("username");
     expect(body).to.hasOwnProperty("create_time");
-    expect(body).to.hasOwnProperty("pic_url");
+    expect(body).to.hasOwnProperty("pic_path");
   });
 });
