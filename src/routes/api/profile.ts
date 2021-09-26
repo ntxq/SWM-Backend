@@ -8,28 +8,6 @@ import createHttpError from "http-errors";
 
 const router = express.Router();
 
-export interface BBox {
-  bbox_id: number;
-  originalX: number;
-  originalY: number;
-  originalWidth: number;
-  originalHeight: number;
-  originalText: string;
-  translatedText?: string;
-}
-
-export interface TranslateBBox extends BBox {
-  translatedX: number;
-  translatedY: number;
-  translatedWidth: number;
-  translatedHeight: number;
-  fontColor: string;
-  fontSize: number;
-  fontFamily: string;
-  fontWeight: string;
-  fontStyle: string;
-}
-
 router.get(
   "/",
   asyncRouterWrap(async (request: Request, response: Response) => {
