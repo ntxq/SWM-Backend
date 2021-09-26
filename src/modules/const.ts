@@ -9,7 +9,5 @@ export type ProgressType =
   | "cut"
   | "mask"
   | "inpaint"
-  | "detect"
   | "bbox"
-  | "translate"
-  | "complete";
+  | "translate";

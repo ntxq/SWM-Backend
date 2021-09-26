@@ -42,7 +42,7 @@ router.get(
 
     await validateRequestID(response.locals.userID, requestID);
 
-    await grpcSocket.OCR.start(requestID, cutIndex);
+    await grpcSocket.OCR.startOCR(requestID, cutIndex);
     response.send({ success: true });
   })
 );

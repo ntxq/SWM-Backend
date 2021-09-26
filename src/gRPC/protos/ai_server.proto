@@ -5,17 +5,19 @@ syntax = "proto3";
 package ai_server;
 
 service OCR {
-  rpc Start (RequestStart) returns (ReplyRequestStart) {}
-  rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
+  //express -> AI
+  rpc StartOCR (RequestStart) returns (ReplyOCRStart) {}
+  //AI -> express
+  rpc SendBBoxes (RequestSendBBoxes) returns (ReplySendBBoxes) {}
 }
 
 service Segmentation {
-  rpc MakeCutsFromWholeImage (RequestMakeCut) returns (ReplyRequestMakeCut) {}
-  rpc StartWholeImage (RequestStart) returns (ReplyRequestStart) {}
-  rpc StartCut (RequestStart) returns (ReplyRequestStart) {}
+  //express -> AI
+  rpc SplitImage (RequestMakeCut) returns (ReplyRequestMakeCut) {}
+  rpc StartSegmentation (RequestStart) returns (ReplySegmentationStart) {}
   rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
-  rpc ImageTransfer (SendImage) returns (ReceiveImage) {}
-  rpc JsonTransfer (SendJson) returns (ReceiveJson) {}
+  //AI -> express
+  rpc InpaintComplete(RequestInpaintComplete) returns (ReplyInpaintComplete) {}
 }
 
 message RequestMakeCut{
@@ -27,28 +29,16 @@ message RequestMakeCut{
 message ReplyRequestMakeCut{
   int32 req_id = 1;
   int32 cut_count = 2;
+  string cut_ranges = 3;
 }
 
-message SendImage{
-  int32 req_id = 1;
-  string type = 2;
-  int32 cut_index = 3;
-  string file_name = 4;
-}
-
-message ReceiveImage{
-  bool success = 1;
-}
-
-message SendJson{
+message RequestSendBBoxes{
   int32 req_id = 1;
   int32 cut_index = 2;
-  string type = 3;
-  string data = 4;
-  string file_name = 5;
+  string data = 3;
 }
 
-message ReceiveJson{
+message ReplySendBBoxes{
   bool success = 1;
 }
 
@@ -57,12 +47,20 @@ message RequestMaskUpdate{
   repeated bytes mask_rles = 2;
   int32 cut_index = 3;
   string image_path = 4;
-  string cut_ranges = 5;
 }
 
 message ReplyMaskUpdate{
   int32 req_id = 1;
-  int32 status_code = 2;
+}
+
+message RequestInpaintComplete{
+  int32 req_id = 1;
+  int32 cut_index = 2;
+  string file_name = 3;
+}
+
+message ReplyInpaintComplete{
+  int32 req_id = 1;
 }
 
 message RequestStart {
@@ -71,7 +69,12 @@ message RequestStart {
   string image_path = 3;
 }
 
-message ReplyRequestStart {
+message ReplySegmentationStart {
   int32 req_id = 1;
-  int32 status_code = 2;
+  string mask = 2;
+}
+
+message ReplyOCRStart {
+  int32 req_id = 1;
+  string mask = 2;
 }

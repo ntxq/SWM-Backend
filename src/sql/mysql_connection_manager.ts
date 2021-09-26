@@ -231,7 +231,7 @@ export class mysqlConnectionManager {
     };
     const rows = await mysqlConnection.callProcedure(procedure);
     //todo 최준영 detect-bbox-translate-complete 단계 구분 필요
-    await progressManager.updateProgress(requestID, index, "complete");
+    await progressManager.updateProgress(requestID, index, "translate");
     return rows;
   }
 
@@ -255,6 +255,7 @@ export class mysqlConnectionManager {
           originalWidth: row_bbox["originalWidth"],
           originalHeight: row_bbox["originalHeight"],
           originalText: row_bbox["originalText"],
+          translatedText: row_bbox["translatedText"],
         };
         result.push(bbox);
       }

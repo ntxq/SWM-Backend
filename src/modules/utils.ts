@@ -2,7 +2,7 @@ import path from "node:path";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import assert from "node:assert";
 import requests from "src/routes/requests.json";
-import { IMAGE_DIR, ProgressType } from "./const";
+import { IMAGE_DIR, JSON_DIR, ProgressType } from "./const";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import createHttpError from "http-errors";
 
@@ -46,6 +46,14 @@ export function getImagePath(
   type: ProgressType
 ): string {
   return path.join(IMAGE_DIR, type, `${requestID}_${cutIndex}.png`);
+}
+
+export function getJsonPath(
+  requestID: number,
+  cutIndex: number,
+  type: ProgressType
+): string {
+  return path.join(JSON_DIR, type, `${requestID}_${cutIndex}.json`);
 }
 
 export function validateParameters(request: Request): void {

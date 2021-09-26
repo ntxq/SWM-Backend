@@ -29,14 +29,12 @@ describe("upload filter validation", function () {
       sinon.stub(queryManager, "addProject").resolves(1);
       sinon.stub(queryManager, "addRequest").resolves(addRequestReturn);
       sinon.stub(queryManager, "updateCut").resolves();
-      const grpcStub = sinon.stub(
-        grpcSocket.segmentation,
-        "makeCutsFromWholeImage"
-      );
+      const grpcStub = sinon.stub(grpcSocket.segmentation, "splitImage");
       image_list.map((image_name, index) => {
         return grpcStub.onCall(index).resolves({
           req_id: index,
           cut_count: (index + 1) * 2,
+          cut_ranges: "[0,100]",
         });
       });
     });

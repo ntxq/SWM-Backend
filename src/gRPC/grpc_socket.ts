@@ -57,13 +57,14 @@ class GRPCSocket {
 
     const Segmentation = this.proto.Segmentation as ServiceClientConstructor;
     server.addService(Segmentation.service, {
-      ImageTransfer: this.segmentation.imageTransfer.bind(this.segmentation),
-      JsonTransfer: this.segmentation.jsonTransfer.bind(this.segmentation),
+      InpaintComplete: this.segmentation.inpaintComplete.bind(
+        this.segmentation
+      ),
     });
 
     const OCR = this.proto.OCR as ServiceClientConstructor;
     server.addService(OCR.service, {
-      JsonTransfer: this.OCR.jsonTransfer.bind(this),
+      SendBBoxes: this.OCR.sendBBoxes.bind(this.OCR),
     });
 
     server.bindAsync(

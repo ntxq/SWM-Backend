@@ -58,14 +58,12 @@ describe("/upload/segmentation two request", function () {
   describe("/source", function () {
     before(() => {
       sinon.stub(queryManager, "updateCut").resolves();
-      const grpcStub = sinon.stub(
-        grpcSocket.segmentation,
-        "makeCutsFromWholeImage"
-      );
+      const grpcStub = sinon.stub(grpcSocket.segmentation, "splitImage");
       image_list.map((image_name, index) => {
         return grpcStub.onCall(index).resolves({
           req_id: index + 154,
           cut_count: (index + 1) * 2,
+          cut_ranges: "[0,100]",
         });
       });
     });
@@ -83,14 +81,12 @@ describe("/upload/segmentation two request", function () {
   describe("/blank", function () {
     before(() => {
       sinon.stub(queryManager, "updateCut").resolves();
-      const grpcStub = sinon.stub(
-        grpcSocket.segmentation,
-        "makeCutsFromWholeImage"
-      );
+      const grpcStub = sinon.stub(grpcSocket.segmentation, "splitImage");
       image_list.map((image_name, index) => {
         return grpcStub.onCall(index).resolves({
           req_id: index + 154,
           cut_count: (index + 1) * 2,
+          cut_ranges: "[0, 100]",
         });
       });
     });
@@ -105,7 +101,7 @@ describe("/upload/segmentation two request", function () {
 
   describe("/start", function () {
     before(function (done) {
-      sinon.stub(grpcSocket.segmentation, "start").resolves();
+      sinon.stub(grpcSocket.segmentation, "startSegmentation").resolves();
       done();
     });
     it("/start 200", async function () {

@@ -1,4 +1,4 @@
-import { ProgressType } from "src/modules/progress_manager";
+import { ProgressType } from "src/modules/const";
 
 export interface SendImage {
   req_id: number;
@@ -32,6 +32,7 @@ export interface RequestMakeCut {
 export interface ReplyRequestMakeCut {
   req_id: number;
   cut_count: number;
+  cut_ranges: string;
 }
 
 export interface RequestStart {
@@ -40,9 +41,13 @@ export interface RequestStart {
   image_path: string;
 }
 
-export interface ReplyRequestStart {
+export interface ReplySegmentationStart {
   req_id: number;
-  status_code: number;
+  mask: string;
+}
+
+export interface ReplyOCRStart {
+  req_id: number;
 }
 
 export interface RequestMaskUpdate {
@@ -50,10 +55,19 @@ export interface RequestMaskUpdate {
   mask_rles: Buffer[];
   cut_index: number;
   image_path: string;
-  cut_ranges: string;
 }
 
 export interface ReplyMaskUpdate {
   req_id: number;
   status_code: number;
+}
+
+export interface RequestInpaintComplete {
+  req_id: number;
+  cut_index: number;
+  file_name: string;
+}
+
+export interface ReplyInpaintComplete {
+  req_id: number;
 }
