@@ -7,7 +7,6 @@ import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
 router.get(
-router.get(
   "/download",
   asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
