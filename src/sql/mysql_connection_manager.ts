@@ -13,11 +13,48 @@ import createError from "http-errors";
 import { getImagePath } from "src/modules/utils";
 import { ProgressType } from "src/modules/const";
 import { PostProjectResponse } from "src/routes/api/segmentation";
+import { Project } from "src/routes/api/history";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
   constructor() {
     this.connection = mysqlConnection;
+  }
+  
+  async getProjects(userID:number, page: number): Promise<Array<Project>>{
+    const page_size = 50;
+    const procedure: Procedure = {
+      query: "sp_get_project",
+      parameters: [userID, page * page_size],
+      selectUnique: false,
+    };
+    const rows = (await mysqlConnection.callProcedure(
+      procedure
+    )) as Array<SelectUniqueResult>;
+
+    const results = new Map<number, Array<SelectUniqueResult>>();
+    for (const row of rows) {
+      const id = row["project_id"] as number;
+      if(results.has(id)){
+        results.set(id,[]);
+      }
+      results.get(id)?.push(row);
+    }
+
+    const projects = Array<Project>();
+    for(const [id, values] of results.entries()) {
+      const project: Project = { id : id, requests: []};
+      for(const row of values) {
+        const id = row["request_id"] as number;
+        const progress = row["progress"] as string;
+        const thumbnail = row["cut1_path"] as string;
+        const thumnail_s3 = await s3.getDownloadURL(thumbnail);
+        const request = { id : id, progress : progress, thumbnail: thumnail_s3}
+        project.requests.push(request);
+      }
+      projects.push(project)
+    }
+    return projects;
   }
 
   async addProject(userID: number, title: string): Promise<number> {

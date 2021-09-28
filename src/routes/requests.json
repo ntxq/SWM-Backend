@@ -83,6 +83,11 @@
 			"query":{
 				"req_id":"number"
 			}
+		},
+		"/api/history/projects":{
+			"query":{
+				"page":"number"
+			}
 		}
 	},
 	"PUT":{},

@@ -15,16 +15,26 @@ describe("/api/history", function () {
     done();
   });
 
-  it("/download 200", async function () {
+  it("/projects 200", async function () {
     sinon.stub(s3, "getDownloadURL").resolves("sample_url");
     sinon.stub(queryManager, "getPath").resolves("test_path");
 
     const response = await supertest(app)
-      .get("/api/history/download")
-      .query({ req_id: request_id })
+      .get("/api/history/projects")
+      .query({ page: 0 })
       .expect(200);
-    expect(response.body).to.hasOwnProperty("success");
-    expect(response.body.s3_url).to.be.equal("sample_url");
+    expect(response.body).to.hasOwnProperty("projects");
+    expect(response.body.projects).to.be.an("array");
+    for(const project of response.body.projects){
+      expect(project).to.hasOwnProperty("id");
+      expect(project).to.hasOwnProperty("requests");
+      expect(project.requests).to.be.an("array");
+      for(const request of project.requests){
+        expect(request).to.hasOwnProperty("id");
+        expect(request).to.hasOwnProperty("progress");
+        expect(request).to.hasOwnProperty("thumnail");
+      }
+    }
   });
 
   it("/download 200", async function () {
