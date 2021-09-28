@@ -15,7 +15,6 @@ router.get(
     const cutPath = await queryManager.getPath(requestID, "complete", 0);
     const downloadURL = await s3.getDownloadURL(cutPath);
     response.send({ s3_url: downloadURL });
-  })
-);
+}));
 
 export default router;
