@@ -6,29 +6,6 @@ import { asyncRouterWrap, validateParameters } from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
-
-router.get(
-  "/projects",
-  asyncRouterWrap(async (request: Request, response: Response) => {
-    // validateParameters(request);
-    const requestID = Number.parseInt(request.query["req_id"] as string);
-    const cutPath = await queryManager.getPath(requestID, "complete", 0);
-    const downloadURL = await s3.getDownloadURL(cutPath);
-    response.send({ s3_url: downloadURL });
-  })
-);
-
-router.get(
-  "/projects",
-  asyncRouterWrap(async (request: Request, response: Response) => {
-    // validateParameters(request);
-    const requestID = Number.parseInt(request.query["req_id"] as string);
-    const cutPath = await queryManager.getPath(requestID, "complete", 0);
-    const downloadURL = await s3.getDownloadURL(cutPath);
-    response.send({ s3_url: downloadURL });
-  })
-);
-
 router.get(
   "/donwload",
   asyncRouterWrap(async (request: Request, response: Response) => {
