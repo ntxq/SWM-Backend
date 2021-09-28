@@ -7,7 +7,8 @@ import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
 router.get(
-  "/donwload",
+router.get(
+  "/download",
   asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
     const requestID = Number.parseInt(request.query["req_id"] as string);

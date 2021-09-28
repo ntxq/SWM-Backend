@@ -79,7 +79,7 @@
 				"cut_id":"number"
 			}
 		},
-		"/api/download":{
+		"/api/history/download":{
 			"query":{
 				"req_id":"number"
 			}
