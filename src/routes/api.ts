@@ -2,7 +2,7 @@ import express from "express";
 
 import ocrRouter from "src/routes/api/ocr";
 import segmentationRouter from "src/routes/api/segmentation";
-import downloadRouter from "src/routes/api/download";
+import historyRouter from "src/routes/api/history";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import jsonwebtoken, { TokenExpiredError } from "jsonwebtoken";
 import { jwtKey, MODE } from "src/sql/secret";
@@ -87,6 +87,6 @@ if (MODE !== "dev") {
 
 router.use("/OCR", ocrRouter);
 router.use("/segmentation", segmentationRouter);
-router.use("/download", downloadRouter);
+router.use("/history", historyRouter);
 
 export default router;
