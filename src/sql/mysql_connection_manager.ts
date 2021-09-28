@@ -20,8 +20,8 @@ export class mysqlConnectionManager {
   constructor() {
     this.connection = mysqlConnection;
   }
-  
-  async getProjects(userID:number, page: number): Promise<Array<Project>>{
+
+  async getProjects(userID: number, page: number): Promise<Array<Project>> {
     const page_size = 50;
     const procedure: Procedure = {
       query: "sp_get_project",
@@ -35,24 +35,25 @@ export class mysqlConnectionManager {
     const results = new Map<number, Array<SelectUniqueResult>>();
     for (const row of rows) {
       const id = row["project_id"] as number;
-      if(results.has(id)){
-        results.set(id,[]);
+      if (!results.has(id)) {
+        results.set(id, []);
       }
       results.get(id)?.push(row);
     }
 
-    const projects = Array<Project>();
-    for(const [id, values] of results.entries()) {
-      const project: Project = { id : id, requests: []};
-      for(const row of values) {
+    const projects = new Array<Project>();
+    for (const [id, values] of results.entries()) {
+      const project: Project = { id: id, requests: [] };
+      for (const row of values) {
         const id = row["request_id"] as number;
         const progress = row["progress"] as string;
         const thumbnail = row["cut1_path"] as string;
-        const thumnail_s3 = await s3.getDownloadURL(thumbnail);
-        const request = { id : id, progress : progress, thumbnail: thumnail_s3}
+        const thumnail_s3 =
+          thumbnail !== null ? await s3.getDownloadURL(thumbnail) : undefined;
+        const request = { id: id, progress: progress, thumbnail: thumnail_s3 };
         project.requests.push(request);
       }
-      projects.push(project)
+      projects.push(project);
     }
     return projects;
   }

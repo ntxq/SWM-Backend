@@ -8,14 +8,14 @@ import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { s3 } from "src/modules/s3_wrapper";
 
-describe("/api/history", function () {
-  const request_id = 1307;
+describe.only("/api/history", function () {
+  const request_id = 154;
   afterEach((done) => {
     sinon.restore();
     done();
   });
 
-  it("/projects 200", async function () {
+  it.only("/projects 200", async function () {
     sinon.stub(s3, "getDownloadURL").resolves("sample_url");
     sinon.stub(queryManager, "getPath").resolves("test_path");
 
@@ -25,11 +25,11 @@ describe("/api/history", function () {
       .expect(200);
     expect(response.body).to.hasOwnProperty("projects");
     expect(response.body.projects).to.be.an("array");
-    for(const project of response.body.projects){
+    for (const project of response.body.projects) {
       expect(project).to.hasOwnProperty("id");
       expect(project).to.hasOwnProperty("requests");
       expect(project.requests).to.be.an("array");
-      for(const request of project.requests){
+      for (const request of project.requests) {
         expect(request).to.hasOwnProperty("id");
         expect(request).to.hasOwnProperty("progress");
         expect(request).to.hasOwnProperty("thumnail");
