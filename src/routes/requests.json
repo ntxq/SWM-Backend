@@ -78,9 +78,18 @@
 				"req_id":"number",
 				"cut_id":"number"
 			}
+		},
+		"/upload/profile":{
+			"query":{
+			}
 		}
 	},
-	"PUT":{},
+	"PUT":{
+		"/upload/profile":{
+			"query":{
+			}
+		}
+	},
 	"DELETE":{},
 	"PATCH":{}
 }

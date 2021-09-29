@@ -3,24 +3,17 @@ import { Profile, Strategy } from "passport-kakao";
 import express from "express";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import {
-  addProfile,
-  makeAccessTokenCookie,
-  parseProfile,
-} from "src/modules/oauth";
+import { makeAccessTokenCookie } from "src/modules/oauth";
 import { KAKAO_ID } from "src/sql/secret";
 import createHttpError from "http-errors";
 
 const router = express.Router();
 
-export interface KakaoProfile extends Profile {
-  account_email?: string;
+export interface KakaoProfile {
   username: string;
-  _json: {
-    kakao_account: {
-      email?: string;
-    };
-  };
+  email?: string;
+  id: number;
+  pic_path: string;
 }
 
 export interface ResponseProfile {
@@ -50,15 +43,28 @@ export function initKakaoOauth(): void {
         clientSecret: "",
       },
       (accessToken, refreshToken, profile: Profile, done) => {
-        const kakao_profile = profile as KakaoProfile;
-        const ID = Number.parseInt(kakao_profile.id);
+        const kakao_profile: KakaoProfile = {
+          id: Number.parseInt(profile.id),
+          username: profile.username as string,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          email: profile._json.kakao_account.email as string,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          pic_path: profile._json.kakao_account.profile
+            .thumbnail_image_url as string,
+        };
+        const ID = kakao_profile.id;
         queryManager
           .getUser(ID)
           .then(async (userInfo) => {
             //set user profile
-            const responseProfile = userInfo.create_time
-              ? parseProfile(userInfo)
-              : await addProfile(kakao_profile);
+            if (!userInfo.create_time) {
+              await queryManager.addUser(
+                kakao_profile.id,
+                kakao_profile.username,
+                kakao_profile.email,
+                kakao_profile.pic_path
+              );
+            }
             //refresh token
             const index = await queryManager.setRefreshToken(ID, refreshToken);
             const jwt: OauthToken = {
@@ -67,7 +73,7 @@ export function initKakaoOauth(): void {
               userID: ID,
             };
             //response
-            done(undefined, jwt, responseProfile);
+            done(undefined, jwt);
           })
           .catch((error) => {
             done(error);
@@ -102,13 +108,12 @@ router.get("/", (request, response, next) => {
   try {
     const authCallback: authCallback = passport.authenticate(
       "kakao",
-      (error, tokenObject: OauthToken, profile: ResponseProfile) => {
+      (error, tokenObject: OauthToken) => {
         if (error) {
           next(new createHttpError.InternalServerError());
           return;
         }
         const token = makeAccessTokenCookie(tokenObject);
-        response.cookie("profile", JSON.stringify(profile));
         response.cookie("kakao_token", token);
         response.redirect("/home");
       }

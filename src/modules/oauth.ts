@@ -1,16 +1,9 @@
 import jsonwebtoken from "jsonwebtoken";
 import { jwtKey, KAKAO_ID } from "src/sql/secret";
 import crypto from "node:crypto";
-import {
-  KakaoProfile,
-  OauthJwtToken,
-  OauthToken,
-  ResponseProfile,
-} from "src/routes/oauth";
+import { OauthJwtToken, OauthToken } from "src/routes/oauth";
 import https, { RequestOptions } from "node:https";
 import createHttpError from "http-errors";
-import { SelectUniqueResult } from "src/sql/sql_connection";
-import { queryManager } from "src/sql/mysql_connection_manager";
 
 export const accessTokens: Map<string, OauthToken> = new Map<
   string,
@@ -34,30 +27,6 @@ export function makeAccessTokenCookie(tokenObject: OauthToken): string {
   const token = jsonwebtoken.sign(jwtToken, jwtKey, { expiresIn: "30m" });
   accessTokens.set(jwtAccessToken, tokenObject);
   return token;
-}
-
-export function parseProfile(userInfo: SelectUniqueResult): ResponseProfile {
-  return {
-    email: userInfo.email as string,
-    username: userInfo.nickname as string,
-    createTime: new Date(userInfo.create_time as string),
-  };
-}
-
-export async function addProfile(
-  profile: KakaoProfile
-): Promise<ResponseProfile> {
-  //add new user to db
-  const result = await queryManager.addUser(
-    Number.parseInt(profile.id),
-    profile.username,
-    profile._json.kakao_account.email
-  );
-  return {
-    email: profile._json.kakao_account.email,
-    username: profile.username,
-    createTime: new Date(result.create_time as string),
-  };
 }
 
 export function kakaoVerify(key: string): Promise<boolean> {

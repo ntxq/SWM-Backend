@@ -13,6 +13,7 @@ import createError from "http-errors";
 import { getImagePath } from "src/modules/utils";
 import { ProgressType } from "src/modules/const";
 import { PostProjectResponse } from "src/routes/upload/segmentation";
+import { MODE } from "./secret";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -279,11 +280,12 @@ export class mysqlConnectionManager {
   async addUser(
     userID: number,
     nickname: string,
-    email?: string
+    email?: string,
+    pic_path?: string
   ): Promise<SelectUniqueResult> {
     const procedure: Procedure = {
       query: "sp_set_user",
-      parameters: [userID, nickname, email],
+      parameters: [userID, nickname, email, pic_path],
       selectUnique: true,
     };
     return mysqlLonginConnection.callProcedure(
@@ -328,6 +330,27 @@ export class mysqlConnectionManager {
     return result["token"] as string;
   }
 
+  async editUserProfile(
+    userID: number,
+    profile: Map<string, string | undefined>
+  ): Promise<void> {
+    const procedure: Procedure = {
+      query: "sp_edit_user",
+      parameters: [userID, profile.get("username"), profile.get("email")],
+      selectUnique: true,
+    };
+    await mysqlLonginConnection.callProcedure(procedure);
+  }
+
+  async deleteUser(userID: number): Promise<void> {
+    const procedure: Procedure = {
+      query: "sp_delete_user",
+      parameters: [userID],
+      selectUnique: true,
+    };
+    await mysqlLonginConnection.callProcedure(procedure);
+  }
+
   async isValidRequest(userID: number, requestID: number): Promise<boolean> {
     const procedure: Procedure = {
       query: "sp_check_request_user",
@@ -338,6 +361,24 @@ export class mysqlConnectionManager {
       procedure
     )) as SelectUniqueResult;
     return result["valid"] !== 0;
+  }
+
+  async addDummyUser(
+    userID: number,
+    nickname: string,
+    email?: string
+  ): Promise<SelectUniqueResult> {
+    if (MODE !== "dev") {
+      throw new createError.Forbidden();
+    }
+    const procedure: Procedure = {
+      query: "sp_set_user",
+      parameters: [userID, nickname, email],
+      selectUnique: true,
+    };
+    return mysqlLonginConnection.callProcedure(
+      procedure
+    ) as Promise<SelectUniqueResult>;
   }
 }
 export const queryManager = new mysqlConnectionManager();
