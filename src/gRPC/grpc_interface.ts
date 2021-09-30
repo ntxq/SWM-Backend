@@ -5,13 +5,15 @@ import {
   ServiceClientConstructor,
 } from "@grpc/grpc-js/build/src/make-client";
 import grpc = require("@grpc/grpc-js");
-import { JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
-import { HttpError } from "http-errors";
-import path = require("path");
-import { getJsonPath, handleGrpcError } from "src/modules/utils";
+import {
+  getJsonPath,
+  getSentenceFromBboxes,
+  handleGrpcError,
+} from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
+import { TranslateBox } from "src/routes/upload/ocr";
 
 export class SegmentationInterface {
   clientUrl: string;
@@ -229,5 +231,28 @@ export class OCRInterface {
     const response: MESSAGE.ReceiveJson = { success: true };
     callback(null, response);
     return response;
+  }
+
+  async startTranslate(
+    requestID: number,
+    cutIndex: number,
+    translateID: number
+  ): Promise<TranslateBox> {
+    const bboxes = await queryManager.getBboxes(requestID, cutIndex);
+    const text = getSentenceFromBboxes(bboxes, translateID);
+    const request: MESSAGE.RequestStartTranslate = { text: text };
+    return new Promise<TranslateBox>((resolve, reject) => {
+      this.client.StartTranslate(
+        request,
+        function (error: Error | null, response: MESSAGE.ReplyStartTranslate) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          const translated = JSON.parse(response.data) as TranslateBox;
+          return resolve(translated);
+        }
+      );
+    });
   }
 }

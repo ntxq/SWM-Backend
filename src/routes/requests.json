@@ -35,6 +35,13 @@
 				"bboxList":"object",
 				"translateBoxList":"object"
 			}
+		},
+		"/upload/OCR/translate":{
+			"body":{
+				"req_id":"number",
+				"cut_id":"number",
+				"translate_id":"number"
+			}
 		}
 	},
 	"GET":{

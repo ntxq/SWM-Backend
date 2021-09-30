@@ -79,7 +79,7 @@ router.get(
   })
 );
 
-interface postEditBody {
+interface postTextBody {
   req_id: string;
   cut_id: string;
   bboxList: string;
@@ -89,7 +89,7 @@ router.post(
   "/text",
   asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
-    const body = request.body as postEditBody;
+    const body = request.body as postTextBody;
     const requestID = Number.parseInt(body["req_id"]);
     const cutIndex = Number.parseInt(body["cut_id"]);
     const bboxList = JSON.parse(body["bboxList"]) as BBox[];
@@ -107,6 +107,30 @@ router.post(
       await queryManager.setTranslateBoxes(requestID, cutIndex, translates);
     }
     response.send({ success: true });
+  })
+);
+
+interface postTranslateBody {
+  req_id: string;
+  cut_id: string;
+  translate_id: string;
+}
+router.post(
+  "/translate",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as postTranslateBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    const cutIndex = Number.parseInt(body["cut_id"]);
+    const translateID = Number.parseInt(body["translate_id"]);
+
+    await validateRequestID(response.locals.userID, requestID);
+    const translated = await grpcSocket.OCR.startTranslate(
+      requestID,
+      cutIndex,
+      translateID
+    );
+    response.send({ translated: translated });
   })
 );
 

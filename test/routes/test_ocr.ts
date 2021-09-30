@@ -10,6 +10,7 @@ import { mysqlConnection } from "src/sql/sql_connection";
 import bboxJson from "test/resource/bbox.json";
 import translateJson from "test/resource/translatebox.json";
 import { queryManager } from "src/sql/mysql_connection_manager";
+import { TranslateBox } from "src/routes/upload/ocr";
 
 describe("/upload/OCR one request", function () {
   const request_id = 1307;
@@ -105,19 +106,40 @@ describe("/upload/OCR one request", function () {
       .expect(400);
   });
 
-  it.skip("/translate 200", async function () {
-    sinon.stub(queryManager, "setTranslateBoxes").resolves();
-
+  it("/translate 200", async function () {
+    const translateBox: TranslateBox = {
+      id: 1,
+      x: 30,
+      y: 20,
+      width: 100,
+      height: 200,
+      text: "text",
+      fontColor: "red",
+      fontSize: 15,
+      fontFamily: "default",
+      fontWeight: "bold",
+      fontStyle: "random",
+    };
+    const responseValue = {
+      data: JSON.stringify(translateBox),
+    };
+    sinon.stub(queryManager, "getBboxes").resolves(bboxJson);
+    sinon
+      .stub(grpcSocket.OCR.client, "StartTranslate")
+      .onFirstCall()
+      .callsArgWith(1, undefined, responseValue);
     const response = await supertest(app)
       .post("/upload/OCR/translate")
       .send({
         req_id: request_id,
         cut_id: cut_id,
-        bboxList: JSON.stringify(bboxJson),
+        translate_id: 2,
       })
       .expect(200);
-    expect(response.body).to.hasOwnProperty("success");
-    expect(response.body.success).to.be.equal(true);
+    expect(response.body).to.hasOwnProperty("translated");
+    expect(JSON.stringify(response.body.translated)).to.be.equal(
+      JSON.stringify(translateBox)
+    );
   });
 
   it.skip("/image 200", async function () {

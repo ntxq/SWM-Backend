@@ -1,5 +1,13 @@
 import { ProgressType } from "src/modules/const";
 
+export interface RequestStartTranslate {
+  text: string;
+}
+
+export interface ReplyStartTranslate {
+  data: string;
+}
+
 export interface SendImage {
   req_id: number;
   type: ProgressType;
