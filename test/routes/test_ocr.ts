@@ -11,6 +11,7 @@ import bboxJson from "test/resource/bbox.json";
 import translateJson from "test/resource/translatebox.json";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { TranslateBox } from "src/routes/upload/ocr";
+import { s3 } from "src/modules/s3_wrapper";
 
 describe("/upload/OCR one request", function () {
   const request_id = 1307;
@@ -142,16 +143,15 @@ describe("/upload/OCR one request", function () {
     );
   });
 
-  it.skip("/image 200", async function () {
-    sinon.stub(queryManager, "setTranslateBoxes").resolves();
+  it("/image 200", async function () {
+    sinon.stub(s3, "upload").resolves();
+    sinon.stub(queryManager, "updateCut").resolves();
 
     const response = await supertest(app)
       .post("/upload/OCR/image")
-      .send({
-        req_id: request_id,
-        cut_id: cut_id,
-        bboxList: JSON.stringify(bboxJson),
-      })
+      .field("req_id", request_id)
+      .field("cut_id", cut_id)
+      .attach("final_image", "test/resource/test_img.png")
       .expect(200);
     expect(response.body).to.hasOwnProperty("success");
     expect(response.body.success).to.be.equal(true);

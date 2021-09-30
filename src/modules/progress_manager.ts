@@ -16,6 +16,7 @@ const progressed: ProgressMap = {
   inpaint: 100,
   bbox: 130,
   translate: 200,
+  complete: 200,
 };
 
 const progressSpeed: ProgressMap = {
@@ -25,6 +26,7 @@ const progressSpeed: ProgressMap = {
   inpaint: 1,
   bbox: 0.5,
   translate: 0,
+  complete: 0,
 };
 
 function nextStateValue(status: ProgressType): number {

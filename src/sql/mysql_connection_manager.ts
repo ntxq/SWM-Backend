@@ -127,7 +127,7 @@ export class mysqlConnectionManager {
   ): Promise<void> {
     //cut,mask,inpaint
     // eslint-disable-next-line unicorn/no-null
-    const path: Array<string | null> = [null, null, null, null];
+    const path: Array<string | null> = [null, null, null, null, null];
     switch (type) {
       case "cut":
         path[0] = filePath;
@@ -138,10 +138,13 @@ export class mysqlConnectionManager {
       case "inpaint":
         path[3] = filePath;
         break;
+      case "complete":
+        path[4] = filePath;
+        break;
     }
 
     const procedure: Procedure = {
-      query: "sp_update_cut_2",
+      query: "sp_update_cut_3",
       parameters: [requestID, cutIndex, ...path, isUserUploadInpaint],
       selectUnique: true,
     };

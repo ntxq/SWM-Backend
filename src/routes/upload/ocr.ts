@@ -5,10 +5,13 @@ import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import {
   asyncRouterWrap,
+  getImagePath,
   validateParameters,
   validateRequestID,
 } from "src/modules/utils";
 import createHttpError from "http-errors";
+import { multer_image } from "src/routes/multer_options";
+import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
 
@@ -100,7 +103,6 @@ router.post(
     }
 
     await validateRequestID(response.locals.userID, requestID);
-
     if (bboxList.length > 0) {
       await queryManager.setBboxes(requestID, cutIndex, bboxList);
     } else if (translates.length > 0) {
@@ -131,6 +133,26 @@ router.post(
       translateID
     );
     response.send({ translated: translated });
+  })
+);
+
+interface postImageBody {
+  req_id: string;
+  cut_id: string;
+}
+router.post(
+  "/image",
+  multer_image.single("final_image"),
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as postImageBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    const cutIndex = Number.parseInt(body["cut_id"]);
+    const file = request.file as Express.Multer.File;
+    const path_url = getImagePath(requestID, cutIndex, "complete");
+    await s3.upload(path_url, file.buffer);
+    await queryManager.updateCut(requestID, "complete", cutIndex, path_url);
+    response.send({ success: true });
   })
 );
 

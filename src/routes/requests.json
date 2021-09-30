@@ -42,6 +42,12 @@
 				"cut_id":"number",
 				"translate_id":"number"
 			}
+		},
+		"/upload/OCR/image":{
+			"body":{
+				"req_id":"number",
+				"cut_id":"number"
+			}
 		}
 	},
 	"GET":{
