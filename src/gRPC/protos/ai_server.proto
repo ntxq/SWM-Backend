@@ -31,7 +31,8 @@ message ReplyStartConcat{
 }
 
 message RequestStartTranslate{
-  string text = 1;
+  string bboxes = 1;
+  string image_path = 2;
 }
 
 message ReplyStartTranslate{
@@ -94,5 +95,4 @@ message ReplySegmentationStart {
 
 message ReplyOCRStart {
   int32 req_id = 1;
-  string mask = 2;
 }

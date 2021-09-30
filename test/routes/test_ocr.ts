@@ -125,6 +125,7 @@ describe("/upload/OCR one request", function () {
       data: JSON.stringify(translateBox),
     };
     sinon.stub(queryManager, "getBboxes").resolves(bboxJson);
+    sinon.stub(queryManager, "getPath").resolves("bboxJson");
     sinon
       .stub(grpcSocket.OCR.client, "StartTranslate")
       .onFirstCall()

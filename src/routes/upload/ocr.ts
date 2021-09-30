@@ -35,9 +35,9 @@ export interface TranslateBox {
   text: string;
   fontColor: string;
   fontSize: number;
-  fontFamily: string;
-  fontWeight: string;
-  fontStyle: string;
+  fontFamily?: string;
+  fontWeight?: string;
+  fontStyle?: string;
 }
 
 router.get(

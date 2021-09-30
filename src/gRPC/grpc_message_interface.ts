@@ -9,7 +9,8 @@ export interface ReplyStartConcat {
 }
 
 export interface RequestStartTranslate {
-  text: string;
+  bboxes: string;
+  image_path: string;
 }
 
 export interface ReplyStartTranslate {

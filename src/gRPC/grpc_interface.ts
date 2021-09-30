@@ -239,8 +239,12 @@ export class OCRInterface {
     translateID: number
   ): Promise<TranslateBox> {
     const bboxes = await queryManager.getBboxes(requestID, cutIndex);
-    const text = getSentenceFromBboxes(bboxes, translateID);
-    const request: MESSAGE.RequestStartTranslate = { text: text };
+    const path = await queryManager.getPath(requestID, "cut", cutIndex);
+    const target_bboxes = bboxes.filter((bbox) => bbox.group_id == translateID);
+    const request: MESSAGE.RequestStartTranslate = {
+      bboxes: JSON.stringify(target_bboxes),
+      image_path: path,
+    };
     return new Promise<TranslateBox>((resolve, reject) => {
       this.client.StartTranslate(
         request,
