@@ -28,11 +28,12 @@
 				"mask":"object"
 			}
 		},
-		"/upload/OCR/edit":{
+		"/upload/OCR/text":{
 			"body":{
 				"req_id":"number",
 				"cut_id":"number",
-				"bboxList":"object"
+				"bboxList":"object",
+				"translateBoxList":"object"
 			}
 		}
 	},

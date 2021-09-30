@@ -8,24 +8,28 @@ import {
   validateParameters,
   validateRequestID,
 } from "src/modules/utils";
+import createHttpError from "http-errors";
 
 const router = express.Router();
 
 export interface BBox {
   bbox_id: number;
-  originalX: number;
-  originalY: number;
-  originalWidth: number;
-  originalHeight: number;
-  originalText: string;
-  translatedText?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string;
+  group_id: number;
+  group_index: number;
 }
 
-export interface TranslateBBox extends BBox {
-  translatedX: number;
-  translatedY: number;
-  translatedWidth: number;
-  translatedHeight: number;
+export interface TranslateBox {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text: string;
   fontColor: string;
   fontSize: number;
   fontFamily: string;
@@ -79,19 +83,29 @@ interface postEditBody {
   req_id: string;
   cut_id: string;
   bboxList: string;
+  translateBoxList: string;
 }
 router.post(
-  "/edit",
+  "/text",
   asyncRouterWrap(async (request: Request, response: Response) => {
     validateParameters(request);
     const body = request.body as postEditBody;
     const requestID = Number.parseInt(body["req_id"]);
     const cutIndex = Number.parseInt(body["cut_id"]);
-    const bboxList = JSON.parse(body["bboxList"]) as TranslateBBox[];
+    const bboxList = JSON.parse(body["bboxList"]) as BBox[];
+    const translates = JSON.parse(body["translateBoxList"]) as TranslateBox[];
+
+    if (bboxList.length > 0 && translates.length > 0) {
+      throw new createHttpError.BadRequest();
+    }
 
     await validateRequestID(response.locals.userID, requestID);
 
-    await queryManager.setBboxesWithTranslate(requestID, cutIndex, bboxList);
+    if (bboxList.length > 0) {
+      await queryManager.setBboxes(requestID, cutIndex, bboxList);
+    } else if (translates.length > 0) {
+      await queryManager.setTranslateBoxes(requestID, cutIndex, translates);
+    }
     response.send({ success: true });
   })
 );

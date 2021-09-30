@@ -5,7 +5,7 @@ import {
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
-import { BBox, TranslateBBox } from "src/routes/upload/ocr";
+import { BBox, TranslateBox } from "src/routes/upload/ocr";
 
 import { s3 } from "src/modules/s3_wrapper";
 import { progressManager } from "src/modules/progress_manager";
@@ -251,12 +251,13 @@ export class mysqlConnectionManager {
       for (const row_bbox of bboxes) {
         const bbox: BBox = {
           bbox_id: row_bbox["bbox_id"],
-          originalX: row_bbox["originalX"],
-          originalY: row_bbox["originalY"],
-          originalWidth: row_bbox["originalWidth"],
-          originalHeight: row_bbox["originalHeight"],
-          originalText: row_bbox["originalText"],
-          translatedText: row_bbox["translatedText"],
+          x: row_bbox["x"],
+          y: row_bbox["y"],
+          width: row_bbox["width"],
+          height: row_bbox["height"],
+          text: row_bbox["text"],
+          group_id: row_bbox["group_id"],
+          group_index: row_bbox["group_index"],
         };
         result.push(bbox);
       }
@@ -264,17 +265,51 @@ export class mysqlConnectionManager {
     });
   }
 
-  async setBboxesWithTranslate(
+  async setTranslateBoxes(
     requestID: number,
     cutIndex: number,
-    updatedBboxes: TranslateBBox[]
+    updatedBboxes: TranslateBox[]
   ): Promise<unknown> {
     const procedure: Procedure = {
-      query: "sp_set_bbox_2",
+      query: "sp_set_translate_box",
       parameters: [requestID, cutIndex, JSON.stringify(updatedBboxes)],
       selectUnique: true,
     };
     return mysqlConnection.callProcedure(procedure);
+  }
+
+  async getTranslateBoxes(
+    requestID: number,
+    cutIndex: number
+  ): Promise<Array<TranslateBox>> {
+    const result: Array<TranslateBox> = new Array<TranslateBox>();
+    const procedure: Procedure = {
+      query: "sp_get_translate_box",
+      parameters: [requestID, cutIndex],
+      selectUnique: true,
+    };
+    return mysqlConnection.callProcedure(procedure).then((rows) => {
+      const bboxes = JSON.parse(
+        (rows as SelectUniqueResult)["translate_box"] as string
+      ) as Array<TranslateBox>;
+      for (const row_bbox of bboxes) {
+        const bbox: TranslateBox = {
+          id: row_bbox["id"],
+          x: row_bbox["x"],
+          y: row_bbox["y"],
+          width: row_bbox["width"],
+          height: row_bbox["height"],
+          text: row_bbox["text"],
+          fontColor: row_bbox["fontColor"],
+          fontSize: row_bbox["fontSize"],
+          fontFamily: row_bbox["fontFamily"],
+          fontWeight: row_bbox["fontWeight"],
+          fontStyle: row_bbox["fontStyle"],
+        };
+        result.push(bbox);
+      }
+      return result;
+    });
   }
 
   async addUser(
