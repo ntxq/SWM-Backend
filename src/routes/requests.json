@@ -1,95 +1,103 @@
 {
-	"POST":{
-		"/upload/segmentation/project":{
-			"body":{
-				"title":"string",
-				"filenames":"Array<string>"
-			}
-		},
-		"/upload/segmentation/source":{
-			"body":{
-				"req_id":"number"
-			}
-		},
-		"/upload/segmentation/blank":{
-			"body":{
-				"req_id":"number"
-			}
-		},
-		"/upload/segmentation/start":{
-			"body":{
-				"req_id":"number"
-			}
-		},
-		"/upload/segmentation/mask":{
-			"body":{
-				"req_id":"number",
-				"cut_id":"number",
-				"mask":"object"
-			}
-		},
-		"/upload/OCR/edit":{
-			"body":{
-				"req_id":"number",
-				"cut_id":"number",
-				"bboxList":"object"
-			}
-		}
-	},
-	"GET":{
-		"/upload/segmentation/cut":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/segmentation/result":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/segmentation/result/mask":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/segmentation/result/inpaint":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/OCR/select":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/OCR/result":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/OCR/result/bbox":{
-			"query":{
-				"req_id":"number",
-				"cut_id":"number"
-			}
-		},
-		"/upload/profile":{
-			"query":{
-			}
-		}
-	},
-	"PUT":{
-		"/upload/profile":{
-			"query":{
-			}
-		}
-	},
-	"DELETE":{},
-	"PATCH":{}
+  "POST": {
+    "/api/segmentation/project": {
+      "body": {
+        "title": "string",
+        "filenames": "Array<string>"
+      }
+    },
+    "/api/segmentation/source": {
+      "body": {
+        "req_id": "number"
+      }
+    },
+    "/api/segmentation/blank": {
+      "body": {
+        "req_id": "number"
+      }
+    },
+    "/api/segmentation/start": {
+      "body": {
+        "req_id": "number"
+      }
+    },
+    "/api/segmentation/mask": {
+      "body": {
+        "req_id": "number",
+        "cut_id": "number",
+        "mask": "object"
+      }
+    },
+    "/api/OCR/edit": {
+      "body": {
+        "req_id": "number",
+        "cut_id": "number",
+        "bboxList": "object"
+      }
+    }
+  },
+  "GET": {
+    "/api/segmentation/cut": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/segmentation/result": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/segmentation/result/mask": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/segmentation/result/inpaint": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/OCR/select": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/OCR/result": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/OCR/result/bbox": {
+      "query": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/profile": {
+      "query": {}
+    }
+  },
+  "PUT": {
+    "/api/profile": {
+      "query": {}
+    },
+    "/api/history/download": {
+      "query": {
+        "req_id": "number"
+      }
+    },
+    "/api/history/projects": {
+      "query": {
+        "page": "number"
+      }
+    }
+  },
+  "DELETE": {},
+  "PATCH": {}
 }

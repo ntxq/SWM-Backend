@@ -6,7 +6,7 @@ import app from "src/app";
 import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { grpcSocket } from "src/gRPC/grpc_socket";
-import { PostProjectResponse } from "src/routes/upload/segmentation";
+import { PostProjectResponse } from "src/routes/api/segmentation";
 
 describe("upload filter validation", function () {
   afterEach((done) => {
@@ -40,7 +40,7 @@ describe("upload filter validation", function () {
     });
     it("400 request", async () => {
       await supertest(app)
-        .post("/upload/segmentation/source")
+        .post("/api/segmentation/source")
         .field({ title_x: "test project" })
         .expect(400);
     });
@@ -48,9 +48,9 @@ describe("upload filter validation", function () {
 });
 
 describe("not exist api call error", function () {
-  it("/upload/invalid", async function () {
+  it("/api/invalid", async function () {
     await supertest(app)
-      .post("/upload/invalid")
+      .post("/api/invalid")
       .field({ title: "test project" })
       .expect(404);
   });

@@ -10,7 +10,7 @@ import { mysqlConnection } from "src/sql/sql_connection";
 import bboxJson from "test/resource/bbox.json";
 import { queryManager } from "src/sql/mysql_connection_manager";
 
-describe("/upload/OCR one request", function () {
+describe("/api/OCR one request", function () {
   const request_id = 1307;
   const cut_id = 1;
 
@@ -28,7 +28,7 @@ describe("/upload/OCR one request", function () {
     sinon.stub(grpcSocket.OCR, "startOCR").resolves();
 
     const response = await supertest(app)
-      .get("/upload/OCR/select")
+      .get("/api/OCR/select")
       .query({ req_id: request_id, cut_id: cut_id })
       .expect(200);
     expect(response.body).to.hasOwnProperty("success");
@@ -39,7 +39,7 @@ describe("/upload/OCR one request", function () {
     //progress manager initStatus
     sinon.stub(mysqlConnection, "callProcedure").resolves({ complete: "bbox" });
     const response = await supertest(app)
-      .get("/upload/OCR/result")
+      .get("/api/OCR/result")
       .query({ req_id: request_id, cut_id: cut_id });
     expect(response.body).to.hasOwnProperty("progress");
     expect(response.body.progress).to.be.a("number");
@@ -49,7 +49,7 @@ describe("/upload/OCR one request", function () {
     sinon.stub(queryManager, "getBboxes").resolves(bboxJson);
 
     const response = await supertest(app)
-      .get("/upload/OCR/result/bbox")
+      .get("/api/OCR/result/bbox")
       .query({ req_id: request_id, cut_id: cut_id });
 
     expect(response.body).to.hasOwnProperty("bboxList");
@@ -70,7 +70,7 @@ describe("/upload/OCR one request", function () {
     sinon.stub(queryManager, "setBboxesWithTranslate").resolves();
 
     const response = await supertest(app)
-      .post("/upload/OCR/edit")
+      .post("/api/OCR/edit")
       .send({
         req_id: request_id,
         cut_id: cut_id,
