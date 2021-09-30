@@ -157,15 +157,19 @@ describe("/upload/OCR one request", function () {
     expect(response.body.success).to.be.equal(true);
   });
 
-  it.skip("/complete 200", async function () {
-    sinon.stub(queryManager, "setTranslateBoxes").resolves();
-
+  it("/complete 200", async function () {
+    const responseValue = {
+      path: "sample path",
+    };
+    sinon.stub(queryManager, "updateCut").resolves();
+    sinon
+      .stub(grpcSocket.OCR.client, "StartConcat")
+      .onFirstCall()
+      .callsArgWith(1, undefined, responseValue);
     const response = await supertest(app)
       .post("/upload/OCR/complete")
       .send({
         req_id: request_id,
-        cut_id: cut_id,
-        bboxList: JSON.stringify(bboxJson),
       })
       .expect(200);
     expect(response.body).to.hasOwnProperty("success");

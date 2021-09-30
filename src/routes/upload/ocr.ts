@@ -156,4 +156,18 @@ router.post(
   })
 );
 
+interface postCompleteBody {
+  req_id: string;
+}
+router.post(
+  "/complete",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    validateParameters(request);
+    const body = request.body as postCompleteBody;
+    const requestID = Number.parseInt(body["req_id"]);
+    await grpcSocket.OCR.startConcat(requestID);
+    response.send({ success: true });
+  })
+);
+
 export default router;

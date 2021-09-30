@@ -255,4 +255,24 @@ export class OCRInterface {
       );
     });
   }
+
+  async startConcat(requestID: number): Promise<void> {
+    const request: MESSAGE.RequestStartConcat = { req_id: requestID };
+    return new Promise<void>((resolve, reject) => {
+      this.client.StartConcat(
+        request,
+        async function (
+          error: Error | null,
+          response: MESSAGE.ReplyStartConcat
+        ) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          await queryManager.updateCut(requestID, "complete", 0, response.path);
+          return resolve();
+        }
+      );
+    });
+  }
 }

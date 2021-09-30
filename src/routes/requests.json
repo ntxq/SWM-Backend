@@ -48,6 +48,11 @@
 				"req_id":"number",
 				"cut_id":"number"
 			}
+		},
+		"/upload/OCR/complete":{
+			"body":{
+				"req_id":"number"
+			}
 		}
 	},
 	"GET":{

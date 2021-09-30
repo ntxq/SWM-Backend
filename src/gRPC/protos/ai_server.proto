@@ -8,6 +8,7 @@ service OCR {
   //express -> AI
   rpc StartOCR (RequestStart) returns (ReplyOCRStart) {}
   rpc StartTranslate (RequestStartTranslate) returns (ReplyStartTranslate) {}
+  rpc StartConcat (RequestStartConcat) returns (ReplyStartConcat) {}
   //AI -> express
   rpc SendBBoxes (RequestSendBBoxes) returns (ReplySendBBoxes) {}
 }
@@ -19,6 +20,14 @@ service Segmentation {
   rpc UpdateMask(RequestMaskUpdate) returns (ReplyMaskUpdate) {}
   //AI -> express
   rpc InpaintComplete(RequestInpaintComplete) returns (ReplyInpaintComplete) {}
+}
+
+message RequestStartConcat{
+  int32 req_id = 1;
+}
+
+message ReplyStartConcat{
+  string path = 1;
 }
 
 message RequestStartTranslate{

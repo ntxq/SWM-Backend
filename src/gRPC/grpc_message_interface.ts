@@ -1,5 +1,13 @@
 import { ProgressType } from "src/modules/const";
 
+export interface RequestStartConcat {
+  req_id: number;
+}
+
+export interface ReplyStartConcat {
+  path: string;
+}
+
 export interface RequestStartTranslate {
   text: string;
 }
