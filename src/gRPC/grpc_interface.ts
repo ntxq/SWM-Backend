@@ -261,7 +261,20 @@ export class OCRInterface {
   }
 
   async startConcat(requestID: number): Promise<void> {
-    const request: MESSAGE.RequestStartConcat = { req_id: requestID };
+    const image_pathes = [];
+    const cut_count = await queryManager.getCutCount(requestID);
+    for (let index = 1; index <= cut_count; index++) {
+      const image_path = await queryManager.getPath(
+        requestID,
+        "complete",
+        index
+      );
+      image_pathes.push(image_path);
+    }
+    const request: MESSAGE.RequestStartConcat = {
+      req_id: requestID,
+      image_pathes: image_pathes,
+    };
     return new Promise<void>((resolve, reject) => {
       this.client.StartConcat(
         request,

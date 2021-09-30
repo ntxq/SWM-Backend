@@ -163,6 +163,8 @@ describe("/upload/OCR one request", function () {
       path: "sample path",
     };
     sinon.stub(queryManager, "updateCut").resolves();
+    sinon.stub(queryManager, "getPath").resolves("test");
+    sinon.stub(queryManager, "getCutCount").resolves(3);
     sinon
       .stub(grpcSocket.OCR.client, "StartConcat")
       .onFirstCall()

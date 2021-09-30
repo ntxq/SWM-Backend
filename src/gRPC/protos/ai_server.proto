@@ -24,6 +24,7 @@ service Segmentation {
 
 message RequestStartConcat{
   int32 req_id = 1;
+  repeated string image_pathes = 2;
 }
 
 message ReplyStartConcat{

@@ -2,6 +2,7 @@ import { ProgressType } from "src/modules/const";
 
 export interface RequestStartConcat {
   req_id: number;
+  image_pathes: string[];
 }
 
 export interface ReplyStartConcat {
