@@ -9,10 +9,6 @@ WORKDIR /usr/src
 COPY package*.json /usr/src/
 RUN yarn install
 
-COPY . /usr/src
-
-# volume ["."]
-
 ENV PORT 3000
 EXPOSE $PORT
 CMD [ "npm", "start" ]

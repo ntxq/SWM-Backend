@@ -1,163 +1,233 @@
-import { GrpcObject } from '@grpc/grpc-js';
-import { ServiceClient, ServiceClientConstructor } from '@grpc/grpc-js/build/src/make-client';
-import fs from 'fs';
-import grpc = require('@grpc/grpc-js');
-import { IMAGE_DIR } from 'src/modules/const';
-import * as MESSAGE from './grpc_message_interface';
-import { JSON_DIR } from '../modules/const';
-import { queryManager } from '../sql/mysqlConnectionManager';
-import Jimp = require('jimp');
-import path = require('path');
+/* eslint-disable unicorn/no-null */
+import { GrpcObject } from "@grpc/grpc-js";
+import {
+  ServiceClient,
+  ServiceClientConstructor,
+} from "@grpc/grpc-js/build/src/make-client";
+import grpc = require("@grpc/grpc-js");
+import { JSON_DIR } from "src/modules/const";
+import * as MESSAGE from "src/gRPC/grpc_message_interface";
+import { queryManager } from "src/sql/mysql_connection_manager";
+import { HttpError } from "http-errors";
+import path = require("path");
+import { getJsonPath, handleGrpcError } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 
-export class SegmentationInterface{
-  client_url:string
-  proto:GrpcObject
-  client:ServiceClient
-  
-  constructor(client_url:string,proto:GrpcObject){
-    this.client_url = client_url
-    this.proto = proto
+export class SegmentationInterface {
+  clientUrl: string;
+  proto: GrpcObject;
+  client: ServiceClient;
 
-    const segmentation = this.proto.Segmentation as ServiceClientConstructor
-    this.client = new segmentation(this.client_url,grpc.credentials.createInsecure(),
-      {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
+  constructor(clientUrl: string, proto: GrpcObject) {
+    this.clientUrl = clientUrl;
+    this.proto = proto;
+
+    const segmentation = this.proto.Segmentation as ServiceClientConstructor;
+    this.client = new segmentation(
+      this.clientUrl,
+      grpc.credentials.createInsecure(),
+      {
+        "grpc.max_send_message_length": 1024 * 1024 * 1024,
+        "grpc.max_receive_message_length": 1024 * 1024 * 1024,
+      }
+    );
   }
 
-  async Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
-      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
-        if(err){
-          console.error(err)
-          return callback && callback(err,null)
+  async splitImage(
+    requestID: number,
+    type: string,
+    imagePath: string
+  ): Promise<MESSAGE.ReplyRequestMakeCut> {
+    const request: MESSAGE.RequestMakeCut = {
+      req_id: requestID,
+      type: type,
+      image_path: imagePath,
+    };
+    return new Promise<MESSAGE.ReplyRequestMakeCut>((resolve, reject) => {
+      const callback = async function (
+        error: Error | null,
+        response: MESSAGE.ReplyRequestMakeCut
+      ) {
+        if (error) {
+          reject(handleGrpcError(error));
         }
-        console.log('Greeting:', response.status_code);
-        return callback && callback(null,response)
-      });
-    })
+        type Ranges = {
+          [key: string]: {
+            range: [number, number];
+            image_path: string;
+          };
+        };
+        const cut_ranges = JSON.parse(response.cut_ranges) as Ranges;
+        const ranges: Map<string, number[]> = new Map<string, number[]>();
+        for (const [key, value] of Object.entries(cut_ranges)) {
+          await queryManager.updateCut(
+            requestID,
+            "cut",
+            Number.parseInt(key),
+            value.image_path
+          );
+          ranges.set(key, value.range);
+        }
+        await queryManager.setCutRanges(
+          request.req_id,
+          JSON.parse(JSON.stringify(ranges))
+        );
+        resolve(response);
+      };
+
+      this.client.SplitImage(request, callback);
+    });
   }
 
-  ImageTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendImage, MESSAGE.ReceiveImage>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveImage>
-    ) {
-      const request:MESSAGE.SendImage = call.request 
-
-      var image = new Jimp(request.width, request.height);
-      image.rgba(request.is_rgba);
-      image.bitmap.data = request.image;
-      const filepath = path.join(IMAGE_DIR,request.filename)
-      image.write(filepath,(err,value)=>{
-        queryManager.update_cut(request.req_id, request.type,request.index,filepath)
-        const response: MESSAGE.ReceiveImage = { success:true }
-        callback(null,response);
-      })
-  }
-
-  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
-    ) {
-      const request:MESSAGE.SendJson = call.request 
-      const filepath = path.join(JSON_DIR,request.filename)
-      fs.writeFileSync(filepath,JSON.stringify(JSON.parse(request.data), null, 4))
-      switch(request.type){
-        case "cut":
-          queryManager.set_cut_ranges(request.req_id,JSON.parse(request.data))
-          break;
-        case "mask":
-          queryManager.update_cut(request.req_id, request.type,0,filepath)
-          break;
-      }
-      const response: MESSAGE.ReceiveJson = { success:true }
-      callback(null,response);
-  }
-
-  async UpdateMask(req_id:number,data:Array<Array<number>>,callback?:Function | undefined){
-    const masks:Array<Buffer> = []
-    data.forEach((mask)=>{
-      masks.push(Buffer.from(mask))
-    })
-
-    const cut_ranges = await queryManager.get_cut_range(req_id)
-    const request:MESSAGE.RequestMaskUpdate = {
-      req_id:req_id, 
-      mask_rles:masks, 
-      image:fs.readFileSync(await queryManager.get_path(req_id,"original")),
-      cut_ranges:JSON.stringify(Object.fromEntries(cut_ranges))
+  async startSegmentation(requestID: number, cutIndex = 0): Promise<void> {
+    if (cutIndex !== 0) {
+      await this.startSegmentationCut(requestID, cutIndex);
+    } else {
+      const cut_count = await queryManager.getCutCount(requestID);
+      await Promise.all(
+        Array.from({ length: cut_count }, (_, index) =>
+          this.startSegmentation(requestID, index + 1)
+        )
+      );
     }
-    queryManager.update_progress(req_id,'cut').then(()=>{
-      this.client.UpdateMask(request, function(err:Error | null, response:MESSAGE.ReplyMaskUpdate) {
-        if(err){
-          console.error(err)
-          return callback && callback(err,null)
-        }
-        console.log('Greeting:', response);
-        return callback && callback(null,response)
-      });
-    })
   }
 
-  UpdateProgress(call:grpc.ServerUnaryCall<MESSAGE.SendUpdateProgress, MESSAGE.ReplySendUpdateProgress>,
-    callback:grpc.sendUnaryData<MESSAGE.ReplySendUpdateProgress>
-    ) {
-      const request:MESSAGE.SendUpdateProgress = call.request 
-      queryManager.update_progress(request.req_id,request.status).then(()=>{
-        const response: MESSAGE.ReplySendUpdateProgress = {}
-        callback(null,response);
-      })
+  async startSegmentationCut(
+    requestID: number,
+    cutIndex: number
+  ): Promise<void> {
+    const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
+    const request: MESSAGE.RequestStart = {
+      req_id: requestID,
+      cut_index: cutIndex,
+      image_path: imagePath,
+    };
+    return new Promise((resolve, reject) => {
+      const callback = async function (
+        error: Error | null,
+        response: MESSAGE.ReplySegmentationStart
+      ) {
+        if (error) {
+          reject(handleGrpcError(error));
+          return;
+        }
+        const filePath = getJsonPath(requestID, cutIndex, "mask");
+        await s3.upload(
+          filePath,
+          Buffer.from(JSON.stringify(JSON.parse(response.mask)))
+        );
+        await queryManager.updateCut(requestID, "mask", cutIndex, filePath);
+        resolve();
+      };
+      this.client.StartSegmentation(request, callback);
+    });
   }
-  
+  async inpaintComplete(
+    call: grpc.ServerUnaryCall<
+      MESSAGE.RequestInpaintComplete,
+      MESSAGE.ReplyInpaintComplete
+    >,
+    callback: grpc.sendUnaryData<MESSAGE.ReplyInpaintComplete>
+  ): Promise<MESSAGE.ReplyInpaintComplete> {
+    const request: MESSAGE.RequestInpaintComplete = call.request;
+    await queryManager.updateCut(
+      request.req_id,
+      "inpaint",
+      request.cut_index,
+      request.file_name
+    );
+    const response: MESSAGE.ReplyInpaintComplete = { req_id: request.req_id };
+    callback(null, response);
+    return response;
+  }
+
+  async updateMask(
+    requestID: number,
+    cutIndex: number,
+    data: Array<Array<number>>
+  ): Promise<MESSAGE.ReplyMaskUpdate> {
+    const masks: Array<Buffer> = [];
+    for (const mask of data) {
+      masks.push(Buffer.from(mask));
+    }
+
+    const request: MESSAGE.RequestMaskUpdate = {
+      req_id: requestID,
+      mask_rles: masks,
+      cut_index: cutIndex,
+      image_path: await queryManager.getPath(requestID, "cut", cutIndex),
+    };
+    await queryManager.updateProgress(requestID, cutIndex, "cut");
+    return new Promise((resolve, reject) => {
+      this.client.UpdateMask(
+        request,
+        function (error: Error | null, response: MESSAGE.ReplyMaskUpdate) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          console.log("Greeting:", response);
+          resolve(response);
+        }
+      );
+    });
+  }
 }
 
-export class OCRInterface{
-  client_url:string
-  proto:GrpcObject
-  client:ServiceClient
-  
-  constructor(client_url:string,proto:GrpcObject){
-    this.client_url = client_url
-    this.proto = proto
+export class OCRInterface {
+  clientUrl: string;
+  proto: GrpcObject;
+  client: ServiceClient;
 
-    const OCR = this.proto.OCR as ServiceClientConstructor
-    this.client = new OCR(this.client_url,grpc.credentials.createInsecure(),
-      {'grpc.max_send_message_length': 1024*1024*1024,'grpc.max_receive_message_length': 1024*1024*1024});
+  constructor(clientUrl: string, proto: GrpcObject) {
+    this.clientUrl = clientUrl;
+    this.proto = proto;
+
+    const OCR = this.proto.OCR as ServiceClientConstructor;
+    this.client = new OCR(this.clientUrl, grpc.credentials.createInsecure(), {
+      "grpc.max_send_message_length": 1024 * 1024 * 1024,
+      "grpc.max_receive_message_length": 1024 * 1024 * 1024,
+    });
   }
 
-  async Start(req_id:number,callback?:Function | undefined){
-    fs.readFile(await queryManager.get_path(req_id,"original"), (err, data) => {
-      if (err) {
-        console.error(err)
-        return
-      }
-      const request:MESSAGE.RequestStart = {req_id:req_id, image:data}
-      this.client.Start(request, function(err:Error | null, response:MESSAGE.ReplyRequestStart) {
-        if(err){
-          console.error(err)
-          return callback && callback(err,null)
+  async startOCR(
+    requestID: number,
+    cutIndex: number
+  ): Promise<MESSAGE.ReplyOCRStart> {
+    const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
+
+    return new Promise<MESSAGE.ReplyOCRStart>((resolve, reject) => {
+      const request: MESSAGE.RequestStart = {
+        req_id: requestID,
+        cut_index: cutIndex,
+        image_path: imagePath,
+      };
+      this.client.StartOCR(
+        request,
+        async function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          await queryManager.updateProgress(requestID, cutIndex, "bbox");
+          return resolve(response);
         }
-        console.log('Greeting_OCR:', response.status_code);
-        return callback && callback(null,response)
-      });
-    })
+      );
+    });
   }
 
-  JsonTransfer(call:grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
-    callback:grpc.sendUnaryData<MESSAGE.ReceiveJson>
-    ) {
-      const request:MESSAGE.SendJson = call.request 
-
-      fs.writeFileSync(path.join(JSON_DIR,request.filename),JSON.stringify(JSON.parse(request.data), null, 4))
-      switch(request.type){
-        case "bbox":
-          queryManager.set_bboxes(request.req_id,JSON.parse(request.data)).then(()=>{
-            queryManager.update_progress(request.req_id,'bbox')
-          })
-          break;
-      }
-      const response: MESSAGE.ReceiveJson = { success:true }
-      callback(null,response);
+  async sendBBoxes(
+    call: grpc.ServerUnaryCall<MESSAGE.SendJson, MESSAGE.ReceiveJson>,
+    callback: grpc.sendUnaryData<MESSAGE.ReceiveJson>
+  ): Promise<MESSAGE.ReceiveJson> {
+    const request: MESSAGE.SendJson = call.request;
+    await queryManager.setBboxes(
+      request.req_id,
+      request.cut_index,
+      JSON.parse(request.data)
+    );
+    const response: MESSAGE.ReceiveJson = { success: true };
+    callback(null, response);
+    return response;
   }
 }

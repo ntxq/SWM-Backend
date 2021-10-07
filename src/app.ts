@@ -1,14 +1,16 @@
 import createError from "http-errors";
 import express from "express";
-import path from "path";
+import path from "node:path";
 import cookieParser = require("cookie-parser");
 import cors = require("cors");
 import logger = require("morgan");
 import { Request, Response, NextFunction } from "express-serve-static-core";
 
-var uploadRouter = require("./routes/upload/upload.ts");
+import apiRouter from "src/routes/api";
+import oauthRouter, { initKakaoOauth } from "src/routes/oauth";
+import passport from "passport";
 
-var app = express();
+const app = express();
 
 app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));
@@ -16,38 +18,41 @@ app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(cookieParser());
 app.use(cors());
 
-app.use(
-  "/static",
-  express.static(path.join(__dirname, "../frontend/build/static"))
-);
+app.use(express.static(path.join(path.resolve(), "frontend/build")));
 
-app.use("/upload", uploadRouter);
-app.get("*", (req: Request, res: Response) =>
-  res.sendFile("index.html", {
-    root: path.join(__dirname, "../frontend/build/"),
+app.use(passport.initialize());
+app.use(passport.session());
+initKakaoOauth();
+
+app.use("/api", apiRouter);
+app.use("/oauth", oauthRouter);
+app.get("*", (request: Request, response: Response) =>
+  response.sendFile("index.html", {
+    root: path.join(path.resolve(), "frontend/build/"),
   })
 );
 
 // catch 404 and forward to error handler
-app.use(function (req: Request, res: Response, next: NextFunction) {
-  next(createError(404));
+app.use(function (request: Request, response: Response, next: NextFunction) {
+  next(new createError.NotFound());
 });
 
 // error handler
 app.use(function (
-  err: createError.HttpError,
-  req: Request,
-  res: Response,
+  error: createError.HttpError,
+  request: Request,
+  response: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
-) {
-  console.log(err.message);
+): void {
+  console.log(error.message);
   // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
+  response.locals.message = error.message;
+  response.locals.error = request.app.get("env") === "development" ? error : {};
 
   // render the error page
-  res.status(err.status || 500);
-  res.send("error");
+  response.status(error.status || 500);
+  response.send("error");
 });
 
 export default app;

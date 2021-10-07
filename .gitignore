@@ -1,11 +1,12 @@
 data/**/*.png
 data/**/*.json
-
+**/settings.json
 *.pyc
 
 yarn.lock
 package-lock.json
 **/secret.ts
+.vscode
 
 # Logs
 logs
