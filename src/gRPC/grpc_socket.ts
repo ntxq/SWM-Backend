@@ -4,6 +4,7 @@ import { SegmentationInterface, OCRInterface } from "src/gRPC/grpc_interface";
 import { GrpcObject } from "@grpc/grpc-js";
 import { ServiceClientConstructor } from "@grpc/grpc-js/build/src/make-client";
 import path = require("path");
+import { SegmentaionIP, RecognitionIP } from "src/hosts";
 
 const PROTO_PATH = path.join(
   path.resolve(),
@@ -86,6 +87,6 @@ class GRPCSocket {
 // export const grpcSocket = new GRPCSocket("0.0.0.0:4000","host.docker.internal:4001","host.docker.internal:5001")
 export const grpcSocket = new GRPCSocket(
   "0.0.0.0:4000",
-  "localhost:4001",
-  "localhost:5001"
+  SegmentaionIP,
+  RecognitionIP
 );
