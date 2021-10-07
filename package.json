@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "nodemon --watch '**/*.ts' --exec \"ts-node --require tsconfig-paths/register\" src/bin/www.ts",
-    "release": "ts-node -r tsconfig-paths/register build/bin/www.js",
+    "release": "node -r ts-node/register/transpile-only -r tsconfig-paths/register build/bin/www.js",
     "build": "tsc --project ./",
     "test": "env TS_NODE_PROJECT=\"tsconfig.json\" nyc mocha --exit --require ts-node/register --require tsconfig-paths/register test/**/*.ts",
     "sp_update": "nodemon --watch '**/*.ts' --exec \"ts-node --require tsconfig-paths/register\" src/sql/backup_procedure.ts"
