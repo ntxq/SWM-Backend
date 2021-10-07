@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import express from "express";
 
 import ocrRouter from "src/routes/api/ocr";
@@ -28,6 +29,7 @@ interface Cookie {
 router.use(
   "*",
   function (request: Request, response: Response, next: NextFunction) {
+    // @ts-ignore
     if (MODE === "dev") {
       //test account
       response.locals.userID = 1;

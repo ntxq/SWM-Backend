@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   MysqlConnection,
   mysqlConnection,
@@ -406,6 +407,7 @@ export class mysqlConnectionManager {
     nickname: string,
     email?: string
   ): Promise<SelectUniqueResult> {
+    // @ts-ignore
     if (MODE !== "dev") {
       throw new createError.Forbidden();
     }

@@ -70,6 +70,7 @@
     "forceConsistentCasingInFileNames": true,        /* Disallow inconsistently-cased references to the same file. */
     "resolveJsonModule":true
   },
-  // "include": ["*.ts"],
-  "exclude": ["node_modules","build"]
+  "include": [
+    "src"
+  ]
 }
