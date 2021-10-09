@@ -166,7 +166,7 @@ export class mysqlConnectionManager {
   ): Promise<void> {
     //cut,mask,inpaint
     // eslint-disable-next-line unicorn/no-null
-    const path: Array<string | null> = [null, null, null, null];
+    const path: Array<string | null> = [null, null, null, null, null];
     switch (type) {
       case "cut":
         path[0] = filePath;
@@ -177,10 +177,13 @@ export class mysqlConnectionManager {
       case "inpaint":
         path[3] = filePath;
         break;
+      case "complete":
+        path[4] = filePath;
+        break;
     }
 
     const procedure: Procedure = {
-      query: "sp_update_cut_2",
+      query: "sp_update_cut_3",
       parameters: [requestID, cutIndex, ...path, isUserUploadInpaint],
       selectUnique: true,
     };
@@ -290,12 +293,13 @@ export class mysqlConnectionManager {
       for (const row_bbox of bboxes) {
         const bbox: BBox = {
           bbox_id: row_bbox["bbox_id"],
-          originalX: row_bbox["originalX"],
-          originalY: row_bbox["originalY"],
-          originalWidth: row_bbox["originalWidth"],
-          originalHeight: row_bbox["originalHeight"],
-          originalText: row_bbox["originalText"],
-          translatedText: row_bbox["translatedText"],
+          x: row_bbox["x"],
+          y: row_bbox["y"],
+          width: row_bbox["width"],
+          height: row_bbox["height"],
+          text: row_bbox["text"],
+          group_id: row_bbox["group_id"],
+          group_index: row_bbox["group_index"],
         };
         result.push(bbox);
       }
@@ -303,17 +307,51 @@ export class mysqlConnectionManager {
     });
   }
 
-  async setBboxesWithTranslate(
+  async setTranslateBoxes(
     requestID: number,
     cutIndex: number,
-    updatedBboxes: TranslateBBox[]
+    updatedBboxes: TranslateBox[]
   ): Promise<unknown> {
     const procedure: Procedure = {
-      query: "sp_set_bbox_2",
+      query: "sp_set_translate_box",
       parameters: [requestID, cutIndex, JSON.stringify(updatedBboxes)],
       selectUnique: true,
     };
     return mysqlConnection.callProcedure(procedure);
+  }
+
+  async getTranslateBoxes(
+    requestID: number,
+    cutIndex: number
+  ): Promise<Array<TranslateBox>> {
+    const result: Array<TranslateBox> = new Array<TranslateBox>();
+    const procedure: Procedure = {
+      query: "sp_get_translate_box",
+      parameters: [requestID, cutIndex],
+      selectUnique: true,
+    };
+    return mysqlConnection.callProcedure(procedure).then((rows) => {
+      const bboxes = JSON.parse(
+        (rows as SelectUniqueResult)["translate_box"] as string
+      ) as Array<TranslateBox>;
+      for (const row_bbox of bboxes) {
+        const bbox: TranslateBox = {
+          id: row_bbox["id"],
+          x: row_bbox["x"],
+          y: row_bbox["y"],
+          width: row_bbox["width"],
+          height: row_bbox["height"],
+          text: row_bbox["text"],
+          fontColor: row_bbox["fontColor"],
+          fontSize: row_bbox["fontSize"],
+          fontFamily: row_bbox["fontFamily"],
+          fontWeight: row_bbox["fontWeight"],
+          fontStyle: row_bbox["fontStyle"],
+        };
+        result.push(bbox);
+      }
+      return result;
+    });
   }
 
   async addUser(

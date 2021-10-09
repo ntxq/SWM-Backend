@@ -10,4 +10,5 @@ export type ProgressType =
   | "mask"
   | "inpaint"
   | "bbox"
-  | "translate";
+  | "translate"
+  | "complete";

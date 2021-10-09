@@ -5,6 +5,7 @@ import requests from "src/routes/requests.json";
 import { IMAGE_DIR, JSON_DIR, ProgressType } from "./const";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import createHttpError from "http-errors";
+import { BBox } from "src/routes/api/ocr";
 
 type RequestParameters = {
   [index: string]: string;
@@ -116,4 +117,27 @@ export async function validateRequestID(
   if (!isValid) {
     throw new createHttpError.Forbidden();
   }
+}
+
+export function getSentenceFromBboxes(
+  bboxes: BBox[],
+  translateID: number
+): string {
+  const translateboxes = [];
+  //extract bboxes
+  for (const bbox of bboxes) {
+    if (bbox.group_id == translateID) {
+      translateboxes.push(bbox);
+    }
+  }
+  //문장 순서에 맞춰서 정렬
+  translateboxes.sort(function (first, second) {
+    return first.group_index < second.group_index ? 1 : -1;
+  });
+  //문장 구성
+  let sentence = "";
+  for (const box of translateboxes) {
+    sentence += box.text;
+  }
+  return sentence;
 }
