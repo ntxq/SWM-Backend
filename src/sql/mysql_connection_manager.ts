@@ -6,7 +6,7 @@ import {
   Procedure,
   SelectUniqueResult,
 } from "src/sql/sql_connection";
-import { BBox, TranslateBBox } from "src/routes/api/ocr";
+import { BBox, TranslateBox } from "src/routes/api/ocr";
 
 import { s3 } from "src/modules/s3_wrapper";
 import { progressManager } from "src/modules/progress_manager";
