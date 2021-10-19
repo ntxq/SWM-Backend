@@ -4,7 +4,7 @@ import express from "express";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { makeAccessTokenCookie } from "src/modules/oauth";
-import { KAKAO_ID } from "src/sql/secret";
+import { KAKAO_ID, KAKAO_REDIRECT_URL } from "src/sql/secret";
 import createHttpError from "http-errors";
 
 const router = express.Router();
@@ -39,7 +39,7 @@ export function initKakaoOauth(): void {
     new Strategy(
       {
         clientID: KAKAO_ID,
-        callbackURL: "", // 위에서 설정한 Redirect URI
+        callbackURL: KAKAO_REDIRECT_URL, // 위에서 설정한 Redirect URI
         clientSecret: "",
       },
       (accessToken, refreshToken, profile: Profile, done) => {
