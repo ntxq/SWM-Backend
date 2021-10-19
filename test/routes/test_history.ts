@@ -8,14 +8,14 @@ import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { s3 } from "src/modules/s3_wrapper";
 
-describe.only("/api/history", function () {
+describe("/api/history", function () {
   const request_id = 154;
   afterEach((done) => {
     sinon.restore();
     done();
   });
 
-  it.only("/projects 200", async function () {
+  it("/projects 200", async function () {
     sinon.stub(s3, "getDownloadURL").resolves("sample_url");
     sinon.stub(queryManager, "getPath").resolves("test_path");
 
