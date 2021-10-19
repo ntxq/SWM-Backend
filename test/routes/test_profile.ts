@@ -7,7 +7,7 @@ import { expect } from "chai";
 import sinon from "ts-sinon";
 import { queryManager } from "src/sql/mysql_connection_manager";
 
-describe.only("/upload/profile", function () {
+describe("/upload/profile", function () {
   before("make dummy profile", async () => {
     await queryManager.addDummyUser(1, "test_nickname", "test@email.com");
   });
