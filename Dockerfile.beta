@@ -12,4 +12,4 @@ RUN yarn install
 ENV PORT 3000
 EXPOSE $PORT
 CMD [ "npm", "run", "release" ]
-#docker run --net=host -d --name swm_back -v $PWD:/usr/src/ swm_back
+#docker run  --restart=always --net=host -d --name swm_back -v $PWD:/usr/src/ swm_back
