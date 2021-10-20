@@ -40,7 +40,8 @@ describe("/api/history", function () {
   it("/download 200", async function () {
     sinon.stub(s3, "getDownloadURL").resolves("sample_url");
     sinon.stub(queryManager, "getPath").resolves("test_path");
-
+    sinon.stub(queryManager, "isValidRequest").resolves(true);
+    
     const response = await supertest(app)
       .get("/api/history/download")
       .query({ req_id: request_id })

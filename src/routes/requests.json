@@ -79,14 +79,6 @@
         "cut_id": "number"
       }
     },
-    "/api/profile": {
-      "query": {}
-    }
-  },
-  "PUT": {
-    "/api/profile": {
-      "query": {}
-    },
     "/api/history/download": {
       "query": {
         "req_id": "number"
@@ -96,6 +88,14 @@
       "query": {
         "page": "number"
       }
+    },
+    "/api/profile": {
+      "query": {}
+    }
+  },
+  "PUT": {
+    "/api/profile": {
+      "query": {}
     }
   },
   "DELETE": {},
