@@ -22,6 +22,11 @@ export function isImageFile(file: Express.Multer.File): boolean {
   return mimetype && extname;
 }
 
+export function createAvatarPath(): string {
+  const date = "avatar" + Date.now().toString() + Math.random().toString();
+  return date;
+}
+
 export function handleGrpcError(error: Error): createHttpError.HttpError {
   console.log(error);
   return new createHttpError.ServiceUnavailable();
