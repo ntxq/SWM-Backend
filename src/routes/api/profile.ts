@@ -18,7 +18,7 @@ router.get(
       throw new createHttpError.NotFound();
     }
     let pic_path = userInfo.pic_path as string;
-    if (pic_path.startsWith("avatar")) {
+    if (pic_path && pic_path.startsWith("avatar")) {
       //1주일
       pic_path = await s3.getDownloadURL(pic_path, 60 * 60 * 24 * 7);
     }
@@ -42,9 +42,6 @@ router.put(
     const newUserProfile: Map<string, string> = new Map<string, string>();
     if (typeof email === "string") {
       newUserProfile.set("email", email);
-    }
-    if (typeof username === "string") {
-      newUserProfile.set("username", username);
     }
     if (typeof username === "string") {
       newUserProfile.set("username", username);
