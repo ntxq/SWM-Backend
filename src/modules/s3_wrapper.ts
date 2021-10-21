@@ -90,6 +90,15 @@ class S3 {
     };
     return this.s3.getSignedUrlPromise("getObject", parameter);
   }
+
+  async getFileSize(filename: string): Promise<number> {
+    return this.s3
+      .headObject({ Key: filename, Bucket: this.bucket })
+      .promise()
+      .then((response) =>
+        response.ContentLength ? response.ContentLength : 0
+      );
+  }
 }
 
 export const s3 = new S3();

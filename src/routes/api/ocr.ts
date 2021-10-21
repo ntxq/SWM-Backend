@@ -5,9 +5,11 @@ import { grpcSocket } from "src/gRPC/grpc_socket";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import {
   asyncRouterWrap,
+  getImagePath,
   validateParameters,
   validateRequestID,
 } from "src/modules/utils";
+import { s3 } from "src/modules/s3_wrapper";
 
 const router = express.Router();
 
@@ -41,9 +43,19 @@ router.get(
     const cutIndex = Number.parseInt(request.query["cut_id"] as string);
 
     await validateRequestID(response.locals.userID, requestID);
-
-    await grpcSocket.OCR.startOCR(requestID, cutIndex);
-    response.send({ success: true });
+    const imageUrl = getImagePath(requestID, 0, "cut");
+    const imageSize = await s3.getFileSize(imageUrl);
+    const total_size = await queryManager.addImageSize(
+      response.locals.userID,
+      requestID,
+      imageSize,
+      "with_inpaint"
+    );
+    const success = total_size > 0;
+    if (success) {
+      await grpcSocket.OCR.startOCR(requestID, cutIndex);
+    }
+    response.send({ success: success, size: total_size });
   })
 );
 

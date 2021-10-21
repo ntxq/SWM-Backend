@@ -9,6 +9,7 @@ import sinon from "ts-sinon";
 import { mysqlConnection } from "src/sql/sql_connection";
 import bboxJson from "test/resource/bbox.json";
 import { queryManager } from "src/sql/mysql_connection_manager";
+import { s3 } from "src/modules/s3_wrapper";
 
 describe("/api/OCR one request", function () {
   const request_id = 1307;
@@ -26,13 +27,30 @@ describe("/api/OCR one request", function () {
 
   it("/select 200", async function () {
     sinon.stub(grpcSocket.OCR, "startOCR").resolves();
-
+    sinon.stub(mysqlConnection, "callProcedure").resolves({ total_size: 123 });
+    sinon.stub(s3, "getFileSize").resolves(123);
+    
     const response = await supertest(app)
       .get("/api/OCR/select")
       .query({ req_id: request_id, cut_id: cut_id })
       .expect(200);
     expect(response.body).to.hasOwnProperty("success");
     expect(response.body.success).to.be.equal(true);
+    expect(response.body.size).to.be.equal(123);
+  });
+
+  it("/select limit exceed", async function () {
+    sinon.stub(grpcSocket.OCR, "startOCR").resolves();
+    sinon.stub(mysqlConnection, "callProcedure").resolves({ total_size: -1 });
+    sinon.stub(s3, "getFileSize").resolves(123);
+
+    const response = await supertest(app)
+      .get("/api/OCR/select")
+      .query({ req_id: request_id, cut_id: cut_id })
+      .expect(200);
+    expect(response.body).to.hasOwnProperty("success");
+    expect(response.body.success).to.be.equal(false);
+    expect(response.body.size).to.be.equal(-1);
   });
 
   it("/result 200", async function () {

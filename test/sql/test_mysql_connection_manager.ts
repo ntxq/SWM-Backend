@@ -62,6 +62,15 @@ describe("mysql connection test", function () {
       });
   });
 
+  it("addImageSize", async function () {
+    const total_size = 123456;
+    const returnValue = { total_size: total_size };
+    sinon.stub(mysqlConnection, "callProcedure").resolves(returnValue);
+    const size = await queryManager
+      .addImageSize(1, 1, 100, "with_inpaint")
+    expect(size).to.be.equal(total_size);
+  });
+
   it("setCutCount", function (done) {
     const returnValue = {};
     sinon.stub(mysqlConnection, "callProcedure").resolves(returnValue);

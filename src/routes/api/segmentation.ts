@@ -107,9 +107,19 @@ router.post(
     validateParameters(request);
     const body = request.body as PostStartBody;
     await validateRequestID(response.locals.userID, body.req_id);
-    await grpcSocket.segmentation.startSegmentation(body.req_id);
-
-    response.send({ success: true });
+    const imageUrl = getImagePath(body.req_id, 0, "cut");
+    const imageSize = await s3.getFileSize(imageUrl);
+    const total_size = await queryManager.addImageSize(
+      response.locals.userID,
+      body.req_id,
+      imageSize,
+      "without_inpaint"
+    );
+    const success = total_size > 0;
+    if (success) {
+      await grpcSocket.segmentation.startSegmentation(body.req_id);
+    }
+    response.send({ success: success, size: total_size });
   })
 );
 

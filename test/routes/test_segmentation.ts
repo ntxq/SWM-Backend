@@ -100,16 +100,27 @@ describe("/api/segmentation two request", function () {
   });
 
   describe("/start", function () {
-    before(function (done) {
-      sinon.stub(grpcSocket.segmentation, "startSegmentation").resolves();
-      done();
-    });
     it("/start 200", async function () {
+      sinon.stub(grpcSocket.segmentation, "startSegmentation").resolves();
+      sinon.stub(s3, "getFileSize").resolves(123);
+      sinon.stub(mysqlConnection, "callProcedure").resolves({ total_size: 123 });
       const response = await supertest(app)
         .post("/api/segmentation/start")
         .send({ req_id: 154 })
         .expect(200);
-      expect(response.body.success).to.be.a("boolean");
+      expect(response.body.success).to.be.equal(true);
+      expect(response.body.size).to.be.a("number");
+    });
+    it("/start exceed limit", async function () {
+      sinon.stub(grpcSocket.segmentation, "startSegmentation").resolves();
+      sinon.stub(s3, "getFileSize").resolves(123);
+      sinon.stub(mysqlConnection, "callProcedure").resolves({ total_size: -1 });
+      const response = await supertest(app)
+        .post("/api/segmentation/start")
+        .send({ req_id: 154 })
+        .expect(200);
+      expect(response.body.success).to.be.equal(false);
+      expect(response.body.size).to.be.a("number");
     });
   });
 

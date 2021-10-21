@@ -108,6 +108,24 @@ export class mysqlConnectionManager {
     return { request_array: returnValue };
   }
 
+  async addImageSize(
+    userID: number,
+    requestID: number,
+    size: number,
+    type: "with_inpaint" | "without_inpaint"
+  ): Promise<number> {
+    const typeNumber = type === "with_inpaint" ? 1 : 2;
+    const procedure: Procedure = {
+      query: "sp_add_image_size",
+      parameters: [userID, requestID, size, typeNumber],
+      selectUnique: true,
+    };
+    const row = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return row["total_size"] as number;
+  }
+
   async setCutCount(requestID: number, cutCount: number): Promise<void> {
     const procedure: Procedure = {
       query: "sp_set_cut_count",
