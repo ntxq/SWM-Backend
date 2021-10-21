@@ -71,6 +71,13 @@ describe("mysql connection test", function () {
     expect(size).to.be.equal(total_size);
   });
 
+  it("getTotalUsedSize", async function () {
+    sinon.stub(mysqlConnection, "callProcedure").resolves({ full_process: 123, ocr_process:123123 });
+    const sizes = await queryManager.getTotalUsedSize(1);
+    expect(sizes.full_process).to.be.equal(123);
+    expect(sizes.ocr_process).to.be.equal(123123);
+  });
+
   it("setCutCount", function (done) {
     const returnValue = {};
     sinon.stub(mysqlConnection, "callProcedure").resolves(returnValue);

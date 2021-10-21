@@ -16,6 +16,7 @@ import { ProgressType } from "src/modules/const";
 import { PostProjectResponse } from "src/routes/api/segmentation";
 import { MODE } from "./secret";
 import { Project } from "src/routes/api/history";
+import { ProfileLimitResponse } from "src/routes/api/profile";
 
 export class mysqlConnectionManager {
   connection: MysqlConnection;
@@ -124,6 +125,21 @@ export class mysqlConnectionManager {
       procedure
     )) as SelectUniqueResult;
     return row["total_size"] as number;
+  }
+
+  async getTotalUsedSize(userID: number): Promise<ProfileLimitResponse> {
+    const procedure: Procedure = {
+      query: "sp_get_used_size",
+      parameters: [userID],
+      selectUnique: true,
+    };
+    const row = (await mysqlConnection.callProcedure(
+      procedure
+    )) as SelectUniqueResult;
+    return {
+      full_process: row["full_process"] ? (row["full_process"] as number) : 0,
+      ocr_process: row["ocr_process"] ? (row["ocr_process"] as number) : 0,
+    };
   }
 
   async setCutCount(requestID: number, cutCount: number): Promise<void> {

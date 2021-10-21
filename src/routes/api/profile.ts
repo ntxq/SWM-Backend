@@ -25,6 +25,20 @@ router.get(
   })
 );
 
+export interface ProfileLimitResponse {
+  full_process: number;
+  ocr_process: number;
+}
+
+router.get(
+  "/limit",
+  asyncRouterWrap(async (request: Request, response: Response) => {
+    const userID = response.locals.userID as number;
+    const responseBody = await queryManager.getTotalUsedSize(userID);
+    response.send(responseBody);
+  })
+);
+
 router.put(
   "/",
   asyncRouterWrap(async (request: Request, response: Response) => {
