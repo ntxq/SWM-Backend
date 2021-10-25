@@ -54,6 +54,7 @@ export class SegmentationInterface {
       ) {
         if (error) {
           reject(handleGrpcError(error));
+          return;
         }
         type Ranges = {
           [key: string]: {
