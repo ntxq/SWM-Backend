@@ -27,6 +27,13 @@ export function handleGrpcError(error: Error): createHttpError.HttpError {
   return new createHttpError.ServiceUnavailable();
 }
 
+export function createMemoryError(
+  response: unknown
+): createHttpError.HttpError {
+  console.log(response);
+  return new createHttpError.InsufficientStorage();
+}
+
 type RouterFunction = (
   request: Request,
   response: Response,
