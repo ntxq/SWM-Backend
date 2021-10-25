@@ -10,7 +10,11 @@ import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { HttpError } from "http-errors";
 import path = require("path");
-import { getJsonPath, handleGrpcError } from "src/modules/utils";
+import {
+  createMemoryError,
+  getJsonPath,
+  handleGrpcError,
+} from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
 
 export class SegmentationInterface {
@@ -110,6 +114,9 @@ export class SegmentationInterface {
         if (error) {
           reject(handleGrpcError(error));
           return;
+        } else if (response.req_id === -1) {
+          reject(createMemoryError(response));
+          return;
         }
         const filePath = getJsonPath(requestID, cutIndex, "mask");
         await s3.upload(
@@ -165,6 +172,9 @@ export class SegmentationInterface {
           if (error) {
             reject(handleGrpcError(error));
             return;
+          } else if (response.req_id === -1) {
+            reject(createMemoryError(response));
+            return;
           }
           console.log("Greeting:", response);
           resolve(response);
@@ -207,6 +217,9 @@ export class OCRInterface {
         async function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
           if (error) {
             reject(handleGrpcError(error));
+            return;
+          } else if (response.req_id === -1) {
+            reject(createMemoryError(response));
             return;
           }
           await queryManager.updateProgress(requestID, cutIndex, "bbox");
