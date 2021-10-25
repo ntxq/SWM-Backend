@@ -375,7 +375,12 @@ export class mysqlConnectionManager {
   ): Promise<void> {
     const procedure: Procedure = {
       query: "sp_edit_user",
-      parameters: [userID, profile.get("username"), profile.get("email")],
+      parameters: [
+        userID,
+        profile.get("username"),
+        profile.get("email"),
+        profile.get("pic_path"),
+      ],
       selectUnique: true,
     };
     await mysqlLonginConnection.callProcedure(procedure);
