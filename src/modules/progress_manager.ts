@@ -11,7 +11,7 @@ type ProgressMap = {
 
 const progressed: ProgressMap = {
   start: 0,
-  cut: 5,
+  cut: 0,
   mask: 30,
   inpaint: 100,
   bbox: 130,
@@ -21,7 +21,7 @@ const progressed: ProgressMap = {
 
 const progressSpeed: ProgressMap = {
   start: 0.2,
-  cut: 1,
+  cut: 0.2,
   mask: 0.25,
   inpaint: 1,
   bbox: 0.5,
@@ -47,7 +47,7 @@ class Progress {
   constructor(requestID: number, cutIndex: number) {
     this.requestID = requestID;
     this.cutIndex = cutIndex;
-    this.status = "start";
+    this.status = "cut";
     this.lastUpdateTime = Date.now();
   }
 

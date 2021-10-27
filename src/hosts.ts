@@ -1,2 +1,2 @@
-export const SegmentaionIP = "host.docker.internal:4001";
-export const RecognitionIP = "host.docker.internal:5001";
+export const SegmentaionIP = "172.17.0.1:4001";
+export const RecognitionIP = "172.17.0.1:5001";

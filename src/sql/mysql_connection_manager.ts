@@ -413,7 +413,12 @@ export class mysqlConnectionManager {
   ): Promise<void> {
     const procedure: Procedure = {
       query: "sp_edit_user",
-      parameters: [userID, profile.get("username"), profile.get("email")],
+      parameters: [
+        userID,
+        profile.get("username"),
+        profile.get("email"),
+        profile.get("pic_path"),
+      ],
       selectUnique: true,
     };
     await mysqlLonginConnection.callProcedure(procedure);
@@ -443,7 +448,8 @@ export class mysqlConnectionManager {
   async addDummyUser(
     userID: number,
     nickname: string,
-    email?: string
+    email?: string,
+    pic_path?: string
   ): Promise<SelectUniqueResult> {
     // @ts-ignore
     if (MODE !== "dev") {
@@ -451,7 +457,7 @@ export class mysqlConnectionManager {
     }
     const procedure: Procedure = {
       query: "sp_set_user",
-      parameters: [userID, nickname, email],
+      parameters: [userID, nickname, email, pic_path],
       selectUnique: true,
     };
     return mysqlLonginConnection.callProcedure(
