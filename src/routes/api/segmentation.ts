@@ -99,6 +99,7 @@ router.post(
 
 interface PostStartBody {
   req_id: number;
+  cut_id: number;
 }
 
 router.post(
@@ -107,7 +108,7 @@ router.post(
     validateParameters(request);
     const body = request.body as PostStartBody;
     await validateRequestID(response.locals.userID, body.req_id);
-    await grpcSocket.segmentation.startSegmentation(body.req_id);
+    await grpcSocket.segmentation.startSegmentation(body.req_id, body.cut_id);
 
     response.send({ success: true });
   })
