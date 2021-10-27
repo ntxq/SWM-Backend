@@ -28,11 +28,30 @@
         "mask": "object"
       }
     },
-    "/api/OCR/edit": {
+    "/api/OCR/text": {
       "body": {
         "req_id": "number",
         "cut_id": "number",
-        "bboxList": "object"
+        "bboxList": "object",
+        "translateBoxList": "object"
+      }
+    },
+    "/api/OCR/translate": {
+      "body": {
+        "req_id": "number",
+        "cut_id": "number",
+        "translate_id": "number"
+      }
+    },
+    "/api/OCR/image": {
+      "body": {
+        "req_id": "number",
+        "cut_id": "number"
+      }
+    },
+    "/api/OCR/complete": {
+      "body": {
+        "req_id": "number"
       }
     }
   },

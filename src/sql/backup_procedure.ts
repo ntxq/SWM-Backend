@@ -18,7 +18,11 @@ async function backup() {
   for (const row of rows) {
     const text = row["ROUTINE_DEFINITION"] as string;
     const title = row["SPECIFIC_NAME"] as string;
-    const path_string = path.join(path.resolve(), "sp", `${title}.sql`);
+    const path_string = path.posix.join(
+      path.posix.resolve(),
+      "sp",
+      `${title}.sql`
+    );
     if (fs.existsSync(path_string)) {
       const read = fs.readFileSync(path_string);
       if (text !== read.toString()) {

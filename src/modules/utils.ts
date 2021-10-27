@@ -46,7 +46,7 @@ export function getImagePath(
   cutIndex: number,
   type: ProgressType
 ): string {
-  return path.join(IMAGE_DIR, type, `${requestID}_${cutIndex}.png`);
+  return path.posix.join(IMAGE_DIR, type, `${requestID}_${cutIndex}.png`);
 }
 
 export function getJsonPath(
@@ -54,7 +54,7 @@ export function getJsonPath(
   cutIndex: number,
   type: ProgressType
 ): string {
-  return path.join(JSON_DIR, type, `${requestID}_${cutIndex}.json`);
+  return path.posix.join(JSON_DIR, type, `${requestID}_${cutIndex}.json`);
 }
 
 export function validateParameters(request: Request): void {
