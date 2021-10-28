@@ -9,6 +9,8 @@ import { queryManager } from "src/sql/mysql_connection_manager";
 
 describe("/api/profile", function () {
   before("make dummy profile", async () => {
+    await queryManager.deleteUser(1);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await queryManager.addDummyUser(1, "test_nickname", "test@email.com");
   });
 
@@ -16,6 +18,11 @@ describe("/api/profile", function () {
     sinon.restore();
     done();
   });
+
+  after(async ()=>{
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await queryManager.deleteUser(1);
+  })
 
   it("get profile", async () => {
     const response: supertest.Response = await supertest(app)

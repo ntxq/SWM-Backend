@@ -79,11 +79,11 @@ class S3 {
     return this.s3.getSignedUrlPromise("putObject", parameter);
   }
 
-  async getDownloadURL(filename: string) {
+  async getDownloadURL(filename: string, expires = 30) {
     const parameter = {
       Bucket: this.bucket,
       Key: filename,
-      Expires: 30,
+      Expires: expires,
     };
     return this.s3.getSignedUrlPromise("getObject", parameter);
   }
