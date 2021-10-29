@@ -39,7 +39,7 @@ export class SegmentationInterface {
 
   async splitImage(
     requestID: number,
-    type: string,
+    type: "cut" | "inpaint",
     imagePath: string
   ): Promise<MESSAGE.ReplyRequestMakeCut> {
     const request: MESSAGE.RequestMakeCut = {
@@ -67,7 +67,7 @@ export class SegmentationInterface {
         for (const [key, value] of Object.entries(cut_ranges)) {
           await queryManager.updateCut(
             requestID,
-            "cut",
+            type,
             Number.parseInt(key),
             value.image_path
           );
