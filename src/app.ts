@@ -16,7 +16,8 @@ app.use(logger("dev"));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(cookieParser());
-app.use(cors());
+
+app.use(cors({ allowedHeaders: "*" }));
 
 app.use(express.static(path.join(path.resolve(), "frontend/build")));
 
