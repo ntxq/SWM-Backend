@@ -87,6 +87,7 @@ message RequestStart {
   int32 req_id = 1;
   int32 cut_index = 2;
   string image_path = 3;
+  optional string inpaint_image_path = 4;
 }
 
 message ReplySegmentationStart {
