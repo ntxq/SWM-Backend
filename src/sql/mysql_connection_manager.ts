@@ -237,7 +237,7 @@ export class mysqlConnectionManager {
 	*/
   async getPath(
     requestID: number,
-    type: string,
+    type: ProgressType | "mask_image",
     cutIndex = 0
   ): Promise<string> {
     const procedure: Procedure = {
@@ -257,6 +257,8 @@ export class mysqlConnectionManager {
         return row["mask_path"] as string;
       case "mask_image":
         return row["mask_image_path"] as string;
+      case "complete":
+        return "";
       default:
         throw new createError.InternalServerError();
     }

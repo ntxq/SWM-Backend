@@ -39,7 +39,7 @@ export class SegmentationInterface {
 
   async splitImage(
     requestID: number,
-    type: string,
+    type: "cut" | "inpaint",
     imagePath: string
   ): Promise<MESSAGE.ReplyRequestMakeCut> {
     const request: MESSAGE.RequestMakeCut = {
@@ -67,7 +67,7 @@ export class SegmentationInterface {
         for (const [key, value] of Object.entries(cut_ranges)) {
           await queryManager.updateCut(
             requestID,
-            "cut",
+            type,
             Number.parseInt(key),
             value.image_path
           );
@@ -206,12 +206,17 @@ export class OCRInterface {
     cutIndex: number
   ): Promise<MESSAGE.ReplyOCRStart> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
-
+    const inpaintImagePath = await queryManager.getPath(
+      requestID,
+      "inpaint",
+      cutIndex
+    );
     return new Promise<MESSAGE.ReplyOCRStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {
         req_id: requestID,
         cut_index: cutIndex,
         image_path: imagePath,
+        inpaint_image_path: inpaintImagePath,
       };
       this.client.StartOCR(
         request,

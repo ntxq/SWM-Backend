@@ -57,6 +57,7 @@ export interface RequestStart {
   req_id: number;
   cut_index: number;
   image_path: string;
+  inpaint_image_path?: string;
 }
 
 export interface ReplySegmentationStart {
