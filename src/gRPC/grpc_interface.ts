@@ -206,12 +206,17 @@ export class OCRInterface {
     cutIndex: number
   ): Promise<MESSAGE.ReplyOCRStart> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
-
+    const inpaintImagePath = await queryManager.getPath(
+      requestID,
+      "inpaint",
+      cutIndex
+    );
     return new Promise<MESSAGE.ReplyOCRStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {
         req_id: requestID,
         cut_index: cutIndex,
         image_path: imagePath,
+        inpaint_image_path: inpaintImagePath,
       };
       this.client.StartOCR(
         request,
