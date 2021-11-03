@@ -258,7 +258,7 @@ export class mysqlConnectionManager {
       case "mask_image":
         return row["mask_image_path"] as string;
       case "complete":
-        return "";
+        return row["result_path"] as string;
       default:
         throw new createError.InternalServerError();
     }
