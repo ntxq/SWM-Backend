@@ -1,5 +1,23 @@
 import { ProgressType } from "src/modules/const";
 
+export interface RequestStartConcat {
+  req_id: number;
+  image_pathes: string[];
+}
+
+export interface ReplyStartConcat {
+  path: string;
+}
+
+export interface RequestStartTranslate {
+  bboxes: string;
+  image_path: string;
+}
+
+export interface ReplyStartTranslate {
+  data: string;
+}
+
 export interface SendImage {
   req_id: number;
   type: ProgressType;
@@ -39,6 +57,7 @@ export interface RequestStart {
   req_id: number;
   cut_index: number;
   image_path: string;
+  inpaint_image_path?: string;
 }
 
 export interface ReplySegmentationStart {

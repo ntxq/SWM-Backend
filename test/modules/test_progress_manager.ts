@@ -27,7 +27,7 @@ describe("progress manager test", function () {
   it("get/set cut progress", async function () {
     let progress = await progressManager.getProgress(request_id, cut_index);
     expect(progress).to.be.a("number");
-    expect(progress).to.be.equal(5);
+    expect(progress).to.be.equal(0);
     await progressManager.updateProgress(request_id, cut_index, "inpaint");
     progress = await progressManager.getProgress(request_id, cut_index);
     expect(progress).to.be.a("number");

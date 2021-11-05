@@ -5,13 +5,17 @@ import {
   ServiceClientConstructor,
 } from "@grpc/grpc-js/build/src/make-client";
 import grpc = require("@grpc/grpc-js");
-import { JSON_DIR } from "src/modules/const";
 import * as MESSAGE from "src/gRPC/grpc_message_interface";
 import { queryManager } from "src/sql/mysql_connection_manager";
 import { HttpError } from "http-errors";
 import path = require("path");
-import { getJsonPath, handleGrpcError } from "src/modules/utils";
+import {
+  createMemoryError,
+  getJsonPath,
+  handleGrpcError,
+} from "src/modules/utils";
 import { s3 } from "src/modules/s3_wrapper";
+import { TranslateBox } from "src/routes/api/ocr";
 
 export class SegmentationInterface {
   clientUrl: string;
@@ -35,7 +39,7 @@ export class SegmentationInterface {
 
   async splitImage(
     requestID: number,
-    type: string,
+    type: "cut" | "inpaint",
     imagePath: string
   ): Promise<MESSAGE.ReplyRequestMakeCut> {
     const request: MESSAGE.RequestMakeCut = {
@@ -50,6 +54,7 @@ export class SegmentationInterface {
       ) {
         if (error) {
           reject(handleGrpcError(error));
+          return;
         }
         type Ranges = {
           [key: string]: {
@@ -62,7 +67,7 @@ export class SegmentationInterface {
         for (const [key, value] of Object.entries(cut_ranges)) {
           await queryManager.updateCut(
             requestID,
-            "cut",
+            type,
             Number.parseInt(key),
             value.image_path
           );
@@ -109,6 +114,9 @@ export class SegmentationInterface {
       ) {
         if (error) {
           reject(handleGrpcError(error));
+          return;
+        } else if (response.req_id === -1) {
+          reject(createMemoryError(response));
           return;
         }
         const filePath = getJsonPath(requestID, cutIndex, "mask");
@@ -165,6 +173,9 @@ export class SegmentationInterface {
           if (error) {
             reject(handleGrpcError(error));
             return;
+          } else if (response.req_id === -1) {
+            reject(createMemoryError(response));
+            return;
           }
           console.log("Greeting:", response);
           resolve(response);
@@ -195,18 +206,26 @@ export class OCRInterface {
     cutIndex: number
   ): Promise<MESSAGE.ReplyOCRStart> {
     const imagePath = await queryManager.getPath(requestID, "cut", cutIndex);
-
+    const inpaintImagePath = await queryManager.getPath(
+      requestID,
+      "inpaint",
+      cutIndex
+    );
     return new Promise<MESSAGE.ReplyOCRStart>((resolve, reject) => {
       const request: MESSAGE.RequestStart = {
         req_id: requestID,
         cut_index: cutIndex,
         image_path: imagePath,
+        inpaint_image_path: inpaintImagePath,
       };
       this.client.StartOCR(
         request,
         async function (error: Error | null, response: MESSAGE.ReplyOCRStart) {
           if (error) {
             reject(handleGrpcError(error));
+            return;
+          } else if (response.req_id === -1) {
+            reject(createMemoryError(response));
             return;
           }
           await queryManager.updateProgress(requestID, cutIndex, "bbox");
@@ -229,5 +248,65 @@ export class OCRInterface {
     const response: MESSAGE.ReceiveJson = { success: true };
     callback(null, response);
     return response;
+  }
+
+  async startTranslate(
+    requestID: number,
+    cutIndex: number,
+    translateID: number
+  ): Promise<TranslateBox> {
+    const bboxes = await queryManager.getBboxes(requestID, cutIndex);
+    const path = await queryManager.getPath(requestID, "cut", cutIndex);
+    const target_bboxes = bboxes.filter((bbox) => bbox.group_id == translateID);
+    const request: MESSAGE.RequestStartTranslate = {
+      bboxes: JSON.stringify(target_bboxes),
+      image_path: path,
+    };
+    return new Promise<TranslateBox>((resolve, reject) => {
+      this.client.StartTranslate(
+        request,
+        function (error: Error | null, response: MESSAGE.ReplyStartTranslate) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          const translated = JSON.parse(response.data) as TranslateBox;
+          return resolve(translated);
+        }
+      );
+    });
+  }
+
+  async startConcat(requestID: number): Promise<void> {
+    const image_pathes = [];
+    const cut_count = await queryManager.getCutCount(requestID);
+    for (let index = 1; index <= cut_count; index++) {
+      const image_path = await queryManager.getPath(
+        requestID,
+        "complete",
+        index
+      );
+      image_pathes.push(image_path);
+    }
+    const request: MESSAGE.RequestStartConcat = {
+      req_id: requestID,
+      image_pathes: image_pathes,
+    };
+    return new Promise<void>((resolve, reject) => {
+      this.client.StartConcat(
+        request,
+        async function (
+          error: Error | null,
+          response: MESSAGE.ReplyStartConcat
+        ) {
+          if (error) {
+            reject(handleGrpcError(error));
+            return;
+          }
+          await queryManager.updateCut(requestID, "complete", 0, response.path);
+          return resolve();
+        }
+      );
+    });
   }
 }

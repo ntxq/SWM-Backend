@@ -189,20 +189,13 @@ describe("mysql connection test", function () {
   it("get/set bboxes", async function () {
     const returnValue = {
       bbox_id: 1,
-      originalX: 40,
-      originalY: 30,
-      originalWidth: 400,
-      originalHeight: 300,
-      originalText: "originalText",
-      translatedX: 30,
-      translatedY: 20,
-      translatedWidth: 100,
-      translatedHeight: 200,
-      fontColor: "red",
-      fontSize: 15,
-      fontFamily: "default",
-      fontWeight: "bold",
-      fontStyle: "random",
+      x: 40,
+      y: 30,
+      width: 400,
+      height: 300,
+      text: "text",
+      group_id: 1,
+      group_index: 1,
     };
     sinon
       .stub(mysqlConnection, "callProcedure")
@@ -212,32 +205,58 @@ describe("mysql connection test", function () {
     expect(bboxes).to.be.instanceof(Array);
     for (const bbox of bboxes) {
       expect(bbox.bbox_id).to.be.equal(returnValue.bbox_id);
-      expect(bbox.originalX).to.be.equal(returnValue.originalX);
-      expect(bbox.originalY).to.be.equal(returnValue.originalY);
-      expect(bbox.originalWidth).to.be.equal(returnValue.originalWidth);
-      expect(bbox.originalHeight).to.be.equal(returnValue.originalHeight);
-      expect(bbox.originalText).to.be.equal(returnValue.originalText);
+      expect(bbox.x).to.be.equal(returnValue.x);
+      expect(bbox.y).to.be.equal(returnValue.y);
+      expect(bbox.width).to.be.equal(returnValue.width);
+      expect(bbox.height).to.be.equal(returnValue.height);
+      expect(bbox.text).to.be.equal(returnValue.text);
     }
     await queryManager.setBboxes(1, 0, [returnValue]);
     await queryManager.setBboxes(1, 1, [returnValue]);
     bboxes = await queryManager.getBboxes(1, 1);
     for (const bbox of bboxes) {
       expect(bbox.bbox_id).to.be.equal(returnValue.bbox_id);
-      expect(bbox.originalX).to.be.equal(returnValue.originalX);
-      expect(bbox.originalY).to.be.equal(returnValue.originalY);
-      expect(bbox.originalWidth).to.be.equal(returnValue.originalWidth);
-      expect(bbox.originalHeight).to.be.equal(returnValue.originalHeight);
-      expect(bbox.originalText).to.be.equal(returnValue.originalText);
+      expect(bbox.x).to.be.equal(returnValue.x);
+      expect(bbox.y).to.be.equal(returnValue.y);
+      expect(bbox.width).to.be.equal(returnValue.width);
+      expect(bbox.height).to.be.equal(returnValue.height);
+      expect(bbox.text).to.be.equal(returnValue.text);
     }
-    await queryManager.setBboxesWithTranslate(1, 1, [returnValue]);
-    bboxes = await queryManager.getBboxes(1, 1);
+  });
+
+  it("get/set translate bboxes", async function () {
+    const returnValue = {
+      id: 1,
+      x: 30,
+      y: 20,
+      width: 100,
+      height: 200,
+      text: "text",
+      fontColor: "red",
+      fontSize: 15,
+      fontFamily: "default",
+      fontWeight: "bold",
+      fontStyle: "random",
+    };
+    sinon
+      .stub(mysqlConnection, "callProcedure")
+      .resolves({ translate_box: JSON.stringify([returnValue]) });
+
+    const bboxes = await queryManager.getTranslateBoxes(1, 1);
+    expect(bboxes).to.be.instanceof(Array);
+    await queryManager.setTranslateBoxes(1, 1, [returnValue]);
     for (const bbox of bboxes) {
-      expect(bbox.bbox_id).to.be.equal(returnValue.bbox_id);
-      expect(bbox.originalX).to.be.equal(returnValue.originalX);
-      expect(bbox.originalY).to.be.equal(returnValue.originalY);
-      expect(bbox.originalWidth).to.be.equal(returnValue.originalWidth);
-      expect(bbox.originalHeight).to.be.equal(returnValue.originalHeight);
-      expect(bbox.originalText).to.be.equal(returnValue.originalText);
+      expect(bbox.id).to.be.equal(returnValue.id);
+      expect(bbox.x).to.be.equal(returnValue.x);
+      expect(bbox.y).to.be.equal(returnValue.y);
+      expect(bbox.width).to.be.equal(returnValue.width);
+      expect(bbox.height).to.be.equal(returnValue.height);
+      expect(bbox.text).to.be.equal(returnValue.text);
+      expect(bbox.fontColor).to.be.equal(returnValue.fontColor);
+      expect(bbox.fontSize).to.be.equal(returnValue.fontSize);
+      expect(bbox.fontFamily).to.be.equal(returnValue.fontFamily);
+      expect(bbox.fontWeight).to.be.equal(returnValue.fontWeight);
+      expect(bbox.fontStyle).to.be.equal(returnValue.fontStyle);
     }
   });
 

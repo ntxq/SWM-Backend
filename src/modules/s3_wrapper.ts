@@ -6,20 +6,17 @@ import createError from "http-errors";
 class S3 {
   s3: AWS.S3;
   bucket: string;
-  ACL: string;
 
   constructor() {
     AWS.config.region = "ap-northeast-2";
     AWS.config.credentials = credentials;
     this.s3 = new AWS.S3();
-    this.bucket = "swm-images-db";
-    this.ACL = "public-read";
+    this.bucket = "swm-images-db-beta";
   }
 
   async upload(filename: string, buffer: Buffer) {
     const parameter: AWS.S3.Types.PutObjectRequest = {
       Bucket: this.bucket,
-      ACL: this.ACL,
       Key: filename,
       Body: buffer,
     };
@@ -82,11 +79,11 @@ class S3 {
     return this.s3.getSignedUrlPromise("putObject", parameter);
   }
 
-  async getDownloadURL(filename: string) {
+  async getDownloadURL(filename: string, expires = 30) {
     const parameter = {
       Bucket: this.bucket,
       Key: filename,
-      Expires: 30,
+      Expires: expires,
     };
     return this.s3.getSignedUrlPromise("getObject", parameter);
   }
