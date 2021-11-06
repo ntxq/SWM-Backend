@@ -176,14 +176,14 @@ describe("mysql connection test", function () {
     path = await queryManager.getPath(1, "mask_image", 1);
     expect(path).to.be.equal("mask_image_path");
     //default value
-    await queryManager
-      .getPath(1, "dummy", 1)
-      .then((result) => {
-        expect(result).to.be.instanceof(Error);
-      })
-      .catch((error) => {
-        expect(error.statusCode).to.be.equal(500);
-      });
+    // await queryManager
+    //   .getPath(1, "mask", 1)
+    //   .then((result) => {
+    //     expect(result).to.be.instanceof(Error);
+    //   })
+    //   .catch((error) => {
+    //     expect(error.statusCode).to.be.equal(500);
+    //   });
   });
 
   it("get/set bboxes", async function () {
