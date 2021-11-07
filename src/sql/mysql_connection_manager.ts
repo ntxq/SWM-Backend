@@ -51,7 +51,9 @@ export class mysqlConnectionManager {
         const progress = row["progress"] as string;
         const thumbnail = row["cut1_path"] as string;
         const thumnail_s3 =
-          thumbnail !== null ? await s3.getDownloadURL(thumbnail) : undefined;
+          thumbnail !== null
+            ? await s3.getDownloadURL(thumbnail, 60 * 60)
+            : undefined;
         const request = { id: id, progress: progress, thumbnail: thumnail_s3 };
         project.requests.push(request);
       }
