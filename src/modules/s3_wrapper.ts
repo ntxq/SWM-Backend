@@ -11,7 +11,7 @@ class S3 {
     AWS.config.region = "ap-northeast-2";
     AWS.config.credentials = credentials;
     this.s3 = new AWS.S3();
-    this.bucket = "swm-images-beta";
+    this.bucket = "swm-images-db-beta";
   }
 
   async upload(filename: string, buffer: Buffer) {
