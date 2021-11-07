@@ -43,7 +43,7 @@ router.get(
     const requestID = Number.parseInt(request.query["req_id"] as string);
     await validateRequestID(response.locals.userID, requestID);
     const cutPath = await queryManager.getPath(requestID, "complete", 0);
-    const downloadURL = await s3.getDownloadURL(cutPath);
+    const downloadURL = await s3.getDownloadURL(cutPath, 60 * 60);
     response.send({ s3_url: downloadURL });
   })
 );
